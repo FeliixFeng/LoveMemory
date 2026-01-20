@@ -157,6 +157,75 @@ function loveMemory() {
       }
     },
     
+    // Missing methods restored below:
+    
+    openMilestoneModal(milestone = null) {
+      if (milestone) {
+        // Edit mode
+        this.editingMilestoneId = milestone.id;
+        this.milestoneForm = { ...milestone };
+      } else {
+        // Create mode
+        this.editingMilestoneId = null;
+        this.milestoneForm = {
+          date: new Date().toISOString().split('T')[0],
+          title: '',
+          desc: '',
+          icon: 'ph-heart'
+        };
+      }
+      this.showMilestoneModal = true;
+    },
+    
+    saveMilestone() {
+      if (!this.milestoneForm.title || !this.milestoneForm.date) {
+        this.showToast('Please fill in title and date', 'ph-warning');
+        return;
+      }
+      
+      if (this.editingMilestoneId) {
+        const index = this.milestones.findIndex(m => m.id === this.editingMilestoneId);
+        if (index !== -1) {
+          this.milestones[index] = { ...this.milestoneForm, id: this.editingMilestoneId };
+        }
+      } else {
+        this.milestones.push({
+          ...this.milestoneForm,
+          id: Date.now()
+        });
+      }
+      
+      this.milestones.sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      this.saveData();
+      this.showMilestoneModal = false;
+      this.showToast('Milestone saved', 'ph-check');
+      
+      this.$nextTick(() => {
+        const container = document.querySelector('.scroll-snap-x');
+        if (container) container.scrollTo({ left: 0, behavior: 'smooth' });
+      });
+    },
+    
+    deleteMilestone() {
+      if (!this.editingMilestoneId) return;
+      
+      if (confirm('Delete this milestone?')) {
+        this.milestones = this.milestones.filter(m => m.id !== this.editingMilestoneId);
+        this.saveData();
+        this.showMilestoneModal = false;
+        this.showToast('Milestone deleted', 'ph-trash');
+      }
+    },
+    
+    initDefaultMilestones() {
+      this.milestones = [
+        { id: 1, date: '2023-05-20', title: 'First Date', desc: 'That coffee shop...', icon: 'ph-heart' },
+        { id: 2, date: '2023-10-01', title: 'First Trip', desc: 'Yunnan Adventure', icon: 'ph-airplane-tilt' }
+      ];
+      this.saveData();
+    },
+
     saveStartDate() {
       this.saveData();
       this.updateCountdown();
