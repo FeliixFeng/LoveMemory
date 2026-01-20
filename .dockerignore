@@ -1,0 +1,27 @@
+# 依赖
+node_modules/
+npm-debug.log
+
+# 挂载数据 (不要打包进去，否则会覆盖服务器上的数据)
+public/uploads/*
+!public/uploads/.gitkeep
+data/*.json
+!data/.gitkeep
+
+# 环境配置
+.env
+.env.local
+
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+.DS_Store
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore

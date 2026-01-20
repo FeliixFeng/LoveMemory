@@ -243,18 +243,14 @@
       
       <!-- Brand -->
       <div class="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
-        <span class="font-serif text-lg font-bold text-warm-900 tracking-wide">我们</span>
-        <span class="text-[8px] text-warm-400 tracking-widest font-display uppercase -mt-0.5">OUR STORY</span>
+        <span class="font-serif text-xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-br from-warm-800 to-warm-600 drop-shadow-sm">欣与峰</span>
+        <span class="text-[8px] text-warm-400 tracking-[0.3em] font-display uppercase mt-0.5">OUR STORY</span>
       </div>
       
       <!-- Actions -->
       <div class="flex items-center gap-3">
-        <button @click="$refs.fileInput.click()" 
-                class="w-9 h-9 rounded-full bg-white/80 border border-warm-200 flex items-center justify-center text-warm-600 shadow-sm active:scale-95 transition-transform">
-          <i class="ph ph-plus text-lg"></i>
-        </button>
         <button @click="showSettings = !showSettings"
-                class="w-9 h-9 rounded-full overflow-hidden border border-warm-200 shadow-sm active:scale-95 transition-transform">
+                class="w-9 h-9 rounded-full overflow-hidden border border-warm-200 shadow-sm active:scale-95 transition-transform hover:shadow-md">
            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="w-full h-full bg-warm-100" alt="Avatar">
         </button>
       </div>

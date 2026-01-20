@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  app:
+    # 容器名称
+    container_name: love-memory
+    
+    # 每次启动时自动构建（适合开发和简单部署）
+    build: .
+    
+    # 总是自动重启（防挂）
+    restart: always
+    
+    # 端口映射: 服务器端口:容器端口
+    ports:
+      - "3000:3000"
+    
+    # 环境变量
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    
+    # 数据卷挂载 (核心！)
+    # 宿主机路径 : 容器内路径
+    volumes:
+      # 1. 挂载上传目录 (图片持久化)
+      - ./public/uploads:/app/public/uploads
+      
+      # 2. 挂载数据目录 (JSON数据持久化)
+      - ./data:/app/data
+      
+      # 3. (可选) 挂载时间，保证日志时间与服务器一致
+      - /etc/localtime:/etc/localtime:ro

@@ -1,0 +1,47 @@
+name: Deploy to Server (Sync)
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 1. 传输文件到服务器 (Rsync)
+      # 这步会自动在服务器创建目录，不需要手动去服务器操作
+      - name: Sync files to Server
+        uses: easingthemes/ssh-deploy@v5.0.0
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          ARGS: "-rlgoDzvc -i --delete"
+          SOURCE: "/"
+          REMOTE_HOST: ${{ secrets.SERVER_IP }}
+          REMOTE_USER: ${{ secrets.SERVER_USER }}
+          TARGET: "/data/app/love-memory"
+          EXCLUDE: "/node_modules/, /.git/, /.github/, /public/uploads/, /data/"
+
+      # 2. 远程启动服务
+      - name: Start Application
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /data/app/love-memory
+            
+            # 确保数据目录存在 (防止第一次部署报错)
+            mkdir -p public/uploads
+            mkdir -p data
+            chmod -R 777 public/uploads data
+            
+            # 启动容器
+            docker-compose up -d --build
+            
+            # 清理垃圾
+            docker image prune -f
