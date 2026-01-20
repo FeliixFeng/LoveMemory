@@ -32,6 +32,15 @@ app.use(express.static(join(__dirname, '../public')));
 
 app.use('/api', router);
 
+// 全局错误处理 (防止 Multer 报错导致前端收到 HTML)
+app.use((err, req, res, next) => {
+  console.error('Server Error:', err);
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({ error: '文件太大，请上传 10MB 以内的图片' });
+  }
+  res.status(500).json({ error: err.message || 'Server Error' });
+});
+
 // ============ 启动服务 ============
 
 app.listen(PORT, () => {

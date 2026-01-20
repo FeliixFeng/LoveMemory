@@ -6,15 +6,21 @@
 import multer from 'multer';
 import { fileURLToPath } from 'url';
 import { dirname, join, extname } from 'path';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// 确保存储目录存在
+const uploadPath = join(__dirname, '../../public/uploads');
+if (!fs.existsSync(uploadPath)) {
+  fs.mkdirSync(uploadPath, { recursive: true });
+}
 
 // multer 存储引擎配置
 const storage = multer.diskStorage({
   // 存储路径：项目根目录下的 public/uploads/
   destination: (req, file, cb) => {
-    const uploadPath = join(__dirname, '../../public/uploads');
     cb(null, uploadPath);
   },
   
