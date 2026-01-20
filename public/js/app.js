@@ -13,6 +13,25 @@ function loveMemory() {
     showSettings: false,
     scrolled: false,
     heroImageLoaded: false,
+    currentHeroIndex: 0,
+    heroTimer: null,
+    
+    // Default curated romantic images for the carousel
+    defaultHeroImages: [
+      'https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?q=80&w=2586&auto=format&fit=crop', // Classic hands
+      'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?q=80&w=2549&auto=format&fit=crop', // Sunset silhouette
+      'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=2573&auto=format&fit=crop', // Couple laughing
+      'https://images.unsplash.com/photo-1621091211034-53136cc1eb32?q=80&w=2535&auto=format&fit=crop', // Beach walk
+      'https://images.unsplash.com/photo-1523438885200-e635ba2c371e?q=80&w=2535&auto=format&fit=crop'  // Cozy indoor
+    ],
+    
+    get activeHeroImages() {
+      // If user has a custom image, put it first, then follow with defaults
+      return this.heroImage 
+        ? [this.heroImage, ...this.defaultHeroImages.slice(0, 4)]
+        : this.defaultHeroImages;
+    },
+
     currentQuote: { text: '', author: '' },
     toast: { show: false, message: '', icon: 'ph-check' },
     
@@ -55,7 +74,16 @@ function loveMemory() {
       this.loadFromStorage();
       this.refreshQuote();
       this.updateCountdown();
+      this.startCarousel(); // Start the hero carousel
       setInterval(() => this.updateCountdown(), 60000);
+    },
+    
+    startCarousel() {
+      // Rotate image every 6 seconds
+      if (this.heroTimer) clearInterval(this.heroTimer);
+      this.heroTimer = setInterval(() => {
+        this.currentHeroIndex = (this.currentHeroIndex + 1) % this.activeHeroImages.length;
+      }, 6000);
     },
     
     loadFromStorage() {
@@ -165,6 +193,8 @@ function loveMemory() {
       reader.onload = (e) => {
         this.heroImage = e.target.result;
         this.saveToStorage();
+        this.currentHeroIndex = 0; // Reset to show the new image immediately
+        this.startCarousel(); // Restart timer
         this.showToast('Cover updated!', 'ph-image');
       };
       reader.readAsDataURL(file);

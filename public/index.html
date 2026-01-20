@@ -78,16 +78,25 @@
     [x-cloak] { display: none !important; }
     
     body {
-      /* Warm Mesh Gradient Background */
+      /* Dynamic Ambient Background */
       background-color: #FDFBF7;
       background-image: 
-        radial-gradient(at 0% 0%, rgba(239, 216, 195, 0.5) 0px, transparent 50%),
+        radial-gradient(at 0% 0%, rgba(239, 216, 195, 0.4) 0px, transparent 50%),
         radial-gradient(at 100% 0%, rgba(221, 164, 128, 0.3) 0px, transparent 50%),
         radial-gradient(at 100% 100%, rgba(212, 139, 96, 0.2) 0px, transparent 50%),
-        radial-gradient(at 0% 100%, rgba(247, 241, 227, 0.8) 0px, transparent 50%);
+        radial-gradient(at 0% 100%, rgba(247, 241, 227, 0.6) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, rgba(255, 255, 255, 0.5) 0px, transparent 50%);
+      background-size: 180% 180%;
       background-attachment: fixed;
+      animation: ambient-shift 25s ease-in-out infinite alternate;
       -webkit-font-smoothing: antialiased;
       padding-bottom: env(safe-area-inset-bottom);
+    }
+    
+    @keyframes ambient-shift {
+      0% { background-position: 0% 0%; }
+      50% { background-position: 100% 100%; }
+      100% { background-position: 0% 100%; }
     }
 
     /* Glassmorphism Utilities */
@@ -167,21 +176,28 @@
 
   <main class="w-full max-w-lg mx-auto pt-24 pb-28 px-5 flex flex-col gap-8 min-h-screen">
     
-    <!-- 1. Immersive Hero Card -->
-    <section class="relative w-full aspect-[3.5/4.5] rounded-[36px] overflow-hidden shadow-float group cursor-pointer animate-slide-up isolate"
+    <!-- 1. Immersive Hero Carousel -->
+    <section class="relative w-full aspect-[3.5/4.5] rounded-[36px] overflow-hidden shadow-float group cursor-pointer animate-slide-up isolate transform-gpu"
              @click="$refs.heroImageInput.click()">
       
-      <!-- Breathing Image Background -->
+      <!-- Carousel Backgrounds -->
       <div class="absolute inset-0 bg-warm-200 overflow-hidden">
-        <img :src="heroImage || 'https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?q=80&w=2586&auto=format&fit=crop'" 
-             class="w-full h-full object-cover animate-breathe transition-opacity duration-700"
-             :class="{ 'opacity-0': !heroImageLoaded, 'opacity-100': heroImageLoaded }"
-             @load="heroImageLoaded = true"
-             alt="Cover">
+        <template x-for="(img, index) in activeHeroImages" :key="index">
+           <img :src="img" 
+                class="absolute inset-0 w-full h-full object-cover transition-opacity duration-[2000ms] ease-in-out will-change-opacity"
+                :class="{ 'opacity-100 scale-105': currentHeroIndex === index, 'opacity-0 scale-100': currentHeroIndex !== index }"
+                style="transition-property: opacity, transform;"
+                alt="Memory Cover">
+        </template>
+        
+        <!-- Loading Placeholder -->
+        <div x-show="!heroImageLoaded" class="absolute inset-0 bg-warm-100 flex items-center justify-center">
+           <div class="w-8 h-8 border-2 border-warm-300 border-t-transparent rounded-full animate-spin"></div>
+        </div>
       </div>
       
-      <!-- Cinematic Overlay -->
-      <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/60"></div>
+      <!-- Cinematic Overlay (Gradient) -->
+      <div class="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/60 z-10 pointer-events-none"></div>
       
       <!-- Top Label -->
       <div class="absolute top-6 left-6 flex items-center gap-2">
