@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Uploaded files (user content)
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Build output
+dist/
+build/
+
+# Runtime data
+data/*.json
+!data/.gitkeep

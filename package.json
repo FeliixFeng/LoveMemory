@@ -1,0 +1,24 @@
+{
+  "name": "lovememory",
+  "version": "1.0.0",
+  "description": "💕 情侣纪念网站 - A romantic memory website for couples",
+  "main": "src/app.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node --watch src/app.js"
+  },
+  "keywords": [
+    "love",
+    "memory",
+    "couples",
+    "anniversary"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "multer": "^2.0.2"
+  }
+}

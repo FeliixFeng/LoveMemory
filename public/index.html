@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Our Memory | 珍藏回忆</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            warm: {
+              50: '#FDFBF7',
+              100: '#F7F1E3',
+              200: '#EFD8C3',
+              300: '#E6BEA0',
+              400: '#DDA480',
+              500: '#D48B60', // Primary Accent
+              600: '#AA6F4D',
+              800: '#5C3D2A', // Dark Text
+              900: '#3D281C',
+            },
+            glass: {
+              light: 'rgba(255, 255, 255, 0.65)',
+              border: 'rgba(255, 255, 255, 0.4)',
+              card: 'rgba(255, 255, 255, 0.85)',
+            }
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', 'PingFang SC', 'Hiragino Sans GB', 'Inter', 'sans-serif'],
+            serif: ['Noto Serif SC', 'Playfair Display', 'Songti SC', 'serif'],
+            display: ['Playfair Display', 'serif'], // For English Accents
+          },
+          boxShadow: {
+            'soft': '0 8px 30px rgba(0, 0, 0, 0.04)',
+            'float': '0 20px 40px -10px rgba(92, 61, 42, 0.15)',
+            'inner-glow': 'inset 0 0 20px rgba(255, 255, 255, 0.6)',
+          },
+          animation: {
+            'breathe': 'breathe 8s ease-in-out infinite',
+            'float': 'float 6s ease-in-out infinite',
+            'slide-up': 'slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
+          },
+          keyframes: {
+            breathe: {
+              '0%, 100%': { transform: 'scale(1.0)' },
+              '50%': { transform: 'scale(1.05)' },
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-10px)' },
+            },
+            slideUp: {
+              '0%': { transform: 'translateY(30px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+  
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  
+  <style>
+    [x-cloak] { display: none !important; }
+    
+    body {
+      /* Warm Mesh Gradient Background */
+      background-color: #FDFBF7;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(239, 216, 195, 0.5) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(221, 164, 128, 0.3) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(212, 139, 96, 0.2) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, rgba(247, 241, 227, 0.8) 0px, transparent 50%);
+      background-attachment: fixed;
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* Glassmorphism Utilities */
+    .glass-card {
+      background: var(--glass-card, rgba(255, 255, 255, 0.7));
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 10px 40px -10px rgba(92, 61, 42, 0.08);
+    }
+
+    .glass-nav {
+      background: rgba(253, 251, 247, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(239, 216, 195, 0.3);
+    }
+
+    /* Horizontal Scroll Snap */
+    .scroll-snap-x {
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+    .snap-start {
+      scroll-snap-align: start;
+    }
+    
+    /* Hide scrollbar */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Text Texture */
+    .text-gradient {
+      background: linear-gradient(135deg, #5C3D2A 0%, #AA6F4D 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+  </style>
+</head>
+
+<body class="text-warm-900 selection:bg-warm-200" 
+      x-data="loveMemory()" 
+      x-init="init()">
+  
+  <!-- Top Navigation (Native App Feel) -->
+  <nav class="fixed top-0 left-0 right-0 z-50 px-5 pt-safe-top pb-3 glass-nav transition-all duration-300"
+       :class="{ 'shadow-sm': scrolled }"
+       @scroll.window="scrolled = (window.pageYOffset > 10)">
+    <div class="flex justify-between items-center h-12 mt-2">
+      <!-- Date Display -->
+      <div class="flex flex-col">
+        <span class="text-[10px] font-bold tracking-[0.2em] text-warm-500 uppercase font-display">TODAY</span>
+        <span class="text-sm font-semibold text-warm-800" x-text="formatDate(new Date().toISOString())"></span>
+      </div>
+      
+      <!-- Brand -->
+      <div class="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
+        <span class="font-serif text-lg font-bold text-warm-900 tracking-wide">我们</span>
+        <span class="text-[8px] text-warm-400 tracking-widest font-display uppercase -mt-0.5">OUR STORY</span>
+      </div>
+      
+      <!-- Actions -->
+      <div class="flex items-center gap-3">
+        <button @click="$refs.fileInput.click()" 
+                class="w-9 h-9 rounded-full bg-white/80 border border-warm-200 flex items-center justify-center text-warm-600 shadow-sm active:scale-95 transition-transform">
+          <i class="ph ph-plus text-lg"></i>
+        </button>
+        <button @click="showSettings = !showSettings"
+                class="w-9 h-9 rounded-full overflow-hidden border border-warm-200 shadow-sm active:scale-95 transition-transform">
+           <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="w-full h-full bg-warm-100" alt="Avatar">
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="w-full max-w-lg mx-auto pt-24 pb-28 px-5 flex flex-col gap-8 min-h-screen">
+    
+    <!-- 1. Immersive Hero Card -->
+    <section class="relative w-full aspect-[3.5/4.5] rounded-[36px] overflow-hidden shadow-float group cursor-pointer animate-slide-up isolate"
+             @click="$refs.heroImageInput.click()">
+      
+      <!-- Breathing Image Background -->
+      <div class="absolute inset-0 bg-warm-200 overflow-hidden">
+        <img :src="heroImage || 'https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?q=80&w=2586&auto=format&fit=crop'" 
+             class="w-full h-full object-cover animate-breathe transition-opacity duration-700"
+             :class="{ 'opacity-0': !heroImageLoaded, 'opacity-100': heroImageLoaded }"
+             @load="heroImageLoaded = true"
+             alt="Cover">
+      </div>
+      
+      <!-- Cinematic Overlay -->
+      <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/60"></div>
+      
+      <!-- Top Label -->
+      <div class="absolute top-6 left-6 flex items-center gap-2">
+        <div class="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/20 flex items-center gap-1.5">
+          <div class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></div>
+          <span class="text-[10px] font-medium text-white tracking-wide uppercase font-display">Loving</span>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="absolute bottom-0 left-0 right-0 p-8 text-white">
+        <div class="flex flex-col gap-1 mb-6">
+          <span class="text-xs font-light text-white/80 tracking-[0.2em] uppercase font-display">TOGETHER FOR</span>
+          <div class="flex items-baseline gap-2">
+            <h1 class="font-serif text-7xl font-medium leading-none tracking-tight text-white drop-shadow-sm" x-text="daysTogether">0</h1>
+            <span class="text-xl font-light font-serif italic opacity-90">Days</span>
+          </div>
+        </div>
+        
+        <!-- Info Widget (Glass) -->
+        <div class="flex items-center justify-between p-4 rounded-2xl bg-white/15 backdrop-blur-xl border border-white/10">
+          <div class="flex flex-col">
+            <span class="text-[10px] text-white/60 uppercase tracking-wider font-display">ANNIVERSARY</span>
+            <span class="text-sm font-medium" x-text="formattedStartDate">Set Date</span>
+          </div>
+          <div class="w-px h-8 bg-white/20"></div>
+          <div class="flex flex-col items-end">
+             <span class="text-[10px] text-white/60 uppercase tracking-wider font-display">NEXT</span>
+             <span class="text-sm font-medium flex items-center gap-1">
+               <i class="ph-fill ph-calendar-heart"></i>
+               <span>36 Days</span>
+             </span>
+          </div>
+        </div>
+      </div>
+      
+      <input type="file" x-ref="heroImageInput" @change="handleHeroImage($event)" accept="image/*" class="hidden">
+    </section>
+
+    <!-- 2. Horizontal Milestones (Timeline) -->
+    <div class="animate-slide-up" style="animation-delay: 0.1s">
+      <div class="flex justify-between items-end mb-4 px-1">
+        <h2 class="font-serif text-xl font-bold text-warm-900">恋爱里程碑</h2>
+        <span class="text-[10px] text-warm-400 font-bold tracking-widest uppercase font-display">MILESTONES</span>
+      </div>
+      
+      <div class="flex gap-4 overflow-x-auto no-scrollbar scroll-snap-x pb-4 -mx-5 px-5">
+        <!-- Add Item -->
+        <div class="flex-none w-16 flex flex-col items-center justify-center gap-2 snap-start">
+           <button class="w-14 h-14 rounded-2xl border-2 border-dashed border-warm-300 flex items-center justify-center text-warm-400 active:bg-warm-50">
+             <i class="ph ph-plus text-xl"></i>
+           </button>
+           <span class="text-[10px] text-warm-400">Add</span>
+        </div>
+
+        <!-- Milestone Card 1 -->
+        <div class="flex-none w-40 p-4 rounded-2xl bg-white border border-white shadow-sm snap-start relative overflow-hidden group">
+          <div class="absolute top-0 right-0 w-16 h-16 bg-warm-100 rounded-full blur-2xl -mr-8 -mt-8 opacity-50"></div>
+          <i class="ph-fill ph-heart text-2xl text-warm-500 mb-3 block"></i>
+          <p class="text-xs text-warm-400 font-display mb-1">2023.05.20</p>
+          <h3 class="font-bold text-warm-800 text-sm">第一次约会</h3>
+          <p class="text-[10px] text-warm-500 mt-1 line-clamp-1">在那个海边咖啡馆...</p>
+        </div>
+
+        <!-- Milestone Card 2 -->
+        <div class="flex-none w-40 p-4 rounded-2xl bg-white border border-white shadow-sm snap-start relative overflow-hidden">
+           <div class="absolute bottom-0 left-0 w-16 h-16 bg-blue-50 rounded-full blur-2xl -ml-8 -mb-8 opacity-50"></div>
+           <i class="ph-fill ph-airplane-tilt text-2xl text-blue-400 mb-3 block"></i>
+           <p class="text-xs text-warm-400 font-display mb-1">2023.10.01</p>
+           <h3 class="font-bold text-warm-800 text-sm">第一次旅行</h3>
+           <p class="text-[10px] text-warm-500 mt-1">去了最想去的云南</p>
+        </div>
+        
+        <!-- Placeholder -->
+        <div class="flex-none w-4"></div>
+      </div>
+    </div>
+
+    <!-- 3. Quote (Emotional) -->
+    <section class="glass-card rounded-[24px] p-6 text-center animate-slide-up relative overflow-hidden" 
+             style="animation-delay: 0.2s"
+             @click="refreshQuote()">
+      <!-- Decor -->
+      <i class="ph-fill ph-quotes text-4xl text-warm-200 absolute top-2 left-4 opacity-50"></i>
+      
+      <div class="relative z-10 py-2">
+        <p class="font-serif text-lg md:text-xl text-warm-800 leading-relaxed mb-3"
+           x-text="currentQuote.text"
+           :key="currentQuote.text">
+          "Love is the whole thing. We are only pieces."
+        </p>
+        <div class="flex items-center justify-center gap-2">
+           <div class="h-px w-6 bg-warm-300"></div>
+           <p class="text-[10px] uppercase tracking-widest text-warm-500 font-display" x-text="currentQuote.author">Rumi</p>
+           <div class="h-px w-6 bg-warm-300"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Recent Moments (Photo Grid Preview) -->
+    <div class="animate-slide-up flex flex-col gap-4" style="animation-delay: 0.3s">
+      <div class="flex justify-between items-end px-1">
+        <h2 class="font-serif text-xl font-bold text-warm-900">甜蜜瞬间</h2>
+        <button class="text-[10px] text-warm-500 font-bold tracking-widest uppercase font-display flex items-center gap-1 active:opacity-60">
+          VIEW ALL <i class="ph-bold ph-arrow-right"></i>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <!-- Upload Card -->
+        <div class="aspect-[4/5] rounded-2xl border-2 border-dashed border-warm-200 bg-white/30 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-white/50 transition-colors"
+             @click="$refs.fileInput.click()">
+           <div class="w-10 h-10 rounded-full bg-warm-100 flex items-center justify-center text-warm-500">
+             <i class="ph-bold ph-camera-plus text-lg"></i>
+           </div>
+           <span class="text-xs text-warm-500 font-medium">记录美好</span>
+        </div>
+
+        <!-- Photo Feed -->
+        <template x-for="(photo, index) in photos.slice(0, 5)" :key="photo.uploadedAt">
+          <div class="relative aspect-[4/5] rounded-2xl overflow-hidden shadow-sm group cursor-pointer"
+               @click="openLightbox(photo)">
+            <img :src="photo.url" loading="lazy" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Moment">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60"></div>
+            <span class="absolute bottom-3 left-3 text-[10px] text-white/90 font-display" x-text="formatDateShort(photo.uploadedAt)"></span>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Hidden Input -->
+    <input type="file" x-ref="fileInput" @change="handleFileUpload($event)" accept="image/*" multiple class="hidden">
+    
+    <!-- Footer -->
+    <footer class="text-center py-8 opacity-40">
+      <i class="ph-fill ph-heart text-warm-400 text-xs animate-pulse"></i>
+    </footer>
+  </main>
+
+  <!-- Settings Bottom Sheet -->
+  <div x-show="showSettings" 
+       x-cloak
+       class="fixed inset-0 z-[60] flex items-end justify-center">
+    
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity duration-300" 
+         x-show="showSettings"
+         x-transition:enter="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="opacity-0"
+         @click="showSettings = false"></div>
+    
+    <!-- Sheet -->
+    <div class="relative w-full max-w-lg bg-[#FDFBF7] rounded-t-[32px] p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-out"
+         x-show="showSettings"
+         x-transition:enter="translate-y-full"
+         x-transition:enter-end="translate-y-0"
+         x-transition:leave="translate-y-full">
+      
+      <div class="w-10 h-1 bg-warm-200 rounded-full mx-auto mb-6"></div>
+      
+      <h3 class="font-serif text-xl font-bold text-warm-900 mb-6 text-center">设置纪念日</h3>
+      
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-warm-100 mb-6">
+        <label class="block text-[10px] font-bold uppercase tracking-wider text-warm-400 mb-2 font-display">ANNIVERSARY DATE</label>
+        <input type="date" 
+               x-model="startDate"
+               @change="saveStartDate()"
+               class="w-full bg-transparent text-lg font-medium text-warm-800 outline-none font-serif">
+      </div>
+      
+      <button class="w-full py-4 bg-warm-800 text-warm-50 rounded-2xl font-medium shadow-lg shadow-warm-800/20 active:scale-[0.98] transition-transform"
+              @click="showSettings = false">
+        确认保存
+      </button>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div x-show="lightboxOpen" 
+       x-cloak
+       class="fixed inset-0 z-[70] bg-black/95 backdrop-blur-md flex items-center justify-center transition-opacity duration-300"
+       x-transition:enter="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="opacity-0"
+       @click="lightboxOpen = false">
+    
+    <button class="absolute top-safe-top right-5 mt-4 z-10 w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-white backdrop-blur-md"
+            @click="lightboxOpen = false">
+      <i class="ph ph-x text-xl"></i>
+    </button>
+    
+    <img :src="lightboxImage" 
+         class="max-w-full max-h-screen object-contain shadow-2xl"
+         x-transition:enter="scale-95 opacity-0"
+         x-transition:enter-end="scale-100 opacity-100"
+         alt="Full size">
+  </div>
+
+  <!-- Toast -->
+  <div x-show="toast.show" 
+       x-cloak
+       class="fixed top-24 left-1/2 -translate-x-1/2 z-[80] bg-white/90 backdrop-blur-xl border border-white/50 text-warm-800 px-5 py-2.5 rounded-full shadow-lg flex items-center gap-2.5 transform transition-all duration-300"
+       x-transition:enter="translate-y-4 opacity-0 scale-95"
+       x-transition:enter-end="translate-y-0 opacity-100 scale-100"
+       x-transition:leave="translate-y-4 opacity-0">
+    <i class="ph-fill text-warm-500 text-lg" :class="toast.icon"></i>
+    <span class="text-xs font-bold tracking-wide" x-text="toast.message"></span>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

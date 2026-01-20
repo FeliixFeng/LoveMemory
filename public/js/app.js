@@ -1,0 +1,191 @@
+function loveMemory() {
+  return {
+    startDate: '',
+    daysTogether: 0,
+    formattedStartDate: '--',
+    photos: [],
+    heroImage: '',
+    isDragging: false,
+    isUploading: false,
+    lightboxOpen: false,
+    lightboxImage: '',
+    showSecretModal: false,
+    showSettings: false,
+    scrolled: false,
+    heroImageLoaded: false,
+    currentQuote: { text: '', author: '' },
+    toast: { show: false, message: '', icon: 'ph-check' },
+    
+    quotes: [
+      { text: "Time expands, then contracts, all in tune with the stirrings of the heart.", author: "Haruki Murakami" },
+      { text: "In all the world, there is no heart for me like yours.", author: "Maya Angelou" },
+      { text: "You are my today and all of my tomorrows.", author: "Leo Christopher" },
+      { text: "The best thing to hold onto in life is each other.", author: "Audrey Hepburn" },
+      { text: "Whatever our souls are made of, his and mine are the same.", author: "Emily Brontë" },
+      { text: "I love you not only for what you are, but for what I am when I am with you.", author: "Roy Croft" },
+      { text: "To love and be loved is to feel the sun from both sides.", author: "David Viscott" },
+      { text: "Love turns ordinary moments into timeless memories.", author: "Unknown" },
+      { text: "We don't measure time in hours, but in memories.", author: "Unknown" },
+      { text: "初见乍欢，久处仍怦然。", author: "佚名" },
+      { text: "你是例外，也是偏爱。", author: "佚名" },
+      { text: "那就在一起，晨昏与四季。", author: "佚名" },
+      { text: "心怀浪漫宇宙，也惜人间日常。", author: "佚名" },
+      { text: "在遇见你的那一刻，浩瀚众星，皆降为尘。", author: "佚名" },
+      { text: "时间会告诉我们，简单的喜欢最长远，平凡中的陪伴最心安。", author: "佚名" },
+      { text: "浮世三千，吾爱有三。日、月与卿。", author: "佚名" },
+      { text: "春水初生，春林初盛，春风十里，不如你。", author: "冯唐" },
+      { text: "山有木兮木有枝，心悦君兮君不知。", author: "《越人歌》" },
+      { text: "玲珑骰子安红豆，入骨相思知不知。", author: "温庭筠" },
+      { text: "愿我如星君如月，夜夜流光相皎洁。", author: "范成大" },
+    ],
+    
+    formatDate(isoString) {
+      if (!isoString) return '';
+      const date = new Date(isoString);
+      return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+    },
+    
+    formatDateShort(isoString) {
+      if (!isoString) return '';
+      const date = new Date(isoString);
+      return date.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
+    },
+
+    init() {
+      this.loadFromStorage();
+      this.refreshQuote();
+      this.updateCountdown();
+      setInterval(() => this.updateCountdown(), 60000);
+    },
+    
+    loadFromStorage() {
+      try {
+        const data = localStorage.getItem('loveMemoryData');
+        if (data) {
+          const parsed = JSON.parse(data);
+          this.startDate = parsed.startDate || '';
+          this.photos = parsed.photos || [];
+          this.heroImage = parsed.heroImage || '';
+        }
+      } catch (e) {
+        console.error('Failed to load data:', e);
+      }
+    },
+    
+    saveToStorage() {
+      try {
+        localStorage.setItem('loveMemoryData', JSON.stringify({
+          startDate: this.startDate,
+          photos: this.photos,
+          heroImage: this.heroImage
+        }));
+      } catch (e) {
+        console.error('Failed to save data:', e);
+      }
+    },
+    
+    saveStartDate() {
+      this.saveToStorage();
+      this.updateCountdown();
+      this.showToast('Date saved!', 'ph-heart');
+    },
+    
+    updateCountdown() {
+      if (!this.startDate) {
+        this.daysTogether = 0;
+        this.formattedStartDate = '--';
+        return;
+      }
+      
+      const start = new Date(this.startDate + 'T00:00:00');
+      const now = new Date();
+      const diff = now - start;
+      this.daysTogether = Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
+      
+      this.formattedStartDate = start.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    },
+    
+    refreshQuote() {
+      const randomIndex = Math.floor(Math.random() * this.quotes.length);
+      this.currentQuote = this.quotes[randomIndex];
+    },
+    
+    async handleFileUpload(event) {
+      const files = Array.from(event.target.files);
+      if (files.length === 0) return;
+      
+      for (const file of files) {
+        await this.uploadFile(file);
+      }
+      event.target.value = '';
+    },
+    
+    handleDrop(event) {
+      this.isDragging = false;
+      const files = Array.from(event.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+      files.forEach(file => this.uploadFile(file));
+    },
+    
+    async uploadFile(file) {
+      this.isUploading = true;
+      
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (!response.ok) throw new Error('Upload failed');
+        
+        const data = await response.json();
+        this.photos.unshift({ url: data.url, uploadedAt: new Date().toISOString() });
+        this.saveToStorage();
+        this.showToast('Photo uploaded!', 'ph-check-circle');
+        
+      } catch (error) {
+        console.error('Upload error:', error);
+        this.showToast('Upload failed', 'ph-x-circle');
+      } finally {
+        this.isUploading = false;
+      }
+    },
+    
+    handleHeroImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.heroImage = e.target.result;
+        this.saveToStorage();
+        this.showToast('Cover updated!', 'ph-image');
+      };
+      reader.readAsDataURL(file);
+    },
+    
+    deletePhoto(index) {
+      this.photos.splice(index, 1);
+      this.saveToStorage();
+      this.showToast('Photo deleted', 'ph-trash');
+    },
+    
+    openLightbox(photo) {
+      this.lightboxImage = photo.url;
+      this.lightboxOpen = true;
+    },
+    
+    showToast(message, icon = 'ph-check') {
+      this.toast = { show: true, message, icon };
+      setTimeout(() => {
+        this.toast.show = false;
+      }, 2500);
+    }
+  };
+}
