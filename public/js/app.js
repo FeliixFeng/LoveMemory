@@ -2,6 +2,7 @@ function loveMemory() {
   return {
     startDate: '',
     daysTogether: 0,
+    nextAnniversaryDays: 0, // New property
     formattedStartDate: '--',
     photos: [],
     heroImage: '',
@@ -11,18 +12,20 @@ function loveMemory() {
     lightboxImage: '',
     showSecretModal: false,
     showSettings: false,
+    showCoverMenu: false, // New: Control the cover action sheet
     scrolled: false,
     heroImageLoaded: false,
     currentHeroIndex: 0,
     heroTimer: null,
+    hearts: [], // Falling hearts data
     
-    // Default curated romantic images for the carousel
+    // Default curated romantic images for the carousel (Stable IDs)
     defaultHeroImages: [
-      'https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?q=80&w=2586&auto=format&fit=crop', // Classic hands
+      'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=2573&auto=format&fit=crop', // Laughing couple
+      'https://images.unsplash.com/photo-1494774157365-9e04c6720e47?q=80&w=2670&auto=format&fit=crop', // Holding hands hiking
       'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?q=80&w=2549&auto=format&fit=crop', // Sunset silhouette
-      'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=2573&auto=format&fit=crop', // Couple laughing
-      'https://images.unsplash.com/photo-1621091211034-53136cc1eb32?q=80&w=2535&auto=format&fit=crop', // Beach walk
-      'https://images.unsplash.com/photo-1523438885200-e635ba2c371e?q=80&w=2535&auto=format&fit=crop'  // Cozy indoor
+      'https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=2670&auto=format&fit=crop', // Beach gentle
+      'https://images.unsplash.com/photo-1621091211034-53136cc1eb32?q=80&w=2535&auto=format&fit=crop'  // Walking away
     ],
     
     get activeHeroImages() {
@@ -75,7 +78,20 @@ function loveMemory() {
       this.refreshQuote();
       this.updateCountdown();
       this.startCarousel(); // Start the hero carousel
+      this.initHearts(); // Start falling hearts
       setInterval(() => this.updateCountdown(), 60000);
+    },
+    
+    initHearts() {
+      // Create 12 subtle hearts with random properties
+      this.hearts = Array.from({ length: 12 }).map(() => ({
+        left: Math.random() * 100 + '%',
+        animationDuration: 15 + Math.random() * 10 + 's', // Slow: 15-25s
+        animationDelay: -Math.random() * 20 + 's', // Start at random times immediately
+        opacity: 0.1 + Math.random() * 0.3, // Very subtle: 0.1-0.4
+        scale: 0.5 + Math.random() * 0.5, // Small: 0.5-1.0
+        swayDuration: 3 + Math.random() * 2 + 's'
+      }));
     },
     
     startCarousel() {
@@ -121,14 +137,27 @@ function loveMemory() {
     updateCountdown() {
       if (!this.startDate) {
         this.daysTogether = 0;
+        this.nextAnniversaryDays = 0;
         this.formattedStartDate = '--';
         return;
       }
       
       const start = new Date(this.startDate + 'T00:00:00');
       const now = new Date();
+      
+      // Calculate days together
       const diff = now - start;
       this.daysTogether = Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
+      
+      // Calculate next anniversary
+      let nextAnniv = new Date(now.getFullYear(), start.getMonth(), start.getDate());
+      if (now > nextAnniv) {
+        // If anniversary passed this year, look at next year
+        nextAnniv.setFullYear(now.getFullYear() + 1);
+      }
+      
+      const diffNext = nextAnniv - now;
+      this.nextAnniversaryDays = Math.ceil(diffNext / (1000 * 60 * 60 * 24));
       
       this.formattedStartDate = start.toLocaleDateString('en-US', {
         year: 'numeric',
@@ -198,6 +227,14 @@ function loveMemory() {
         this.showToast('Cover updated!', 'ph-image');
       };
       reader.readAsDataURL(file);
+    },
+    
+    removeHeroImage() {
+      this.heroImage = '';
+      this.saveToStorage();
+      this.currentHeroIndex = 0;
+      this.showCoverMenu = false;
+      this.showToast('Restored default covers', 'ph-arrow-counter-clockwise');
     },
     
     deletePhoto(index) {

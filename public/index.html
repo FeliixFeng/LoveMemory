@@ -43,8 +43,24 @@
             'breathe': 'breathe 8s ease-in-out infinite',
             'float': 'float 6s ease-in-out infinite',
             'slide-up': 'slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
+            'blob': 'blob 10s infinite',
+            'wave': 'wave 25s linear infinite',
           },
           keyframes: {
+            wave: {
+              '0%': { transform: 'translateX(0)' },
+              '100%': { transform: 'translateX(-50%)' },
+            },
+            blob: {
+              '0%': { transform: 'translateX(0)' },
+              '100%': { transform: 'translateX(-50%)' },
+            },
+            blob: {
+              '0%': { transform: 'translate(0px, 0px) scale(1)' },
+              '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+              '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+              '100%': { transform: 'translate(0px, 0px) scale(1)' },
+            },
             breathe: {
               '0%, 100%': { transform: 'scale(1.0)' },
               '50%': { transform: 'scale(1.05)' },
@@ -92,12 +108,6 @@
       -webkit-font-smoothing: antialiased;
       padding-bottom: env(safe-area-inset-bottom);
     }
-    
-    @keyframes ambient-shift {
-      0% { background-position: 0% 0%; }
-      50% { background-position: 100% 100%; }
-      100% { background-position: 0% 100%; }
-    }
 
     /* Glassmorphism Utilities */
     .glass-card {
@@ -136,12 +146,89 @@
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
+    
+    /* Animations */
+    @keyframes fall {
+      0% { transform: translateY(-10vh) rotate(0deg); opacity: 0; }
+      10% { opacity: 1; }
+      100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+    }
+    
+    @keyframes sway {
+      0% { transform: translateX(-15px); }
+      100% { transform: translateX(15px); }
+    }
+    
+    .animate-fall {
+      animation-name: fall;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+    }
+    
+    .animate-sway {
+      animation-name: sway;
+      animation-timing-function: ease-in-out;
+      animation-iteration-count: infinite;
+      animation-direction: alternate;
+    }
   </style>
 </head>
 
-<body class="text-warm-900 selection:bg-warm-200" 
+<body class="text-warm-900 selection:bg-warm-200 relative overflow-x-hidden bg-transparent" 
       x-data="loveMemory()" 
       x-init="init()">
+  
+  <!-- Ambient Background Blobs & Base Color -->
+  <div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden bg-[#FDFBF7]">
+    <!-- Static Grain Texture -->
+    <div class="absolute inset-0 opacity-[0.03]" style="background-image: url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E');"></div>
+    
+    <!-- Top Blobs -->
+    <div class="absolute top-0 left-1/4 w-72 h-72 bg-warm-300/30 rounded-full mix-blend-multiply filter blur-3xl opacity-80 animate-blob"></div>
+    <div class="absolute top-0 right-1/4 w-72 h-72 bg-rose-200/30 rounded-full mix-blend-multiply filter blur-3xl opacity-80 animate-blob" style="animation-delay: 2s"></div>
+    
+    <!-- Bottom Flowing Aurora -->
+    <div class="absolute -bottom-32 left-0 w-full h-96 bg-gradient-to-r from-warm-200/40 via-rose-200/40 to-warm-200/40 blur-3xl opacity-80 animate-pulse-soft" style="animation-duration: 8s;"></div>
+    <div class="absolute -bottom-48 right-0 w-[600px] h-[600px] bg-orange-200/30 rounded-full mix-blend-multiply filter blur-[100px] opacity-80 animate-blob" style="animation-delay: 4s"></div>
+    
+    <!-- Subtle Falling Hearts -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+      <template x-for="heart in hearts" :key="heart">
+        <div class="absolute -top-10 text-warm-400 animate-fall"
+             :style="`
+               left: ${heart.left};
+               opacity: ${heart.opacity};
+               font-size: ${heart.scale * 1.5 + 0.5}rem;
+               animation-duration: ${heart.animationDuration};
+               animation-delay: ${heart.animationDelay};
+             `">
+           <div class="animate-sway" :style="`animation-duration: ${heart.swayDuration}`">
+             <i class="ph-fill ph-heart"></i>
+           </div>
+        </div>
+      </template>
+    </div>
+    
+    <!-- Moving Waves (Liquid Footer) -->
+    <div class="absolute bottom-0 left-0 w-full overflow-hidden leading-none pointer-events-none opacity-60">
+      <!-- Wave 1 (Back, Slower) -->
+      <div class="relative w-[200%] h-[120px] animate-wave" style="animation-duration: 20s;">
+        <svg class="block w-full h-full text-warm-200/40 fill-current" viewBox="0 0 1600 120" preserveAspectRatio="none">
+           <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25"></path>
+           <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5"></path>
+           <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z"></path>
+        </svg>
+      </div>
+      <!-- Wave 2 (Front, Faster) -->
+      <div class="absolute bottom-0 left-0 w-[200%] h-[100px] animate-wave" style="animation-duration: 12s; animation-direction: reverse;">
+        <svg class="block w-full h-full text-rose-200/40 fill-current" viewBox="0 0 1600 100" preserveAspectRatio="none">
+           <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25"></path>
+           <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5"></path>
+           <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z"></path>
+        </svg>
+      </div>
+    </div>
+  </div>
   
   <!-- Top Navigation (Native App Feel) -->
   <nav class="fixed top-0 left-0 right-0 z-50 px-5 pt-safe-top pb-3 glass-nav transition-all duration-300"
@@ -177,8 +264,7 @@
   <main class="w-full max-w-lg mx-auto pt-24 pb-28 px-5 flex flex-col gap-8 min-h-screen">
     
     <!-- 1. Immersive Hero Carousel -->
-    <section class="relative w-full aspect-[3.5/4.5] rounded-[36px] overflow-hidden shadow-float group cursor-pointer animate-slide-up isolate transform-gpu"
-             @click="$refs.heroImageInput.click()">
+    <section class="relative w-full aspect-[3.5/4.5] rounded-[36px] overflow-hidden shadow-float group animate-slide-up isolate transform-gpu">
       
       <!-- Carousel Backgrounds -->
       <div class="absolute inset-0 bg-warm-200 overflow-hidden">
@@ -187,18 +273,29 @@
                 class="absolute inset-0 w-full h-full object-cover transition-opacity duration-[2000ms] ease-in-out will-change-opacity"
                 :class="{ 'opacity-100 scale-105': currentHeroIndex === index, 'opacity-0 scale-100': currentHeroIndex !== index }"
                 style="transition-property: opacity, transform;"
+                @load="heroImageLoaded = true"
+                @error="heroImageLoaded = true; $el.src = 'https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?q=80&w=2586&auto=format&fit=crop'"
                 alt="Memory Cover">
         </template>
         
-        <!-- Loading Placeholder -->
-        <div x-show="!heroImageLoaded" class="absolute inset-0 bg-warm-100 flex items-center justify-center">
+        <!-- Loading Placeholder (With timeout fallback) -->
+        <div x-show="!heroImageLoaded" 
+             x-init="setTimeout(() => heroImageLoaded = true, 3000)"
+             class="absolute inset-0 bg-warm-100 flex items-center justify-center transition-opacity duration-500">
            <div class="w-8 h-8 border-2 border-warm-300 border-t-transparent rounded-full animate-spin"></div>
         </div>
       </div>
       
       <!-- Cinematic Overlay (Gradient) -->
       <div class="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/60 z-10 pointer-events-none"></div>
-      
+
+      <!-- Hidden Edit Trigger (Disguised as Decor) -->
+      <button class="absolute top-6 right-6 z-20 w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/20 transition-all duration-300 opacity-0 group-hover:opacity-100 active:scale-90"
+              @click.stop="showCoverMenu = true"
+              title="Customize Cover">
+        <i class="ph-fill ph-magic-wand text-lg"></i>
+      </button>
+
       <!-- Top Label -->
       <div class="absolute top-6 left-6 flex items-center gap-2">
         <div class="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/20 flex items-center gap-1.5">
@@ -209,11 +306,17 @@
 
       <!-- Main Content -->
       <div class="absolute bottom-0 left-0 right-0 p-8 text-white">
-        <div class="flex flex-col gap-1 mb-6">
-          <span class="text-xs font-light text-white/80 tracking-[0.2em] uppercase font-display">TOGETHER FOR</span>
-          <div class="flex items-baseline gap-2">
-            <h1 class="font-serif text-7xl font-medium leading-none tracking-tight text-white drop-shadow-sm" x-text="daysTogether">0</h1>
-            <span class="text-xl font-light font-serif italic opacity-90">Days</span>
+        <div class="flex flex-col mb-8 relative">
+          <!-- Decorative line -->
+          <div class="w-12 h-1 bg-white/30 rounded-full mb-4"></div>
+          
+          <span class="text-xs font-medium text-white/90 tracking-[0.3em] uppercase font-display mb-[-10px] z-10 ml-2 shadow-sm">TOGETHER FOR</span>
+          
+          <div class="flex items-baseline">
+            <h1 class="font-serif text-[7rem] md:text-[8rem] font-medium leading-[0.9] tracking-tighter text-white drop-shadow-lg" 
+                style="text-shadow: 0 10px 30px rgba(0,0,0,0.3);"
+                x-text="daysTogether">0</h1>
+            <span class="text-3xl font-light font-serif italic opacity-90 ml-2 self-end mb-6">Days</span>
           </div>
         </div>
         
@@ -228,7 +331,7 @@
              <span class="text-[10px] text-white/60 uppercase tracking-wider font-display">NEXT</span>
              <span class="text-sm font-medium flex items-center gap-1">
                <i class="ph-fill ph-calendar-heart"></i>
-               <span>36 Days</span>
+               <span x-text="nextAnniversaryDays + ' Days'">0 Days</span>
              </span>
           </div>
         </div>
@@ -373,6 +476,54 @@
               @click="showSettings = false">
         确认保存
       </button>
+    </div>
+  </div>
+
+  <!-- Cover Action Sheet -->
+  <div x-show="showCoverMenu" 
+       x-cloak
+       class="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:justify-center">
+    
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300" 
+         x-show="showCoverMenu"
+         x-transition:enter="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="opacity-0"
+         @click="showCoverMenu = false"></div>
+    
+    <!-- Menu -->
+    <div class="relative w-full max-w-sm mx-4 mb-6 sm:mb-0 transition-all duration-300 transform"
+         x-show="showCoverMenu"
+         x-transition:enter="translate-y-full opacity-0 scale-95"
+         x-transition:enter-end="translate-y-0 opacity-100 scale-100"
+         x-transition:leave="translate-y-full opacity-0 scale-95">
+      
+      <div class="flex flex-col gap-2">
+        <!-- Options Group -->
+        <div class="bg-white/90 backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl">
+          <div class="py-3 px-4 border-b border-gray-200/50 text-center">
+             <span class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Manage Cover</span>
+          </div>
+          
+          <button @click="$refs.heroImageInput.click(); showCoverMenu = false"
+                  class="w-full py-4 text-warm-900 text-base font-medium active:bg-black/5 transition-colors flex items-center justify-center gap-2">
+            <i class="ph-bold ph-image"></i> 更换封面
+          </button>
+          
+          <button x-show="heroImage"
+                  @click="removeHeroImage()"
+                  class="w-full py-4 text-red-500 text-base font-medium border-t border-gray-200/50 active:bg-black/5 transition-colors flex items-center justify-center gap-2">
+            <i class="ph-bold ph-trash"></i> 恢复默认轮播
+          </button>
+        </div>
+        
+        <!-- Cancel Button -->
+        <button @click="showCoverMenu = false"
+                class="w-full py-4 bg-white text-blue-500 text-base font-semibold rounded-2xl shadow-lg active:scale-[0.98] transition-transform">
+          取消
+        </button>
+      </div>
     </div>
   </div>
 
