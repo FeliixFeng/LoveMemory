@@ -132,7 +132,11 @@ function loveMemory() {
           this.heroImage = data.heroImage || '';
           this.milestones = data.milestones || [];
           
-          if (this.milestones.length === 0) this.initDefaultMilestones();
+          if (this.milestones.length === 0) {
+            this.initDefaultMilestones();
+            // Sync default data to server immediately
+            this.saveData(); 
+          }
           
           // Enforce newest-first sorting on load
           this.milestones.sort((a, b) => new Date(b.date) - new Date(a.date));

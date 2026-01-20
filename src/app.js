@@ -21,8 +21,9 @@ const PORT = process.env.PORT || 3000;
 // 跨域支持
 app.use(cors());
 
-// JSON 解析
+// JSON 解析 (Crucial for API body parsing)
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // 静态资源目录 - 指向 public 文件夹
 app.use(express.static(join(__dirname, '../public')));
