@@ -133,6 +133,14 @@ function loveMemory() {
           
           this.milestones.sort((a, b) => new Date(b.date) - new Date(a.date));
           this.updateCountdown();
+          
+          // Force reset scroll to start (Left)
+          this.$nextTick(() => {
+            setTimeout(() => {
+              const container = document.querySelector('.scroll-snap-x');
+              if (container) container.scrollLeft = 0;
+            }, 50);
+          });
         }
       } catch (e) {
         console.error('Failed to load data:', e);
