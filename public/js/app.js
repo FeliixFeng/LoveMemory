@@ -19,6 +19,30 @@ function loveMemory() {
     heroTimer: null,
     hearts: [], // Falling hearts data
     
+    // Milestones Data
+    milestones: [],
+    showMilestoneModal: false,
+    showGalleryModal: false, // New: Control the gallery modal
+    editingMilestoneId: null, // null = create mode
+    milestoneForm: {
+      date: '',
+      title: '',
+      desc: '',
+      icon: 'ph-heart'
+    },
+    
+    // Available icons for selection
+    milestoneIcons: [
+      { id: 'ph-heart', name: 'Love' },
+      { id: 'ph-airplane-tilt', name: 'Travel' },
+      { id: 'ph-house', name: 'Home' },
+      { id: 'ph-ring', name: 'Ring' },
+      { id: 'ph-baby', name: 'Baby' },
+      { id: 'ph-cake', name: 'Birthday' },
+      { id: 'ph-camera', name: 'Photo' },
+      { id: 'ph-star', name: 'Star' }
+    ],
+    
     // Default curated romantic images for the carousel (Stable IDs)
     defaultHeroImages: [
       'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=2573&auto=format&fit=crop', // Laughing couple
@@ -33,6 +57,15 @@ function loveMemory() {
       return this.heroImage 
         ? [this.heroImage, ...this.defaultHeroImages.slice(0, 4)]
         : this.defaultHeroImages;
+    },
+    
+    // Split photos into two columns for masonry layout
+    get leftColumnPhotos() {
+      return this.photos.slice(0, 6).filter((_, i) => i % 2 === 0);
+    },
+    
+    get rightColumnPhotos() {
+      return this.photos.slice(0, 6).filter((_, i) => i % 2 !== 0);
     },
 
     currentQuote: { text: '', author: '' },
@@ -75,13 +108,92 @@ function loveMemory() {
 
     init() {
       this.loadFromStorage();
+      if (this.milestones.length === 0) this.initDefaultMilestones(); // Load defaults if empty
       this.refreshQuote();
       this.updateCountdown();
       this.startCarousel(); // Start the hero carousel
       this.initHearts(); // Start falling hearts
+      
+      // Reset scroll position
+      this.$nextTick(() => {
+        const container = document.querySelector('.scroll-snap-x');
+        if (container) container.scrollLeft = 0;
+      });
+      
       setInterval(() => this.updateCountdown(), 60000);
     },
     
+    initDefaultMilestones() {
+      this.milestones = [
+        { id: 1, date: '2023-05-20', title: 'First Date', desc: 'That coffee shop...', icon: 'ph-heart' },
+        { id: 2, date: '2023-10-01', title: 'First Trip', desc: 'Yunnan Adventure', icon: 'ph-airplane-tilt' }
+      ];
+      this.saveToStorage();
+    },
+    
+    openMilestoneModal(milestone = null) {
+      if (milestone) {
+        // Edit mode
+        this.editingMilestoneId = milestone.id;
+        this.milestoneForm = { ...milestone };
+      } else {
+        // Create mode
+        this.editingMilestoneId = null;
+        this.milestoneForm = {
+          date: new Date().toISOString().split('T')[0],
+          title: '',
+          desc: '',
+          icon: 'ph-heart'
+        };
+      }
+      this.showMilestoneModal = true;
+    },
+    
+    saveMilestone() {
+      if (!this.milestoneForm.title || !this.milestoneForm.date) {
+        this.showToast('Please fill in title and date', 'ph-warning');
+        return;
+      }
+      
+      if (this.editingMilestoneId) {
+        // Update existing
+        const index = this.milestones.findIndex(m => m.id === this.editingMilestoneId);
+        if (index !== -1) {
+          this.milestones[index] = { ...this.milestoneForm, id: this.editingMilestoneId };
+        }
+      } else {
+        // Create new
+        this.milestones.push({
+          ...this.milestoneForm,
+          id: Date.now()
+        });
+      }
+      
+      // Sort by date (newest first for better UX)
+      this.milestones.sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      this.saveToStorage();
+      this.showMilestoneModal = false;
+      this.showToast('Milestone saved', 'ph-check');
+      
+      // Force scroll to start to see the new item
+      this.$nextTick(() => {
+        const container = document.querySelector('.scroll-snap-x');
+        if (container) container.scrollTo({ left: 0, behavior: 'smooth' });
+      });
+    },
+    
+    deleteMilestone() {
+      if (!this.editingMilestoneId) return;
+      
+      if (confirm('Delete this milestone?')) {
+        this.milestones = this.milestones.filter(m => m.id !== this.editingMilestoneId);
+        this.saveToStorage();
+        this.showMilestoneModal = false;
+        this.showToast('Milestone deleted', 'ph-trash');
+      }
+    },
+
     initHearts() {
       // Create 12 subtle hearts with random properties
       this.hearts = Array.from({ length: 12 }).map(() => ({
@@ -110,6 +222,9 @@ function loveMemory() {
           this.startDate = parsed.startDate || '';
           this.photos = parsed.photos || [];
           this.heroImage = parsed.heroImage || '';
+          this.milestones = parsed.milestones || [];
+          // Enforce newest-first sorting on load
+          this.milestones.sort((a, b) => new Date(b.date) - new Date(a.date));
         }
       } catch (e) {
         console.error('Failed to load data:', e);
@@ -121,7 +236,8 @@ function loveMemory() {
         localStorage.setItem('loveMemoryData', JSON.stringify({
           startDate: this.startDate,
           photos: this.photos,
-          heroImage: this.heroImage
+          heroImage: this.heroImage,
+          milestones: this.milestones
         }));
       } catch (e) {
         console.error('Failed to save data:', e);
@@ -241,6 +357,13 @@ function loveMemory() {
       this.photos.splice(index, 1);
       this.saveToStorage();
       this.showToast('Photo deleted', 'ph-trash');
+    },
+    
+    confirmDelete(photo) {
+      if (confirm('是否删除这张照片？')) {
+        const index = this.photos.indexOf(photo);
+        if (index > -1) this.deletePhoto(index);
+      }
     },
     
     openLightbox(photo) {
