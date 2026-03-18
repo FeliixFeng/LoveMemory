@@ -7,6 +7,7 @@ import express from 'express';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import env from './config/env.js';
 import router from './routes/index.js';
 
 // 获取 __dirname (ES Modules 兼容)
@@ -14,7 +15,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = env.PORT;
 
 // ============ 中间件配置 ============
 
