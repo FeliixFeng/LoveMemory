@@ -119,6 +119,16 @@ function loveMemory() {
       });
     },
 
+    normalizePhoto(photo = {}) {
+      const displayUrl = photo.displayUrl || photo.url || '';
+
+      return {
+        ...photo,
+        url: photo.url || displayUrl,
+        displayUrl
+      };
+    },
+
     // Date formatting
     formatDate(isoString) {
       if (!isoString) return '';
@@ -151,7 +161,7 @@ function loveMemory() {
         if (response.ok) {
           const data = await response.json();
           this.startDate = data.startDate || '';
-          this.photos = data.photos || [];
+          this.photos = (data.photos || []).map((photo) => this.normalizePhoto(photo));
           this.heroImage = data.heroImage || '';
           this.milestones = data.milestones || [];
           
@@ -318,13 +328,14 @@ function loveMemory() {
         if (!response.ok) throw new Error('Upload failed');
         
         const data = await response.json();
-        this.photos.unshift({
+        this.photos.unshift(this.normalizePhoto({
           url: data.url,
+          displayUrl: data.displayUrl || data.url,
           filename: data.filename || '',
           mimeType: data.mimeType || compressedFile.type || '',
           size: data.size || compressedFile.size || 0,
           uploadedAt: new Date().toISOString()
-        });
+        }));
         this.saveData(); 
         this.showToast('Photo uploaded!', 'ph-check-circle');
       } catch (error) {
@@ -399,7 +410,7 @@ function loveMemory() {
         const response = await fetch('/api/upload', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: photo.url })
+          body: JSON.stringify({ url: photo.url || photo.displayUrl })
         });
 
         if (!response.ok) throw new Error('Delete failed');
@@ -421,7 +432,7 @@ function loveMemory() {
     },
     
     openLightbox(photo) {
-      this.lightboxImage = photo.url;
+      this.lightboxImage = photo.displayUrl || photo.url;
       this.lightboxOpen = true;
     },
 
