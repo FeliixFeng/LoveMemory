@@ -121,11 +121,13 @@ function loveMemory() {
 
     normalizePhoto(photo = {}) {
       const displayUrl = photo.displayUrl || photo.url || '';
+      const thumbUrl = photo.thumbUrl || displayUrl;
 
       return {
         ...photo,
         url: photo.url || displayUrl,
-        displayUrl
+        displayUrl,
+        thumbUrl
       };
     },
 
@@ -331,6 +333,7 @@ function loveMemory() {
         this.photos.unshift(this.normalizePhoto({
           url: data.url,
           displayUrl: data.displayUrl || data.url,
+          thumbUrl: data.thumbUrl || data.displayUrl || data.url,
           filename: data.filename || '',
           mimeType: data.mimeType || compressedFile.type || '',
           size: data.size || compressedFile.size || 0,

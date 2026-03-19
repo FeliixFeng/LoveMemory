@@ -117,6 +117,7 @@ test('upload and delete endpoints manage files and metadata', async () => {
     assert.equal(uploadResponse.status, 200);
     assert.equal(uploadData.success, true);
     assert.equal(uploadData.displayUrl, uploadData.url);
+    assert.equal(uploadData.thumbUrl, uploadData.displayUrl);
     assert.equal(uploadData.mimeType, 'image/png');
     assert.equal(uploadData.size > 0, true);
 

@@ -17,11 +17,13 @@ function normalizeMilestoneId(id) {
 function normalizePhotoRecord(photo) {
   const url = photo?.url || '';
   const displayUrl = photo?.displayUrl || url;
+  const thumbUrl = photo?.thumbUrl || displayUrl;
   const fallbackFilename = url.startsWith('/uploads/') ? basename(url) : '';
 
   return {
     url,
     displayUrl,
+    thumbUrl,
     filename: photo?.filename || fallbackFilename,
     mimeType: photo?.mimeType || '',
     size: Number(photo?.size) || 0,
@@ -79,6 +81,7 @@ async function ensureSchema() {
       id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       url TEXT NOT NULL,
       display_url TEXT NOT NULL,
+      thumb_url TEXT NOT NULL,
       filename VARCHAR(255) NOT NULL DEFAULT '',
       mime_type VARCHAR(100) NOT NULL DEFAULT '',
       file_size INT UNSIGNED NOT NULL DEFAULT 0,
@@ -88,6 +91,7 @@ async function ensureSchema() {
   `);
 
   await ensurePhotoColumn(mysqlPool, 'display_url', "ALTER TABLE photos ADD COLUMN display_url TEXT NOT NULL");
+  await ensurePhotoColumn(mysqlPool, 'thumb_url', "ALTER TABLE photos ADD COLUMN thumb_url TEXT NOT NULL");
   await ensurePhotoColumn(mysqlPool, 'filename', "ALTER TABLE photos ADD COLUMN filename VARCHAR(255) NOT NULL DEFAULT ''");
   await ensurePhotoColumn(mysqlPool, 'mime_type', "ALTER TABLE photos ADD COLUMN mime_type VARCHAR(100) NOT NULL DEFAULT ''");
   await ensurePhotoColumn(mysqlPool, 'file_size', 'ALTER TABLE photos ADD COLUMN file_size INT UNSIGNED NOT NULL DEFAULT 0');
@@ -121,7 +125,7 @@ async function readDataWithConnection(connection) {
     'SELECT id, date, title, description, icon FROM milestones ORDER BY date DESC, created_at DESC'
   );
   const [photoRows] = await connection.query(
-    'SELECT url, display_url, filename, mime_type, file_size, uploaded_at FROM photos ORDER BY id DESC'
+    'SELECT url, display_url, thumb_url, filename, mime_type, file_size, uploaded_at FROM photos ORDER BY id DESC'
   );
 
   return {
@@ -138,6 +142,7 @@ async function readDataWithConnection(connection) {
       normalizePhotoRecord({
         url: item.url,
         displayUrl: item.display_url,
+        thumbUrl: item.thumb_url,
         filename: item.filename,
         mimeType: item.mime_type,
         size: item.file_size,
@@ -238,22 +243,23 @@ export async function saveDataToMysql(payload) {
           await connection.query(
             `
               UPDATE photos
-              SET display_url = ?, filename = ?, mime_type = ?, file_size = ?, uploaded_at = ?
+              SET display_url = ?, thumb_url = ?, filename = ?, mime_type = ?, file_size = ?, uploaded_at = ?
               WHERE id = ?
             `,
-            [photo.displayUrl, photo.filename, photo.mimeType, photo.size, photo.uploadedAt, existingRows[0].id]
+            [photo.displayUrl, photo.thumbUrl, photo.filename, photo.mimeType, photo.size, photo.uploadedAt, existingRows[0].id]
           );
           continue;
         }
 
         await connection.query(
           `
-            INSERT INTO photos (url, display_url, filename, mime_type, file_size, uploaded_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO photos (url, display_url, thumb_url, filename, mime_type, file_size, uploaded_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
           `,
           [
             photo.url,
             photo.displayUrl,
+            photo.thumbUrl,
             photo.filename,
             photo.mimeType,
             photo.size,
