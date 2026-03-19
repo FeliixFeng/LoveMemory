@@ -8,12 +8,13 @@ import { fileURLToPath } from 'url';
 import { dirname, join, extname, basename } from 'path';
 import fs from 'fs';
 import fsPromises from 'fs/promises';
+import env from '../config/env.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // 确保存储目录存在
-const uploadPath = join(__dirname, '../../public/uploads');
+const uploadPath = env.UPLOAD_DIR || join(__dirname, '../../public/uploads');
 if (!fs.existsSync(uploadPath)) {
   fs.mkdirSync(uploadPath, { recursive: true });
 }
@@ -22,6 +23,7 @@ if (!fs.existsSync(uploadPath)) {
 const storage = multer.diskStorage({
   // 存储路径：项目根目录下的 public/uploads/
   destination: (req, file, cb) => {
+    fs.mkdirSync(uploadPath, { recursive: true });
     cb(null, uploadPath);
   },
   

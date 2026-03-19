@@ -39,6 +39,8 @@ const env = {
   PORT: Number(process.env.PORT) || 3000,
   NODE_ENV: process.env.NODE_ENV || 'development',
   STORAGE_DRIVER: storageDriver,
+  DATA_FILE: process.env.DATA_FILE || '',
+  UPLOAD_DIR: process.env.UPLOAD_DIR || '',
   MYSQL_HOST: process.env.MYSQL_HOST || '',
   MYSQL_PORT: Number(process.env.MYSQL_PORT) || 3306,
   MYSQL_DATABASE: process.env.MYSQL_DATABASE || '',

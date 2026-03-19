@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "node --watch src/app.js",
-    "migrate:mysql": "node scripts/migrate-json-to-mysql.js"
+    "migrate:mysql": "node scripts/migrate-json-to-mysql.js",
+    "test": "node --test"
   },
   "keywords": [
     "love",

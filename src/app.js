@@ -44,14 +44,25 @@ app.use((err, req, res, next) => {
 
 // ============ 启动服务 ============
 
-app.listen(PORT, () => {
-  console.log('');
-  console.log('  💕 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('');
-  console.log('     LoveMemory 情侣纪念网站已启动！');
-  console.log('');
-  console.log(`     🌐 访问地址: http://localhost:${PORT}`);
-  console.log('');
-  console.log('  💕 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('');
-});
+export function startServer(port = PORT) {
+  const server = app.listen(port, () => {
+    const address = server.address();
+    const activePort = typeof address === 'object' && address ? address.port : port;
+    console.log('');
+    console.log('  💕 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('');
+    console.log('     LoveMemory 情侣纪念网站已启动！');
+    console.log('');
+    console.log(`     🌐 访问地址: http://localhost:${activePort}`);
+    console.log('');
+    console.log('  💕 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('');
+  });
+  return server;
+}
+
+if (process.argv[1] === __filename) {
+  startServer();
+}
+
+export default app;

@@ -1,11 +1,12 @@
 import fs from 'fs/promises';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import env from '../config/env.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const DATA_FILE = join(__dirname, '../../data/db.json');
+const DATA_FILE = env.DATA_FILE || join(__dirname, '../../data/db.json');
 
 const DEFAULT_DATA = {
   startDate: '',
@@ -16,6 +17,7 @@ const DEFAULT_DATA = {
 
 async function ensureDataFile() {
   try {
+    await fs.mkdir(dirname(DATA_FILE), { recursive: true });
     await fs.access(DATA_FILE);
     const content = await fs.readFile(DATA_FILE, 'utf-8');
     if (!content.trim()) {
