@@ -117,12 +117,15 @@ test('upload and delete endpoints manage files and metadata', async () => {
     assert.equal(uploadResponse.status, 200);
     assert.equal(uploadData.success, true);
     assert.equal(uploadData.displayUrl, uploadData.url);
-    assert.equal(uploadData.thumbUrl, uploadData.displayUrl);
+    assert.notEqual(uploadData.thumbUrl, uploadData.displayUrl);
     assert.equal(uploadData.mimeType, 'image/png');
     assert.equal(uploadData.size > 0, true);
 
     const uploadedFile = path.join(ctx.uploadDir, uploadData.filename);
+    const thumbFilename = path.basename(uploadData.thumbUrl);
+    const thumbFile = path.join(ctx.uploadDir, thumbFilename);
     await fs.access(uploadedFile);
+    await fs.access(thumbFile);
 
     const deleteResponse = await fetch(`${ctx.baseUrl}/api/upload`, {
       method: 'DELETE',
@@ -134,6 +137,7 @@ test('upload and delete endpoints manage files and metadata', async () => {
     assert.equal(deleteResponse.status, 200);
     assert.equal(deleteData.success, true);
     await assert.rejects(() => fs.access(uploadedFile));
+    await assert.rejects(() => fs.access(thumbFile));
   } finally {
     await ctx.close();
   }

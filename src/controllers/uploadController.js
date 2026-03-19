@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join, extname, basename } from 'path';
 import fs from 'fs';
 import fsPromises from 'fs/promises';
+import sharp from 'sharp';
 import env from '../config/env.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -17,6 +18,12 @@ const __dirname = dirname(__filename);
 const uploadPath = env.UPLOAD_DIR || join(__dirname, '../../public/uploads');
 if (!fs.existsSync(uploadPath)) {
   fs.mkdirSync(uploadPath, { recursive: true });
+}
+
+function buildThumbFilename(filename) {
+  const extension = extname(filename);
+  const name = filename.slice(0, filename.length - extension.length);
+  return `${name}_thumb${extension}`;
 }
 
 // multer 存储引擎配置
@@ -54,24 +61,36 @@ export const upload = multer({
 });
 
 // 上传处理函数
-export const handleUpload = (req, res) => {
+export const handleUpload = async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: '请选择要上传的图片' });
   }
-  
-  // 返回可访问的 URL 路径
-  const url = `/uploads/${req.file.filename}`;
-  const displayUrl = url;
-  const thumbUrl = displayUrl;
-  res.json({ 
-    success: true,
-    url,
-    displayUrl,
-    thumbUrl,
-    filename: req.file.filename,
-    mimeType: req.file.mimetype,
-    size: req.file.size
-  });
+
+  try {
+    const thumbFilename = buildThumbFilename(req.file.filename);
+    const thumbFilePath = join(uploadPath, thumbFilename);
+
+    await sharp(req.file.path)
+      .resize({ width: 480, height: 480, fit: 'inside', withoutEnlargement: true })
+      .toFile(thumbFilePath);
+
+    const url = `/uploads/${req.file.filename}`;
+    const displayUrl = url;
+    const thumbUrl = `/uploads/${thumbFilename}`;
+
+    res.json({
+      success: true,
+      url,
+      displayUrl,
+      thumbUrl,
+      filename: req.file.filename,
+      mimeType: req.file.mimetype,
+      size: req.file.size
+    });
+  } catch (error) {
+    console.error('Create thumbnail error:', error);
+    res.status(500).json({ error: 'Failed to process uploaded image' });
+  }
 };
 
 export const deleteUpload = async (req, res) => {
@@ -88,8 +107,14 @@ export const deleteUpload = async (req, res) => {
 
     const filename = basename(url);
     const filePath = join(uploadPath, filename);
+    const thumbPath = join(uploadPath, buildThumbFilename(filename));
 
     await fsPromises.unlink(filePath);
+    await fsPromises.unlink(thumbPath).catch((error) => {
+      if (error.code !== 'ENOENT') {
+        throw error;
+      }
+    });
     res.json({ success: true, filename });
   } catch (error) {
     if (error.code === 'ENOENT') {
