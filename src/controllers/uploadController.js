@@ -61,9 +61,11 @@ export const handleUpload = (req, res) => {
   
   // 返回可访问的 URL 路径
   const url = `/uploads/${req.file.filename}`;
+  const displayUrl = url;
   res.json({ 
     success: true,
     url,
+    displayUrl,
     filename: req.file.filename,
     mimeType: req.file.mimetype,
     size: req.file.size
