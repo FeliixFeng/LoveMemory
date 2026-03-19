@@ -162,11 +162,11 @@ function loveMemory() {
 
     detectPerformanceProfile() {
       const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-      const lowCpuDevice = (navigator.hardwareConcurrency || 8) <= 4;
       const smallScreen = window.innerWidth <= 768;
+      const lowCpuDevice = (navigator.hardwareConcurrency || 8) <= 4;
 
       this.reduceMotion = reducedMotionQuery.matches;
-      this.effectsEnabled = !(this.reduceMotion || (lowCpuDevice && smallScreen));
+      this.effectsEnabled = !(this.reduceMotion || smallScreen || lowCpuDevice);
     },
 
     init() {
