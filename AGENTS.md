@@ -28,7 +28,6 @@ Use this as the default instruction source when no stricter local rules exist.
 - `scripts/migrate-json-to-mysql.js`: one-time data migration tool
 - `public/index.html`: UI markup, Tailwind config, Alpine bindings
 - `public/js/app.js`: primary client logic (`loveMemory()` object)
-- `public/js/script.js`: legacy file; not referenced by `public/index.html`
 
 ## 3) Build / run / lint / test commands
 ### Install
@@ -148,7 +147,6 @@ Use this as the default instruction source when no stricter local rules exist.
      - `POST /api/upload` (multipart field `image`)
 
 ## 10) Known quirks
-- `public/js/script.js` is legacy and not referenced by `public/index.html`.
 - Keep new frontend work inside `public/js/app.js` unless a deliberate module split is requested.
 
 ## 11) External framework guardrails (docs-aligned)
