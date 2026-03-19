@@ -46,6 +46,9 @@ npm run dev
 
 # 生产模式
 npm start
+
+# 运行最小 API 测试
+npm test
 ```
 
 ### 2.1 环境变量说明
@@ -53,6 +56,7 @@ npm start
 - 项目统一从环境变量读取配置。
 - `STORAGE_DRIVER=json` 时使用当前 JSON 文件存储。
 - `STORAGE_DRIVER=mysql` 时必须配置完整的 `MYSQL_*` 变量。
+- `DATA_FILE` 和 `UPLOAD_DIR` 可在测试或临时环境中覆盖默认路径。
 - 不要提交真实密钥，生产环境请在服务器使用独立的 `.env` 文件。
 
 ### 2.2 JSON 数据迁移到 MySQL

@@ -37,11 +37,12 @@ Use this as the default instruction source when no stricter local rules exist.
 - Dev watch mode: `npm run dev`
 - Prod-like local run: `npm start`
 - JSON -> MySQL migration: `npm run migrate:mysql`
+- API smoke tests: `npm test`
 ### Lint / test / build reality
 - `npm run lint` → fails (`Missing script: lint`)
-- `npm run test` → fails (`Missing script: test`)
+- `npm run test` → runs Node built-in API smoke tests
 - `npm run build` → fails (`Missing script: build`)
-- Current repo has no configured lint/test/build scripts in `package.json`.
+- Current repo has no configured lint/build scripts; `test` now exists.
 ### Single-test command (important)
 - There is no official single-test command yet because no test runner is configured.
 - If Node built-in tests are introduced (`node:test`):
@@ -108,6 +109,7 @@ Use this as the default instruction source when no stricter local rules exist.
 - Never hardcode DB credentials in code.
 - Use `.env.example` for template only; do not put real secrets in repo.
 - `.env.production` stays on server only and must never be committed.
+- `DATA_FILE` and `UPLOAD_DIR` are available for tests or isolated environments.
 ### Frontend patterns
 - Main state container is `loveMemory()` in `public/js/app.js`.
 - Keep frontend API usage aligned (`/api/data`, `/api/upload`).
@@ -138,19 +140,16 @@ Use this as the default instruction source when no stricter local rules exist.
 - When changing behavior, run what exists:
   1. `npm run dev` (boot smoke check)
   2. `npm start` (entrypoint smoke check)
-  3. if MySQL behavior changed: `npm run migrate:mysql` in a controlled env
-  4. manual API checks when relevant:
+  3. `npm test` (API smoke tests)
+  4. if MySQL behavior changed: `npm run migrate:mysql` in a controlled env
+  5. manual API checks when relevant:
      - `GET /api/data`
      - `POST /api/data`
      - `POST /api/upload` (multipart field `image`)
 
 ## 10) Known quirks
-- `public/js/app.js` has duplicate object-method keys:
-  - `saveMilestone`
-  - `deleteMilestone`
-  - `initDefaultMilestones`
-- In object literals, later duplicates override earlier definitions.
-- Avoid introducing additional duplicate keys.
+- `public/js/script.js` is legacy and not referenced by `public/index.html`.
+- Keep new frontend work inside `public/js/app.js` unless a deliberate module split is requested.
 
 ## 11) External framework guardrails (docs-aligned)
 - Express 5 will forward rejected async handlers to error middleware automatically.
