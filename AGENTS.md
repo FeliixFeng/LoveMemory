@@ -15,11 +15,16 @@ Use this as the default instruction source when no stricter local rules exist.
   - uploads: `public/uploads/`
   - JSON DB (legacy/fallback): `data/db.json`
   - MySQL DB (production): configured via `.env.production`
+  - photo variants:
+    - `url`: original uploaded file
+    - `displayUrl`: main detail/lightbox image
+    - `thumbUrl`: generated thumbnail for list/grid views
 
 ## 2) Codebase map (where to edit)
 - `src/app.js`: app bootstrap, middleware, static serving, `/api` mount, global error middleware
 - `src/routes/index.js`: route registration (`POST /upload`, `GET/POST /data`)
 - `src/controllers/uploadController.js`: multer storage/filter/limits and upload response
+- `src/controllers/healthController.js`: health check response for deploy/runtime smoke checks
 - `src/controllers/dataController.js`: unified read/write entrypoint via storage abstraction
 - `src/storage/index.js`: storage driver switch (`json` vs `mysql`)
 - `src/storage/jsonStorage.js`: JSON read/write implementation (`data/db.json`)
@@ -99,6 +104,7 @@ Use this as the default instruction source when no stricter local rules exist.
 - Keep upload size limits enforced (current: 10MB).
 - Handle multer failures via JSON responses.
 - Preserve upload response shape: `{ success, url, filename }`.
+- Current upload flow generates a thumbnail file alongside the uploaded original image.
 ### Node fs + path safety
 - Use `fs/promises` for async persistence.
 - Keep pretty JSON writes (`JSON.stringify(data, null, 2)`).
@@ -112,6 +118,7 @@ Use this as the default instruction source when no stricter local rules exist.
 ### Frontend patterns
 - Main state container is `loveMemory()` in `public/js/app.js`.
 - Keep frontend API usage aligned (`/api/data`, `/api/upload`).
+- Grid/list views should prefer `thumbUrl`; lightbox/detail views should prefer `displayUrl`.
 - Continue utility-first Tailwind styling in `public/index.html`.
 
 ## 6) Runtime file rules
@@ -142,6 +149,7 @@ Use this as the default instruction source when no stricter local rules exist.
   3. `npm test` (API smoke tests)
   4. if MySQL behavior changed: `npm run migrate:mysql` in a controlled env
   5. manual API checks when relevant:
+     - `GET /api/health`
      - `GET /api/data`
      - `POST /api/data`
      - `POST /api/upload` (multipart field `image`)
