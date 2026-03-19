@@ -9,6 +9,8 @@ function loveMemory() {
     isDragging: false,
     isUploading: false,
     deletingPhotoUrl: '',
+    effectsEnabled: true,
+    reduceMotion: false,
     lightboxOpen: false,
     lightboxImage: '',
     showSecretModal: false,
@@ -158,7 +160,17 @@ function loveMemory() {
       return date.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
     },
 
+    detectPerformanceProfile() {
+      const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const lowCpuDevice = (navigator.hardwareConcurrency || 8) <= 4;
+      const smallScreen = window.innerWidth <= 768;
+
+      this.reduceMotion = reducedMotionQuery.matches;
+      this.effectsEnabled = !(this.reduceMotion || (lowCpuDevice && smallScreen));
+    },
+
     init() {
+      this.detectPerformanceProfile();
       this.loadData();
       this.refreshQuote();
       this.updateCountdown();
@@ -469,21 +481,23 @@ function loveMemory() {
     },
     
     initHearts() {
-      this.hearts = Array.from({ length: 12 }).map(() => ({
+      const heartCount = this.effectsEnabled ? 10 : 4;
+      this.hearts = Array.from({ length: heartCount }).map(() => ({
         left: Math.random() * 100 + '%',
-        animationDuration: 15 + Math.random() * 10 + 's',
+        animationDuration: (this.effectsEnabled ? 15 : 20) + Math.random() * 8 + 's',
         animationDelay: -Math.random() * 20 + 's',
-        opacity: 0.1 + Math.random() * 0.3,
+        opacity: this.effectsEnabled ? 0.1 + Math.random() * 0.3 : 0.08 + Math.random() * 0.15,
         scale: 0.5 + Math.random() * 0.5,
         swayDuration: 3 + Math.random() * 2 + 's'
       }));
     },
     
     startCarousel() {
+      if (this.reduceMotion) return;
       if (this.heroTimer) clearInterval(this.heroTimer);
       this.heroTimer = setInterval(() => {
         this.currentHeroIndex = (this.currentHeroIndex + 1) % this.activeHeroImages.length;
-      }, 6000);
+      }, this.effectsEnabled ? 6000 : 9000);
     }
   };
 }

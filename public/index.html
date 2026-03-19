@@ -104,7 +104,6 @@
         radial-gradient(at 50% 50%, rgba(255, 255, 255, 0.5) 0px, transparent 50%);
       background-size: 180% 180%;
       background-attachment: fixed;
-      animation: ambient-shift 25s ease-in-out infinite alternate;
       -webkit-font-smoothing: antialiased;
       padding-bottom: env(safe-area-inset-bottom);
     }
@@ -171,10 +170,48 @@
       animation-iteration-count: infinite;
       animation-direction: alternate;
     }
+
+    .reduced-effects body,
+    body.reduced-effects {
+      background-attachment: scroll;
+    }
+
+    body.reduced-effects .glass-card {
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    body.reduced-effects .glass-nav {
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    @media (max-width: 768px) {
+      body {
+        background-attachment: scroll;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      body {
+        scroll-behavior: auto;
+      }
+
+      .animate-fall,
+      .animate-sway,
+      .animate-wave,
+      .animate-blob,
+      .animate-slide-up,
+      .animate-pulse,
+      .animate-spin {
+        animation: none !important;
+      }
+    }
   </style>
 </head>
 
 <body class="text-warm-900 selection:bg-warm-200 relative overflow-x-hidden bg-transparent" 
+      :class="{ 'reduced-effects': !effectsEnabled || reduceMotion }"
       x-data="loveMemory()" 
       x-init="init()">
   
@@ -184,15 +221,15 @@
     <div class="absolute inset-0 opacity-[0.03]" style="background-image: url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E');"></div>
     
     <!-- Top Blobs -->
-    <div class="absolute top-0 left-1/4 w-72 h-72 bg-warm-300/30 rounded-full mix-blend-multiply filter blur-3xl opacity-80 animate-blob"></div>
-    <div class="absolute top-0 right-1/4 w-72 h-72 bg-rose-200/30 rounded-full mix-blend-multiply filter blur-3xl opacity-80 animate-blob" style="animation-delay: 2s"></div>
+    <div x-show="effectsEnabled" class="absolute top-0 left-1/4 w-72 h-72 bg-warm-300/30 rounded-full mix-blend-multiply filter blur-3xl opacity-80 animate-blob"></div>
+    <div x-show="effectsEnabled" class="absolute top-0 right-1/4 w-72 h-72 bg-rose-200/30 rounded-full mix-blend-multiply filter blur-3xl opacity-80 animate-blob" style="animation-delay: 2s"></div>
     
     <!-- Bottom Flowing Aurora -->
-    <div class="absolute -bottom-32 left-0 w-full h-96 bg-gradient-to-r from-warm-200/40 via-rose-200/40 to-warm-200/40 blur-3xl opacity-80 animate-pulse-soft" style="animation-duration: 8s;"></div>
-    <div class="absolute -bottom-48 right-0 w-[600px] h-[600px] bg-orange-200/30 rounded-full mix-blend-multiply filter blur-[100px] opacity-80 animate-blob" style="animation-delay: 4s"></div>
+    <div x-show="effectsEnabled" class="absolute -bottom-32 left-0 w-full h-96 bg-gradient-to-r from-warm-200/40 via-rose-200/40 to-warm-200/40 blur-3xl opacity-80 animate-pulse-soft" style="animation-duration: 8s;"></div>
+    <div x-show="effectsEnabled" class="absolute -bottom-48 right-0 w-[600px] h-[600px] bg-orange-200/30 rounded-full mix-blend-multiply filter blur-[100px] opacity-80 animate-blob" style="animation-delay: 4s"></div>
     
     <!-- Subtle Falling Hearts -->
-    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div x-show="effectsEnabled" class="absolute inset-0 overflow-hidden pointer-events-none">
       <template x-for="heart in hearts" :key="heart">
         <div class="absolute -top-10 text-warm-400 animate-fall"
              :style="`
@@ -210,7 +247,7 @@
     </div>
     
     <!-- Moving Waves (Liquid Footer) -->
-    <div class="absolute bottom-0 left-0 w-full overflow-hidden leading-none pointer-events-none opacity-60">
+    <div x-show="effectsEnabled" class="absolute bottom-0 left-0 w-full overflow-hidden leading-none pointer-events-none opacity-60">
       <!-- Wave 1 (Back, Slower) -->
       <div class="relative w-[200%] h-[120px] animate-wave" style="animation-duration: 20s;">
         <svg class="block w-full h-full text-warm-200/40 fill-current" viewBox="0 0 1600 120" preserveAspectRatio="none">
@@ -266,8 +303,13 @@
       <div class="absolute inset-0 bg-warm-200 overflow-hidden">
         <template x-for="(img, index) in activeHeroImages" :key="index">
            <img :src="img" 
-                class="absolute inset-0 w-full h-full object-cover transition-opacity duration-[2000ms] ease-in-out will-change-opacity"
-                :class="{ 'opacity-100 scale-105': currentHeroIndex === index, 'opacity-0 scale-100': currentHeroIndex !== index }"
+                class="absolute inset-0 w-full h-full object-cover ease-in-out"
+                :class="{
+                  'opacity-100 scale-105 transition-opacity duration-[2000ms] will-change-opacity': currentHeroIndex === index && effectsEnabled,
+                  'opacity-0 scale-100 transition-opacity duration-[2000ms] will-change-opacity': currentHeroIndex !== index && effectsEnabled,
+                  'opacity-100 transition-opacity duration-500': currentHeroIndex === index && !effectsEnabled,
+                  'opacity-0 transition-opacity duration-500': currentHeroIndex !== index && !effectsEnabled
+                }"
                 style="transition-property: opacity, transform;"
                 @load="heroImageLoaded = true"
                 @error="heroImageLoaded = true; $el.src = 'https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?q=80&w=2586&auto=format&fit=crop'"
@@ -295,7 +337,7 @@
       <!-- Top Label -->
       <div class="absolute top-6 left-6 flex items-center gap-2">
         <div class="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/20 flex items-center gap-1.5">
-          <div class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></div>
+          <div class="w-1.5 h-1.5 rounded-full bg-green-400" :class="{ 'animate-pulse': effectsEnabled }"></div>
           <span class="text-[10px] font-medium text-white tracking-wide uppercase font-display">Loving</span>
         </div>
       </div>
