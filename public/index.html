@@ -414,9 +414,9 @@
                x-show="photos.length === 0"
                @click="$refs.fileInput.click()">
              <div class="w-12 h-12 rounded-full bg-warm-100 flex items-center justify-center text-warm-500 mb-2">
-               <i class="ph-bold ph-camera-plus text-xl"></i>
+               <i class="ph-bold text-xl" :class="isUploading ? 'ph-spinner-gap animate-spin' : 'ph-camera-plus'"></i>
              </div>
-             <span class="text-xs text-warm-500 font-medium">第一张照片</span>
+             <span class="text-xs text-warm-500 font-medium" x-text="isUploading ? '上传中...' : '第一张照片'">第一张照片</span>
           </div>
 
           <template x-for="photo in leftColumnPhotos" :key="photo.uploadedAt">
@@ -424,8 +424,15 @@
                  @click="openLightbox(photo)"
                  @contextmenu.prevent="confirmDelete(photo)">
                <img :src="photo.thumbUrl || photo.displayUrl || photo.url" loading="lazy" class="w-full h-auto object-cover" alt="Moment">
+               <div x-show="isPhotoDeleting(photo)" class="absolute inset-0 bg-black/35 backdrop-blur-[2px] flex items-center justify-center z-10">
+                 <div class="flex items-center gap-2 rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-warm-800 shadow">
+                   <i class="ph-bold ph-spinner-gap animate-spin"></i>
+                   <span>Deleting...</span>
+                 </div>
+               </div>
                <!-- Delete Button (Desktop Hover) -->
-               <button class="hidden md:flex absolute top-2 right-2 w-6 h-6 text-white/80 hover:text-white drop-shadow-md items-center justify-center opacity-0 group-hover:opacity-100 transition-all active:scale-90 z-20"
+               <button class="hidden md:flex absolute top-2 right-2 w-6 h-6 text-white/80 hover:text-white drop-shadow-md items-center justify-center opacity-0 group-hover:opacity-100 transition-all active:scale-90 z-20 disabled:opacity-30"
+                       :disabled="isPhotoDeleting(photo)"
                        @click.stop="deletePhoto(photos.indexOf(photo))">
                  <i class="ph-bold ph-x-circle text-xl"></i>
                </button>
@@ -440,8 +447,15 @@
                  @click="openLightbox(photo)"
                  @contextmenu.prevent="confirmDelete(photo)">
                <img :src="photo.thumbUrl || photo.displayUrl || photo.url" loading="lazy" class="w-full h-auto object-cover" alt="Moment">
+               <div x-show="isPhotoDeleting(photo)" class="absolute inset-0 bg-black/35 backdrop-blur-[2px] flex items-center justify-center z-10">
+                 <div class="flex items-center gap-2 rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-warm-800 shadow">
+                   <i class="ph-bold ph-spinner-gap animate-spin"></i>
+                   <span>Deleting...</span>
+                 </div>
+               </div>
                <!-- Delete Button (Desktop Hover) -->
-               <button class="hidden md:flex absolute top-2 right-2 w-6 h-6 text-white/80 hover:text-white drop-shadow-md items-center justify-center opacity-0 group-hover:opacity-100 transition-all active:scale-90 z-20"
+               <button class="hidden md:flex absolute top-2 right-2 w-6 h-6 text-white/80 hover:text-white drop-shadow-md items-center justify-center opacity-0 group-hover:opacity-100 transition-all active:scale-90 z-20 disabled:opacity-30"
+                       :disabled="isPhotoDeleting(photo)"
                        @click.stop="deletePhoto(photos.indexOf(photo))">
                  <i class="ph-bold ph-x-circle text-xl"></i>
                </button>
@@ -452,8 +466,8 @@
           <div class="relative w-full aspect-square rounded-2xl bg-warm-100/50 border border-warm-100 flex flex-col items-center justify-center cursor-pointer active:bg-warm-200/50 transition-colors"
                x-show="photos.length > 0"
                @click="$refs.fileInput.click()">
-             <i class="ph-bold ph-plus text-warm-500 text-xl mb-1"></i>
-             <span class="text-[10px] text-warm-500 font-bold uppercase tracking-wider">Add</span>
+             <i class="ph-bold text-warm-500 text-xl mb-1" :class="isUploading ? 'ph-spinner-gap animate-spin' : 'ph-plus'"></i>
+             <span class="text-[10px] text-warm-500 font-bold uppercase tracking-wider" x-text="isUploading ? 'Uploading' : 'Add'">Add</span>
           </div>
         </div>
       </div>
@@ -563,9 +577,13 @@
           <div class="relative aspect-square bg-warm-100 overflow-hidden cursor-pointer group"
                @click="openLightbox(photo)">
             <img :src="photo.thumbUrl || photo.displayUrl || photo.url" loading="lazy" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt="Moment">
+            <div x-show="isPhotoDeleting(photo)" class="absolute inset-0 bg-black/35 backdrop-blur-[2px] flex items-center justify-center z-10">
+              <i class="ph-bold ph-spinner-gap animate-spin text-white text-lg"></i>
+            </div>
             
             <!-- Delete Overlay (only on hover/tap) -->
-            <button class="absolute top-1 right-1 w-6 h-6 bg-black/50 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity active:scale-90"
+            <button class="absolute top-1 right-1 w-6 h-6 bg-black/50 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity active:scale-90 disabled:opacity-30"
+                    :disabled="isPhotoDeleting(photo)"
                     @click.stop="deletePhoto(index)">
               <i class="ph-bold ph-x text-xs"></i>
             </button>

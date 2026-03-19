@@ -8,6 +8,7 @@ function loveMemory() {
     heroImage: '',
     isDragging: false,
     isUploading: false,
+    deletingPhotoUrl: '',
     lightboxOpen: false,
     lightboxImage: '',
     showSecretModal: false,
@@ -129,6 +130,19 @@ function loveMemory() {
         displayUrl,
         thumbUrl
       };
+    },
+
+    isPhotoDeleting(photo) {
+      return this.deletingPhotoUrl && this.deletingPhotoUrl === (photo.url || photo.displayUrl);
+    },
+
+    async parseApiError(response, fallbackMessage) {
+      try {
+        const data = await response.json();
+        return data.error || fallbackMessage;
+      } catch (error) {
+        return fallbackMessage;
+      }
     },
 
     // Date formatting
@@ -327,7 +341,9 @@ function loveMemory() {
           body: formData
         });
         
-        if (!response.ok) throw new Error('Upload failed');
+        if (!response.ok) {
+          throw new Error(await this.parseApiError(response, 'Upload failed'));
+        }
         
         const data = await response.json();
         this.photos.unshift(this.normalizePhoto({
@@ -343,7 +359,7 @@ function loveMemory() {
         this.showToast('Photo uploaded!', 'ph-check-circle');
       } catch (error) {
         console.error('Upload error:', error);
-        this.showToast('Upload failed', 'ph-x-circle');
+        this.showToast(error.message || 'Upload failed', 'ph-x-circle');
       } finally {
         this.isUploading = false;
       }
@@ -410,20 +426,25 @@ function loveMemory() {
       if (!photo) return;
 
       try {
+        this.deletingPhotoUrl = photo.url || photo.displayUrl;
         const response = await fetch('/api/upload', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: photo.url || photo.displayUrl })
         });
 
-        if (!response.ok) throw new Error('Delete failed');
+        if (!response.ok) {
+          throw new Error(await this.parseApiError(response, 'Delete failed'));
+        }
 
         this.photos.splice(index, 1);
         this.saveData();
         this.showToast('Photo deleted', 'ph-trash');
       } catch (error) {
         console.error('Delete photo error:', error);
-        this.showToast('Delete failed', 'ph-x-circle');
+        this.showToast(error.message || 'Delete failed', 'ph-x-circle');
+      } finally {
+        this.deletingPhotoUrl = '';
       }
     },
 
