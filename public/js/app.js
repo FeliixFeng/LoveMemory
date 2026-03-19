@@ -302,7 +302,13 @@ function loveMemory() {
         if (!response.ok) throw new Error('Upload failed');
         
         const data = await response.json();
-        this.photos.unshift({ url: data.url, uploadedAt: new Date().toISOString() });
+        this.photos.unshift({
+          url: data.url,
+          filename: data.filename || '',
+          mimeType: data.mimeType || compressedFile.type || '',
+          size: data.size || compressedFile.size || 0,
+          uploadedAt: new Date().toISOString()
+        });
         this.saveData(); 
         this.showToast('Photo uploaded!', 'ph-check-circle');
       } catch (error) {
@@ -369,10 +375,26 @@ function loveMemory() {
       this.showToast('Restored default covers', 'ph-arrow-counter-clockwise');
     },
     
-    deletePhoto(index) {
-      this.photos.splice(index, 1);
-      this.saveData();
-      this.showToast('Photo deleted', 'ph-trash');
+    async deletePhoto(index) {
+      const photo = this.photos[index];
+      if (!photo) return;
+
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: photo.url })
+        });
+
+        if (!response.ok) throw new Error('Delete failed');
+
+        this.photos.splice(index, 1);
+        this.saveData();
+        this.showToast('Photo deleted', 'ph-trash');
+      } catch (error) {
+        console.error('Delete photo error:', error);
+        this.showToast('Delete failed', 'ph-x-circle');
+      }
     },
     
     confirmDelete(photo) {

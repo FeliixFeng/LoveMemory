@@ -5,8 +5,9 @@
 
 import multer from 'multer';
 import { fileURLToPath } from 'url';
-import { dirname, join, extname } from 'path';
+import { dirname, join, extname, basename } from 'path';
 import fs from 'fs';
+import fsPromises from 'fs/promises';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -61,6 +62,35 @@ export const handleUpload = (req, res) => {
   res.json({ 
     success: true,
     url,
-    filename: req.file.filename
+    filename: req.file.filename,
+    mimeType: req.file.mimetype,
+    size: req.file.size
   });
+};
+
+export const deleteUpload = async (req, res) => {
+  try {
+    const url = req.body?.url;
+    if (!url || typeof url !== 'string') {
+      return res.status(400).json({ error: 'Missing photo url' });
+    }
+
+    const expectedPrefix = '/uploads/';
+    if (!url.startsWith(expectedPrefix)) {
+      return res.status(400).json({ error: 'Invalid photo url' });
+    }
+
+    const filename = basename(url);
+    const filePath = join(uploadPath, filename);
+
+    await fsPromises.unlink(filePath);
+    res.json({ success: true, filename });
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      return res.json({ success: true, missing: true });
+    }
+
+    console.error('Delete upload error:', error);
+    res.status(500).json({ error: 'Failed to delete photo file' });
+  }
 };

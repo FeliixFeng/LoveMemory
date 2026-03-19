@@ -62,12 +62,37 @@ async function ensureSchema() {
     CREATE TABLE IF NOT EXISTS photos (
       id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       url TEXT NOT NULL,
+      filename VARCHAR(255) NOT NULL DEFAULT '',
+      mime_type VARCHAR(100) NOT NULL DEFAULT '',
+      file_size INT UNSIGNED NOT NULL DEFAULT 0,
       uploaded_at VARCHAR(40) NOT NULL,
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
+  await ensurePhotoColumn(mysqlPool, 'filename', "ALTER TABLE photos ADD COLUMN filename VARCHAR(255) NOT NULL DEFAULT ''");
+  await ensurePhotoColumn(mysqlPool, 'mime_type', "ALTER TABLE photos ADD COLUMN mime_type VARCHAR(100) NOT NULL DEFAULT ''");
+  await ensurePhotoColumn(mysqlPool, 'file_size', 'ALTER TABLE photos ADD COLUMN file_size INT UNSIGNED NOT NULL DEFAULT 0');
+
   schemaReady = true;
+}
+
+async function ensurePhotoColumn(mysqlPool, columnName, alterSql) {
+  const [rows] = await mysqlPool.query(
+    `
+      SELECT 1
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = ?
+        AND TABLE_NAME = 'photos'
+        AND COLUMN_NAME = ?
+      LIMIT 1
+    `,
+    [env.MYSQL_DATABASE, columnName]
+  );
+
+  if (rows.length === 0) {
+    await mysqlPool.query(alterSql);
+  }
 }
 
 async function readDataWithConnection(connection) {
@@ -78,7 +103,7 @@ async function readDataWithConnection(connection) {
     'SELECT id, date, title, description, icon FROM milestones ORDER BY date DESC, created_at DESC'
   );
   const [photoRows] = await connection.query(
-    'SELECT url, uploaded_at FROM photos ORDER BY id ASC'
+    'SELECT url, filename, mime_type, file_size, uploaded_at FROM photos ORDER BY id DESC'
   );
 
   return {
@@ -93,6 +118,9 @@ async function readDataWithConnection(connection) {
     })),
     photos: photoRows.map((item) => ({
       url: item.url,
+      filename: item.filename || '',
+      mimeType: item.mime_type || '',
+      size: item.file_size || 0,
       uploadedAt: item.uploaded_at
     }))
   };
@@ -153,10 +181,16 @@ export async function saveDataToMysql(payload) {
       for (const photo of newData.photos) {
         await connection.query(
           `
-            INSERT INTO photos (url, uploaded_at)
-            VALUES (?, ?)
+            INSERT INTO photos (url, filename, mime_type, file_size, uploaded_at)
+            VALUES (?, ?, ?, ?, ?)
           `,
-          [photo.url || '', photo.uploadedAt || new Date().toISOString()]
+          [
+            photo.url || '',
+            photo.filename || '',
+            photo.mimeType || '',
+            Number(photo.size) || 0,
+            photo.uploadedAt || new Date().toISOString()
+          ]
         );
       }
     }
