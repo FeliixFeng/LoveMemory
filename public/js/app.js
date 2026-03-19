@@ -88,7 +88,38 @@ function loveMemory() {
       { text: "玲珑骰子安红豆，入骨相思知不知。", author: "温庭筠" },
       { text: "愿我如星君如月，夜夜流光相皎洁。", author: "范成大" },
     ],
-    
+
+    // Shared UI helpers
+    createMilestoneForm(milestone = null) {
+      if (milestone) {
+        return { ...milestone };
+      }
+
+      return {
+        date: new Date().toISOString().split('T')[0],
+        title: '',
+        desc: '',
+        icon: 'ph-heart'
+      };
+    },
+
+    resetTimelineScroll(behavior = 'auto', delay = 0) {
+      this.$nextTick(() => {
+        setTimeout(() => {
+          const container = document.querySelector('.scroll-snap-x');
+          if (!container) return;
+
+          if (behavior === 'auto') {
+            container.scrollLeft = 0;
+            return;
+          }
+
+          container.scrollTo({ left: 0, behavior });
+        }, delay);
+      });
+    },
+
+    // Date formatting
     formatDate(isoString) {
       if (!isoString) return '';
       const date = new Date(isoString);
@@ -107,15 +138,13 @@ function loveMemory() {
       this.updateCountdown();
       this.startCarousel();
       this.initHearts();
-      
-      this.$nextTick(() => {
-        const container = document.querySelector('.scroll-snap-x');
-        if (container) container.scrollLeft = 0;
-      });
-      
+
+      this.resetTimelineScroll();
+
       setInterval(() => this.updateCountdown(), 60000);
     },
-    
+
+    // Data sync
     async loadData() {
       try {
         const response = await fetch('/api/data?t=' + Date.now());
@@ -133,14 +162,8 @@ function loveMemory() {
           
           this.milestones.sort((a, b) => new Date(b.date) - new Date(a.date));
           this.updateCountdown();
-          
-          // Force reset scroll to start (Left)
-          this.$nextTick(() => {
-            setTimeout(() => {
-              const container = document.querySelector('.scroll-snap-x');
-              if (container) container.scrollLeft = 0;
-            }, 50);
-          });
+
+          this.resetTimelineScroll('auto', 50);
         }
       } catch (e) {
         console.error('Failed to load data:', e);
@@ -164,21 +187,15 @@ function loveMemory() {
         this.showToast('Failed to sync', 'ph-warning');
       }
     },
-    
+
+    // Milestones
     openMilestoneModal(milestone = null) {
       if (milestone) {
-        // Edit mode
         this.editingMilestoneId = milestone.id;
-        this.milestoneForm = { ...milestone };
+        this.milestoneForm = this.createMilestoneForm(milestone);
       } else {
-        // Create mode
         this.editingMilestoneId = null;
-        this.milestoneForm = {
-          date: new Date().toISOString().split('T')[0],
-          title: '',
-          desc: '',
-          icon: 'ph-heart'
-        };
+        this.milestoneForm = this.createMilestoneForm();
       }
       this.showMilestoneModal = true;
     },
@@ -206,11 +223,8 @@ function loveMemory() {
       this.saveData();
       this.showMilestoneModal = false;
       this.showToast('Milestone saved', 'ph-check');
-      
-      this.$nextTick(() => {
-        const container = document.querySelector('.scroll-snap-x');
-        if (container) container.scrollTo({ left: 0, behavior: 'smooth' });
-      });
+
+      this.resetTimelineScroll('smooth');
     },
     
     deleteMilestone() {
@@ -232,6 +246,7 @@ function loveMemory() {
       this.saveData();
     },
 
+    // Countdown and quote
     saveStartDate() {
       this.saveData();
       this.updateCountdown();
@@ -270,7 +285,8 @@ function loveMemory() {
       const randomIndex = Math.floor(Math.random() * this.quotes.length);
       this.currentQuote = this.quotes[randomIndex];
     },
-    
+
+    // Photos
     async handleFileUpload(event) {
       const files = Array.from(event.target.files);
       if (files.length === 0) return;
@@ -396,7 +412,7 @@ function loveMemory() {
         this.showToast('Delete failed', 'ph-x-circle');
       }
     },
-    
+
     confirmDelete(photo) {
       if (confirm('是否删除这张照片？')) {
         const index = this.photos.indexOf(photo);
@@ -408,7 +424,8 @@ function loveMemory() {
       this.lightboxImage = photo.url;
       this.lightboxOpen = true;
     },
-    
+
+    // UI effects
     showToast(message, icon = 'ph-check') {
       this.toast = { show: true, message, icon };
       setTimeout(() => {
