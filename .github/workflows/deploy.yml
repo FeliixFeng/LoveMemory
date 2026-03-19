@@ -48,6 +48,9 @@ jobs:
             
             # 启动容器
             docker-compose up -d --build
+
+            # 部署后健康检查
+            curl --fail --silent http://127.0.0.1:3000/api/health >/dev/null
             
             # 清理垃圾
             docker image prune -f
