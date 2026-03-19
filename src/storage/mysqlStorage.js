@@ -1,4 +1,5 @@
 import mysql from 'mysql2/promise';
+import { basename } from 'path';
 import env from '../config/env.js';
 import { DEFAULT_DATA } from './jsonStorage.js';
 
@@ -11,6 +12,19 @@ function normalizeMilestoneId(id) {
     return Number(idString);
   }
   return idString;
+}
+
+function normalizePhotoRecord(photo) {
+  const url = photo?.url || '';
+  const fallbackFilename = url.startsWith('/uploads/') ? basename(url) : '';
+
+  return {
+    url,
+    filename: photo?.filename || fallbackFilename,
+    mimeType: photo?.mimeType || '',
+    size: Number(photo?.size) || 0,
+    uploadedAt: photo?.uploadedAt || new Date().toISOString()
+  };
 }
 
 function createPool() {
@@ -116,13 +130,15 @@ async function readDataWithConnection(connection) {
       desc: item.description,
       icon: item.icon
     })),
-    photos: photoRows.map((item) => ({
-      url: item.url,
-      filename: item.filename || '',
-      mimeType: item.mime_type || '',
-      size: item.file_size || 0,
-      uploadedAt: item.uploaded_at
-    }))
+    photos: photoRows.map((item) =>
+      normalizePhotoRecord({
+        url: item.url,
+        filename: item.filename,
+        mimeType: item.mime_type,
+        size: item.file_size,
+        uploadedAt: item.uploaded_at
+      })
+    )
   };
 }
 
@@ -158,12 +174,27 @@ export async function saveDataToMysql(payload) {
     );
 
     if (Array.isArray(payload.milestones)) {
-      await connection.query('DELETE FROM milestones');
+      const milestoneIds = newData.milestones.map((milestone) => String(milestone.id));
+
+      if (milestoneIds.length > 0) {
+        await connection.query(
+          `DELETE FROM milestones WHERE id NOT IN (${milestoneIds.map(() => '?').join(', ')})`,
+          milestoneIds
+        );
+      } else {
+        await connection.query('DELETE FROM milestones');
+      }
+
       for (const milestone of newData.milestones) {
         await connection.query(
           `
             INSERT INTO milestones (id, date, title, description, icon)
             VALUES (?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+              date = VALUES(date),
+              title = VALUES(title),
+              description = VALUES(description),
+              icon = VALUES(icon)
           `,
           [
             String(milestone.id),
@@ -177,19 +208,50 @@ export async function saveDataToMysql(payload) {
     }
 
     if (Array.isArray(payload.photos)) {
-      await connection.query('DELETE FROM photos');
-      for (const photo of newData.photos) {
+      const normalizedPhotos = newData.photos
+        .map((photo) => normalizePhotoRecord(photo))
+        .filter((photo) => photo.url);
+      const photoUrls = normalizedPhotos.map((photo) => photo.url).filter(Boolean);
+      newData.photos = normalizedPhotos;
+
+      if (photoUrls.length > 0) {
+        await connection.query(
+          `DELETE FROM photos WHERE url NOT IN (${photoUrls.map(() => '?').join(', ')})`,
+          photoUrls
+        );
+      } else {
+        await connection.query('DELETE FROM photos');
+      }
+
+      for (const photo of normalizedPhotos) {
+        const [existingRows] = await connection.query(
+          'SELECT id FROM photos WHERE url = ? LIMIT 1',
+          [photo.url]
+        );
+
+        if (existingRows.length > 0) {
+          await connection.query(
+            `
+              UPDATE photos
+              SET filename = ?, mime_type = ?, file_size = ?, uploaded_at = ?
+              WHERE id = ?
+            `,
+            [photo.filename, photo.mimeType, photo.size, photo.uploadedAt, existingRows[0].id]
+          );
+          continue;
+        }
+
         await connection.query(
           `
             INSERT INTO photos (url, filename, mime_type, file_size, uploaded_at)
             VALUES (?, ?, ?, ?, ?)
           `,
           [
-            photo.url || '',
-            photo.filename || '',
-            photo.mimeType || '',
-            Number(photo.size) || 0,
-            photo.uploadedAt || new Date().toISOString()
+            photo.url,
+            photo.filename,
+            photo.mimeType,
+            photo.size,
+            photo.uploadedAt
           ]
         );
       }
