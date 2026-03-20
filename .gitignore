@@ -25,6 +25,7 @@ npm-debug.log*
 # Build output
 dist/
 build/
+.next/
 
 # Runtime data
 data/*.json

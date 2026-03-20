@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Settings {
+  id        Int      @id @db.TinyInt
+  startDate String   @default("") @map("start_date") @db.VarChar(20)
+  heroImage String   @default("") @map("hero_image") @db.LongText
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
+
+model Milestone {
+  id          String   @id @db.VarChar(64)
+  date        String   @db.VarChar(20)
+  title       String   @db.VarChar(255)
+  description String   @db.Text
+  icon        String   @db.VarChar(64)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("milestones")
+}
+
+model Photo {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  url        String   @db.Text
+  displayUrl String   @map("display_url") @db.Text
+  thumbUrl   String   @map("thumb_url") @db.Text
+  filename   String   @default("") @db.VarChar(255)
+  mimeType   String   @default("") @map("mime_type") @db.VarChar(100)
+  fileSize   Int      @default(0) @map("file_size") @db.UnsignedInt
+  uploadedAt String   @map("uploaded_at") @db.VarChar(40)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("photos")
+}

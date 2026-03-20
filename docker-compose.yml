@@ -18,6 +18,9 @@ services:
     env_file:
       - ./.env.production
 
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-}
+
     # 数据卷挂载 (核心！)
     # 宿主机路径 : 容器内路径
     volumes:
