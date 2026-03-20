@@ -2,15 +2,11 @@
   "name": "lovememory",
   "version": "1.0.0",
   "description": "💕 情侣纪念网站 - A romantic memory website for couples",
-  "main": "src/app.js",
   "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "legacy:dev": "node --watch src/app.js",
-    "legacy:start": "node src/app.js",
-    "migrate:mysql": "node scripts/migrate-json-to-mysql.js",
     "test": "node --test",
     "prisma:generate": "prisma generate"
   },
@@ -31,11 +27,6 @@
   },
   "dependencies": {
     "@prisma/client": "^6.19.2",
-    "cors": "^2.8.5",
-    "dotenv": "^17.3.1",
-    "express": "^5.2.1",
-    "multer": "^2.0.2",
-    "mysql2": "^3.20.0",
     "next": "^15.5.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
