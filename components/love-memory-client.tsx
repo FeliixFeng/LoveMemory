@@ -55,6 +55,13 @@ function sortMilestones(milestones: Milestone[]) {
   return [...milestones].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
+function createDefaultMilestoneDraft(): Omit<Milestone, 'id'> {
+  return {
+    ...DEFAULT_MILESTONE,
+    date: new Date().toISOString().split('T')[0]
+  };
+}
+
 export function LoveMemoryClient() {
   const [data, setData] = useState<AppData>({
     startDate: '',
@@ -68,7 +75,7 @@ export function LoveMemoryClient() {
   const [deletingPhotoUrl, setDeletingPhotoUrl] = useState('');
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null);
-  const [milestoneDraft, setMilestoneDraft] = useState<Omit<Milestone, 'id'>>(DEFAULT_MILESTONE);
+  const [milestoneDraft, setMilestoneDraft] = useState<Omit<Milestone, 'id'>>(createDefaultMilestoneDraft());
   const [toast, setToast] = useState<string>('');
 
   useEffect(() => {
@@ -147,6 +154,16 @@ export function LoveMemoryClient() {
     }
   }
 
+  async function uploadSingleFile(file: File) {
+    const formData = new FormData();
+    formData.append('image', file);
+    const response = await fetch('/api/upload', { method: 'POST', body: formData });
+    if (!response.ok) {
+      throw new Error(await parseError(response, '上传失败'));
+    }
+    return normalizePhoto(await response.json());
+  }
+
   async function handlePhotoUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
@@ -155,13 +172,7 @@ export function LoveMemoryClient() {
     try {
       const uploaded: Photo[] = [];
       for (const file of files) {
-        const formData = new FormData();
-        formData.append('image', file);
-        const response = await fetch('/api/upload', { method: 'POST', body: formData });
-        if (!response.ok) {
-          throw new Error(await parseError(response, '上传失败'));
-        }
-        uploaded.push(normalizePhoto(await response.json()));
+        uploaded.push(await uploadSingleFile(file));
       }
 
       const nextData = {
@@ -211,13 +222,7 @@ export function LoveMemoryClient() {
 
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('image', file);
-      const response = await fetch('/api/upload', { method: 'POST', body: formData });
-      if (!response.ok) {
-        throw new Error(await parseError(response, '封面上传失败'));
-      }
-      const uploaded = normalizePhoto(await response.json());
+      const uploaded = await uploadSingleFile(file);
       await saveData({ ...data, heroImage: uploaded.displayUrl || uploaded.url }, '封面已更新');
     } catch (error) {
       console.error(error);
@@ -230,10 +235,7 @@ export function LoveMemoryClient() {
 
   function beginMilestoneCreate() {
     setEditingMilestone(null);
-    setMilestoneDraft({
-      ...DEFAULT_MILESTONE,
-      date: new Date().toISOString().split('T')[0]
-    });
+    setMilestoneDraft(createDefaultMilestoneDraft());
   }
 
   function beginMilestoneEdit(milestone: Milestone) {
