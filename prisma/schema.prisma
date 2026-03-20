@@ -38,5 +38,6 @@ model Photo {
   uploadedAt String   @map("uploaded_at") @db.VarChar(40)
   createdAt  DateTime @default(now()) @map("created_at")
 
+  @@unique([url], map: "photos_url_unique")
   @@map("photos")
 }
