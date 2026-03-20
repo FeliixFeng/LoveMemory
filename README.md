@@ -1,28 +1,33 @@
 # LoveMemory
 
-A long-term couples memory website built with Next.js, TypeScript, Prisma, MySQL, and local image storage.
+LoveMemory is a long-term couples memory website built for daily use and slow, careful iteration.
+
+## Current abilities
+
+- Set and edit the anniversary date
+- View days together and next countdown
+- Create, edit, and delete milestones
+- Choose milestone icons
+- Upload photos
+- Generate and use real thumbnails automatically
+- Delete photos and clean up files
+- Update the hero cover
+- Restore the default hero rotation
+- Open photos in a lightbox
+- Browse all photos in a dedicated gallery view
+- Refresh a quote card
+- Check runtime health with `/api/health`
 
 ## Stack
 
-- Frontend and server rendering: `Next.js 15`
-- Language: `TypeScript`
-- Database access: `Prisma`
-- Database: `MySQL`
-- Image processing: `sharp`
-- Styling: `Tailwind CSS` (via CDN) + local global CSS
+- `Next.js 15`
+- `React 18`
+- `TypeScript`
+- `Prisma`
+- `MySQL`
+- `sharp`
 
-## Features
-
-- Anniversary countdown
-- Milestones CRUD
-- Hero cover upload and reset
-- Photo upload with generated thumbnails
-- Photo delete with file cleanup
-- Gallery modal and lightbox viewer
-- Quote card with random refresh
-- Health check endpoint at `/api/health`
-
-## Commands
+## Local commands
 
 ```bash
 npm install
@@ -33,9 +38,9 @@ npm test
 npm run prisma:generate
 ```
 
-## Environment
+## Environment variables
 
-Create `.env.local` or a production env file with:
+Create `.env.local` or a server env file with values like:
 
 ```bash
 NODE_ENV=development
@@ -53,28 +58,26 @@ UPLOAD_DIR=./public/uploads
 
 Notes:
 
-- `STORAGE_DRIVER=mysql` is the primary production mode.
-- `STORAGE_DRIVER=json` remains available as a fallback for isolated local/testing scenarios.
-- `UPLOAD_DIR` stores originals plus generated thumbnail files.
+- `mysql` is the main runtime mode.
+- `json` remains available for isolated fallback/testing use.
+- `UPLOAD_DIR` stores originals and generated thumbnails.
 
-## Health Check
+## Health check
 
 ```bash
 curl http://localhost:3000/api/health
 ```
 
-Expected shape:
+Example response:
 
 ```json
 {"success":true,"status":"ok","storageDriver":"mysql"}
 ```
 
-## Structure
+## Main folders
 
 ```text
 app/
-  api/
-  lib/
 components/
 prisma/
 public/uploads/

@@ -63,12 +63,12 @@ const QUOTES: Quote[] = [
 ];
 
 const MILESTONE_ICONS: MilestoneIcon[] = [
-  { id: 'ph-heart', label: 'Love', symbol: 'Heart' },
-  { id: 'ph-airplane-tilt', label: 'Travel', symbol: 'Trip' },
-  { id: 'ph-house', label: 'Home', symbol: 'Home' },
-  { id: 'ph-ring', label: 'Ring', symbol: 'Ring' },
-  { id: 'ph-camera', label: 'Photo', symbol: 'Photo' },
-  { id: 'ph-star', label: 'Star', symbol: 'Star' }
+  { id: 'ph-heart', label: '心动', symbol: '心动' },
+  { id: 'ph-airplane-tilt', label: '旅行', symbol: '旅行' },
+  { id: 'ph-house', label: '日常', symbol: '日常' },
+  { id: 'ph-ring', label: '纪念', symbol: '纪念' },
+  { id: 'ph-camera', label: '照片', symbol: '照片' },
+  { id: 'ph-star', label: '特别', symbol: '特别' }
 ];
 
 function normalizePhoto(photo: Photo): Photo {
@@ -354,7 +354,7 @@ export function LoveMemoryClient() {
     return (
       <main className="mx-auto flex min-h-screen max-w-5xl items-center justify-center px-6">
         <div className="rounded-full bg-white/80 px-5 py-3 text-sm font-semibold text-amber-900 shadow-sm">
-          Loading memories...
+          正在载入回忆...
         </div>
       </main>
     );
@@ -362,99 +362,99 @@ export function LoveMemoryClient() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 px-4 py-6 md:px-6">
-      <section className="overflow-hidden rounded-[32px] border border-white/70 bg-white/75 shadow-[0_16px_60px_rgba(92,61,42,0.12)]">
+      <section className="lm-card overflow-hidden rounded-[32px]">
         <div
-          className="relative min-h-[320px] bg-cover bg-center p-6 text-white md:min-h-[420px]"
+          className="relative min-h-[320px] bg-cover bg-center p-5 text-white md:min-h-[420px] md:p-6"
           style={{
             backgroundImage: `linear-gradient(180deg, rgba(35,20,10,0.08) 0%, rgba(35,20,10,0.58) 100%), url('${activeHeroImages[currentHeroIndex]}')`
           }}
         >
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs uppercase tracking-[0.35em] text-white/70">Together For</p>
-              <div className="mt-3 flex items-end gap-3">
-                <span className="font-serif text-6xl leading-none md:text-8xl">{daysTogether}</span>
-                <span className="pb-2 text-lg text-white/80 md:text-2xl">Days</span>
+              <p className="text-xs uppercase tracking-[0.35em] text-white/70">在一起</p>
+              <div className="mt-3 flex items-end gap-2 md:gap-3">
+                <span className="font-serif text-5xl leading-none md:text-8xl">{daysTogether}</span>
+                <span className="pb-1 text-base text-white/80 md:pb-2 md:text-2xl">天</span>
               </div>
             </div>
             <div className="flex flex-col items-end gap-2">
-              <label className="cursor-pointer rounded-full bg-white/15 px-4 py-2 text-xs font-semibold backdrop-blur-sm transition hover:bg-white/25">
-                {isUploading ? 'Uploading...' : 'Update Cover'}
+              <label className="cursor-pointer rounded-full bg-white/15 px-3 py-2 text-xs font-semibold backdrop-blur-sm transition hover:bg-white/25 md:px-4">
+                {isUploading ? '上传中...' : '更换封面'}
                 <input type="file" accept="image/*" className="hidden" onChange={handleHeroUpload} />
               </label>
               {data.heroImage ? (
                 <button
                   type="button"
                   onClick={() => void restoreDefaultHero()}
-                  className="rounded-full bg-white/10 px-4 py-2 text-xs font-semibold text-white/90 backdrop-blur-sm transition hover:bg-white/20"
+                  className="rounded-full bg-white/10 px-3 py-2 text-xs font-semibold text-white/90 backdrop-blur-sm transition hover:bg-white/20 md:px-4"
                 >
-                  Restore Default
+                  恢复默认
                 </button>
               ) : null}
             </div>
           </div>
 
-          <div className="mt-16 grid gap-3 md:mt-24 md:grid-cols-3">
+          <div className="mt-12 grid gap-3 md:mt-24 md:grid-cols-3">
             <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-[0.25em] text-white/60">Anniversary</p>
+              <p className="text-xs uppercase tracking-[0.25em] text-white/60">纪念日</p>
               <p className="mt-2 text-lg font-medium">{formatDate(data.startDate)}</p>
             </div>
             <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-[0.25em] text-white/60">Next</p>
-              <p className="mt-2 text-lg font-medium">{nextAnniversaryDays} Days</p>
+              <p className="text-xs uppercase tracking-[0.25em] text-white/60">下一个纪念点</p>
+              <p className="mt-2 text-lg font-medium">{nextAnniversaryDays} 天</p>
             </div>
             <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-[0.25em] text-white/60">Status</p>
-              <p className="mt-2 text-lg font-medium">{isSaving ? 'Syncing...' : 'In Love'}</p>
+              <p className="text-xs uppercase tracking-[0.25em] text-white/60">状态</p>
+              <p className="mt-2 text-lg font-medium">{isSaving ? '同步中...' : '甜蜜进行时'}</p>
             </div>
           </div>
         </div>
       </section>
 
       <section
-        className="rounded-[28px] border border-white/70 bg-white/80 px-6 py-5 text-center shadow-[0_12px_42px_rgba(92,61,42,0.08)] transition hover:border-amber-200"
+        className="lm-card-strong rounded-[28px] px-6 py-5 text-center transition hover:border-[rgba(212,139,96,0.35)]"
         onClick={refreshQuote}
       >
-        <p className="text-xs uppercase tracking-[0.35em] text-amber-500">Quote</p>
-        <p className="mt-3 font-serif text-xl leading-relaxed text-amber-950">{currentQuote.text}</p>
-        <p className="mt-3 text-xs uppercase tracking-[0.3em] text-amber-600/70">{currentQuote.author}</p>
+        <p className="text-xs uppercase tracking-[0.35em] text-[var(--lm-accent-deep)]">今日一句</p>
+        <p className="mt-3 font-serif text-xl leading-relaxed text-[var(--lm-text-strong)]">{currentQuote.text}</p>
+        <p className="lm-soft mt-3 text-xs uppercase tracking-[0.3em]">{currentQuote.author}</p>
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="rounded-[28px] border border-white/70 bg-white/80 p-5 shadow-[0_12px_42px_rgba(92,61,42,0.08)]">
+        <div className="lm-card-strong rounded-[28px] p-5">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h2 className="font-serif text-2xl font-semibold text-amber-950">甜蜜瞬间</h2>
-              <p className="text-sm text-amber-700/70">上传后会自动生成缩略图，浏览更流畅。</p>
+              <h2 className="font-serif text-2xl font-semibold text-[var(--lm-text-strong)]">甜蜜瞬间</h2>
+              <p className="lm-muted text-sm">把值得记住的时刻慢慢留下来。</p>
             </div>
             <div className="flex items-center gap-2">
               {data.photos.length > 0 ? (
                 <button
                   type="button"
                   onClick={() => setGalleryOpen(true)}
-                  className="rounded-full border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-50"
+                  className="lm-secondary-btn rounded-full px-4 py-2 text-sm font-semibold transition"
                 >
-                  View All
+                  查看全部
                 </button>
               ) : null}
-              <label className="cursor-pointer rounded-full bg-amber-900 px-4 py-2 text-sm font-semibold text-amber-50 transition hover:bg-amber-800">
-                {isUploading ? 'Uploading...' : 'Add Photos'}
+              <label className="lm-primary-btn cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition">
+                {isUploading ? '上传中...' : '添加照片'}
                 <input type="file" multiple accept="image/*" className="hidden" onChange={handlePhotoUpload} />
               </label>
             </div>
           </div>
 
           {data.photos.length === 0 ? (
-            <div className="flex min-h-[240px] flex-col items-center justify-center rounded-[24px] border border-dashed border-amber-200 bg-amber-50/70 text-center text-amber-700">
+            <div className="flex min-h-[240px] flex-col items-center justify-center rounded-[24px] border border-dashed border-[var(--lm-border)] bg-[rgba(247,241,227,0.58)] text-center text-[var(--lm-text)]">
               <p className="text-lg font-semibold">还没有照片</p>
-              <p className="mt-2 text-sm text-amber-700/70">上传第一张照片，开始记录你们的故事。</p>
+              <p className="lm-muted mt-2 text-sm">上传第一张照片，开始记录你们的故事。</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
               {data.photos.map((photo) => {
                 const deleting = deletingPhotoUrl === photo.url;
                 return (
-                  <div key={photo.uploadedAt} className="group relative overflow-hidden rounded-[24px] bg-amber-100">
+                  <div key={photo.uploadedAt} className="group relative overflow-hidden rounded-[24px] bg-[var(--lm-bg-soft)]">
                     <button type="button" className="block w-full" onClick={() => setSelectedPhoto(photo)}>
                       <img
                         src={photo.thumbUrl || photo.displayUrl || photo.url}
@@ -471,7 +471,7 @@ export function LoveMemoryClient() {
                         onClick={() => void handleDeletePhoto(photo)}
                         className="rounded-full bg-white/15 px-2 py-1 font-semibold backdrop-blur-sm transition hover:bg-white/25 disabled:opacity-50"
                       >
-                        {deleting ? 'Deleting...' : 'Delete'}
+                        {deleting ? '删除中...' : '删除'}
                       </button>
                     </div>
                   </div>
@@ -482,30 +482,30 @@ export function LoveMemoryClient() {
         </div>
 
         <div className="flex flex-col gap-6">
-          <section className="rounded-[28px] border border-white/70 bg-white/80 p-5 shadow-[0_12px_42px_rgba(92,61,42,0.08)]">
-            <h2 className="font-serif text-2xl font-semibold text-amber-950">纪念日设置</h2>
+          <section className="lm-card-strong rounded-[28px] p-5">
+            <h2 className="font-serif text-2xl font-semibold text-[var(--lm-text-strong)]">纪念日设置</h2>
             <div className="mt-4 flex items-center gap-3">
               <input
                 type="date"
                 value={data.startDate}
                 onChange={(event) => void saveData({ ...data, startDate: event.target.value }, '纪念日已保存')}
-                className="w-full rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 outline-none transition focus:border-amber-400"
+                className="lm-input w-full rounded-2xl px-4 py-3 outline-none transition"
               />
             </div>
           </section>
 
-          <section className="rounded-[28px] border border-white/70 bg-white/80 p-5 shadow-[0_12px_42px_rgba(92,61,42,0.08)]">
+          <section className="lm-card-strong rounded-[28px] p-5">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h2 className="font-serif text-2xl font-semibold text-amber-950">恋爱里程碑</h2>
-                <p className="text-sm text-amber-700/70">把重要的日子一点点留下来。</p>
+                <h2 className="font-serif text-2xl font-semibold text-[var(--lm-text-strong)]">恋爱里程碑</h2>
+                <p className="lm-muted text-sm">把重要的日子一点点留下来。</p>
               </div>
               <button
                 type="button"
                 onClick={beginMilestoneCreate}
-                className="rounded-full border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-50"
+                className="lm-secondary-btn rounded-full px-4 py-2 text-sm font-semibold transition"
               >
-                New
+                新建
               </button>
             </div>
 
@@ -515,15 +515,15 @@ export function LoveMemoryClient() {
                   key={milestone.id}
                   type="button"
                   onClick={() => beginMilestoneEdit(milestone)}
-                  className="w-full rounded-2xl border border-amber-100 bg-amber-50/70 p-4 text-left transition hover:border-amber-300 hover:bg-white"
+                  className="w-full rounded-2xl border border-[var(--lm-border-soft)] bg-[rgba(247,241,227,0.45)] p-4 text-left transition hover:border-[var(--lm-border)] hover:bg-white"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.25em] text-amber-500">{milestone.date}</p>
-                      <h3 className="mt-2 text-lg font-semibold text-amber-950">{milestone.title}</h3>
-                      <p className="mt-1 text-sm text-amber-800/70">{milestone.desc || 'No note yet.'}</p>
+                      <p className="text-xs uppercase tracking-[0.25em] text-[var(--lm-accent-deep)]">{milestone.date}</p>
+                      <h3 className="mt-2 text-lg font-semibold text-[var(--lm-text-strong)]">{milestone.title}</h3>
+                      <p className="lm-muted mt-1 text-sm">{milestone.desc || '还没有写备注'}</p>
                     </div>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-amber-700 shadow-sm">
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--lm-text)] shadow-sm">
                       {formatMilestoneIcon(milestone.icon)}
                     </span>
                   </div>
@@ -531,7 +531,7 @@ export function LoveMemoryClient() {
               ))}
             </div>
 
-            <div className="mt-5 rounded-[24px] border border-dashed border-amber-200 bg-white/80 p-4">
+            <div className="mt-5 rounded-[24px] border border-dashed border-[var(--lm-border)] bg-white/80 p-4">
               <div className="mb-3 flex flex-wrap gap-2">
                 {MILESTONE_ICONS.map((iconItem) => {
                   const selected = milestoneDraft.icon === iconItem.id;
@@ -542,8 +542,8 @@ export function LoveMemoryClient() {
                       onClick={() => setMilestoneDraft((current) => ({ ...current, icon: iconItem.id }))}
                       className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
                         selected
-                          ? 'bg-amber-900 text-white'
-                          : 'border border-amber-200 bg-white text-amber-700 hover:bg-amber-50'
+                          ? 'lm-primary-btn'
+                          : 'lm-secondary-btn'
                       }`}
                     >
                       {iconItem.label}
@@ -557,29 +557,29 @@ export function LoveMemoryClient() {
                   placeholder="里程碑标题"
                   value={milestoneDraft.title}
                   onChange={(event) => setMilestoneDraft((current) => ({ ...current, title: event.target.value }))}
-                  className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 outline-none focus:border-amber-400"
+                  className="lm-input rounded-2xl px-4 py-3 outline-none"
                 />
                 <input
                   type="date"
                   value={milestoneDraft.date}
                   onChange={(event) => setMilestoneDraft((current) => ({ ...current, date: event.target.value }))}
-                  className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 outline-none focus:border-amber-400"
+                  className="lm-input rounded-2xl px-4 py-3 outline-none"
                 />
                 <input
                   type="text"
                   placeholder="一句备注"
                   value={milestoneDraft.desc}
                   onChange={(event) => setMilestoneDraft((current) => ({ ...current, desc: event.target.value }))}
-                  className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 outline-none focus:border-amber-400"
+                  className="lm-input rounded-2xl px-4 py-3 outline-none"
                 />
               </div>
               <div className="mt-4 flex gap-3">
                 <button
                   type="button"
                   onClick={() => void submitMilestone()}
-                  className="rounded-full bg-amber-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-800"
+                  className="lm-primary-btn rounded-full px-4 py-2 text-sm font-semibold transition"
                 >
-                  {editingMilestone ? 'Update' : 'Save'}
+                  {editingMilestone ? '更新' : '保存'}
                 </button>
                 {editingMilestone ? (
                   <button
@@ -587,7 +587,7 @@ export function LoveMemoryClient() {
                     onClick={() => void deleteMilestone(editingMilestone.id)}
                     className="rounded-full border border-red-200 px-4 py-2 text-sm font-semibold text-red-500 transition hover:bg-red-50"
                   >
-                    Delete
+                    删除
                   </button>
                 ) : null}
               </div>
@@ -603,38 +603,38 @@ export function LoveMemoryClient() {
             className="absolute right-5 top-5 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm"
             onClick={() => setSelectedPhoto(null)}
           >
-            Close
+            关闭
           </button>
           <img
             src={selectedPhoto.displayUrl || selectedPhoto.url}
             alt="Selected memory"
-            className="max-h-[90vh] max-w-[90vw] rounded-[28px] object-contain shadow-2xl"
+            className="max-h-[88vh] max-w-[94vw] rounded-[24px] object-contain shadow-2xl md:max-w-[90vw] md:rounded-[28px]"
           />
         </div>
       ) : null}
 
       {galleryOpen ? (
         <div className="fixed inset-0 z-40 flex flex-col bg-[#fffaf3]">
-          <div className="flex items-center justify-between border-b border-amber-100 bg-white/90 px-4 py-4 backdrop-blur-sm">
+          <div className="flex items-center justify-between border-b border-amber-100 bg-white/90 px-3 py-4 backdrop-blur-sm md:px-4">
             <button
               type="button"
               onClick={() => setGalleryOpen(false)}
               className="rounded-full border border-amber-200 px-4 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-50"
             >
-              Close
+              关闭
             </button>
             <p className="font-serif text-lg font-semibold text-amber-950">甜蜜瞬间</p>
-            <label className="cursor-pointer rounded-full bg-amber-900 px-4 py-2 text-sm font-semibold text-amber-50 transition hover:bg-amber-800">
-              {isUploading ? 'Uploading...' : 'Add'}
+            <label className="lm-primary-btn cursor-pointer rounded-full px-3 py-2 text-sm font-semibold transition md:px-4">
+              {isUploading ? '上传中...' : '添加'}
               <input type="file" multiple accept="image/*" className="hidden" onChange={handlePhotoUpload} />
             </label>
           </div>
 
-          <div className="grid flex-1 grid-cols-3 gap-1 overflow-y-auto p-3">
+          <div className="grid flex-1 grid-cols-2 gap-2 overflow-y-auto p-3 sm:grid-cols-3 lg:grid-cols-4">
             {data.photos.map((photo) => {
               const deleting = deletingPhotoUrl === photo.url;
               return (
-                <div key={`gallery-${photo.uploadedAt}`} className="relative overflow-hidden rounded-2xl bg-amber-100">
+                <div key={`gallery-${photo.uploadedAt}`} className="relative overflow-hidden rounded-2xl bg-[var(--lm-bg-soft)]">
                   <button type="button" className="block w-full" onClick={() => setSelectedPhoto(photo)}>
                     <img
                       src={photo.thumbUrl || photo.displayUrl || photo.url}
@@ -649,7 +649,7 @@ export function LoveMemoryClient() {
                     onClick={() => void handleDeletePhoto(photo)}
                     className="absolute right-2 top-2 rounded-full bg-black/45 px-2 py-1 text-[11px] font-semibold text-white transition hover:bg-black/60 disabled:opacity-40"
                   >
-                    {deleting ? '...' : 'Delete'}
+                    {deleting ? '...' : '删除'}
                   </button>
                 </div>
               );
