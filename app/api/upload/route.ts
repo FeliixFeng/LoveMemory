@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import path from 'node:path';
 import sharp from 'sharp';
 import { NextResponse } from 'next/server.js';
+import { createPhotoWithPrisma, deletePhotoWithPrisma } from '../../lib/app-data.ts';
 import env from '../../../src/config/env.js';
 
 const uploadDir = env.UPLOAD_DIR || path.join(process.cwd(), 'public/uploads');
@@ -51,15 +52,27 @@ export async function POST(request: Request) {
     const url = `/uploads/${filename}`;
     const displayUrl = url;
     const thumbUrl = `/uploads/${thumbFilename}`;
+    const uploadedPhoto = env.STORAGE_DRIVER === 'mysql'
+      ? await createPhotoWithPrisma({
+          url,
+          displayUrl,
+          thumbUrl,
+          filename,
+          mimeType: file.type,
+          size: file.size
+        })
+      : {
+          url,
+          displayUrl,
+          thumbUrl,
+          filename,
+          mimeType: file.type,
+          size: file.size
+        };
 
     return NextResponse.json({
       success: true,
-      url,
-      displayUrl,
-      thumbUrl,
-      filename,
-      mimeType: file.type,
-      size: file.size
+      ...uploadedPhoto
     });
   } catch (error) {
     console.error('Upload error:', error);
@@ -78,6 +91,10 @@ export async function DELETE(request: Request) {
     const filename = path.basename(url);
     const filePath = path.join(uploadDir, filename);
     const thumbPath = path.join(uploadDir, buildThumbFilename(filename));
+
+    if (env.STORAGE_DRIVER === 'mysql') {
+      await deletePhotoWithPrisma(url);
+    }
 
     await fs.unlink(filePath).catch((error) => {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;

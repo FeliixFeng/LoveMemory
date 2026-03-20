@@ -191,3 +191,27 @@ export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise
 
   return nextData;
 }
+
+export async function createPhotoWithPrisma(photo: Partial<AppPhoto> & { url: string }): Promise<AppPhoto> {
+  const normalized = normalizePhoto(photo);
+
+  await prisma.photo.create({
+    data: {
+      url: normalized.url,
+      displayUrl: normalized.displayUrl,
+      thumbUrl: normalized.thumbUrl,
+      filename: normalized.filename,
+      mimeType: normalized.mimeType,
+      fileSize: normalized.size,
+      uploadedAt: normalized.uploadedAt
+    }
+  });
+
+  return normalized;
+}
+
+export async function deletePhotoWithPrisma(url: string): Promise<void> {
+  await prisma.photo.deleteMany({
+    where: { url }
+  });
+}
