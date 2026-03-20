@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server.js';
-import { getStorageDriver } from '../../../src/storage/index.js';
+import { getStorageDriver } from '../../lib/env.ts';
 
 export async function GET() {
   return NextResponse.json({

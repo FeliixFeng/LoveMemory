@@ -1,4 +1,7 @@
 import { prisma } from './prisma.ts';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { getDataFilePath } from './env.ts';
 
 export type AppMilestone = {
   id: number | string;
@@ -31,6 +34,8 @@ export const DEFAULT_APP_DATA: AppData = {
   milestones: [],
   photos: []
 };
+
+const dataFile = getDataFilePath();
 
 function normalizeMilestoneId(id: string) {
   return /^\d+$/.test(id) ? Number(id) : id;
@@ -81,6 +86,50 @@ export async function readAppDataWithPrisma(): Promise<AppData> {
       })
     )
   };
+}
+
+async function ensureJsonDataFile() {
+  await fs.mkdir(path.dirname(dataFile), { recursive: true });
+
+  try {
+    await fs.access(dataFile);
+    const content = await fs.readFile(dataFile, 'utf-8');
+    if (!content.trim()) {
+      throw new Error('Empty file');
+    }
+    JSON.parse(content);
+  } catch {
+    await fs.writeFile(dataFile, JSON.stringify(DEFAULT_APP_DATA, null, 2));
+  }
+}
+
+export async function readAppDataFromJson(): Promise<AppData> {
+  await ensureJsonDataFile();
+  const content = await fs.readFile(dataFile, 'utf-8');
+  const parsed = JSON.parse(content);
+
+  return {
+    ...DEFAULT_APP_DATA,
+    ...parsed,
+    milestones: Array.isArray(parsed.milestones) ? parsed.milestones : [],
+    photos: Array.isArray(parsed.photos) ? parsed.photos.map((photo: AppPhoto) => normalizePhoto(photo)) : []
+  };
+}
+
+export async function writeAppDataToJson(payload: Partial<AppData>): Promise<AppData> {
+  const currentData = await readAppDataFromJson();
+  const nextData: AppData = {
+    ...DEFAULT_APP_DATA,
+    ...currentData,
+    ...payload,
+    milestones: Array.isArray(payload.milestones) ? payload.milestones : currentData.milestones,
+    photos: Array.isArray(payload.photos)
+      ? payload.photos.map((photo) => normalizePhoto(photo))
+      : currentData.photos
+  };
+
+  await fs.writeFile(dataFile, JSON.stringify(nextData, null, 2));
+  return nextData;
 }
 
 export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise<AppData> {
