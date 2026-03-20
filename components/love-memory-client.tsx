@@ -32,11 +32,17 @@ type Quote = {
   author: string;
 };
 
+type MilestoneIcon = {
+  id: string;
+  label: string;
+  symbol: string;
+};
+
 const DEFAULT_MILESTONE: Omit<Milestone, 'id'> = {
   date: '',
   title: '',
   desc: '',
-  icon: 'heart'
+  icon: 'ph-heart'
 };
 
 const DEFAULT_HERO_IMAGES = [
@@ -56,6 +62,15 @@ const QUOTES: Quote[] = [
   { text: '时间会告诉我们，简单的喜欢最长远。', author: '佚名' }
 ];
 
+const MILESTONE_ICONS: MilestoneIcon[] = [
+  { id: 'ph-heart', label: 'Love', symbol: 'Heart' },
+  { id: 'ph-airplane-tilt', label: 'Travel', symbol: 'Trip' },
+  { id: 'ph-house', label: 'Home', symbol: 'Home' },
+  { id: 'ph-ring', label: 'Ring', symbol: 'Ring' },
+  { id: 'ph-camera', label: 'Photo', symbol: 'Photo' },
+  { id: 'ph-star', label: 'Star', symbol: 'Star' }
+];
+
 function normalizePhoto(photo: Photo): Photo {
   return {
     ...photo,
@@ -71,6 +86,10 @@ function formatDate(dateString: string) {
     month: 'long',
     day: 'numeric'
   });
+}
+
+function formatMilestoneIcon(iconId: string) {
+  return MILESTONE_ICONS.find((item) => item.id === iconId)?.symbol || iconId;
 }
 
 function sortMilestones(milestones: Milestone[]) {
@@ -285,6 +304,10 @@ export function LoveMemoryClient() {
     }
   }
 
+  async function restoreDefaultHero() {
+    await saveData({ ...data, heroImage: '' }, '已恢复默认封面');
+  }
+
   function beginMilestoneCreate() {
     setEditingMilestone(null);
     setMilestoneDraft(createDefaultMilestoneDraft());
@@ -353,10 +376,21 @@ export function LoveMemoryClient() {
                 <span className="pb-2 text-lg text-white/80 md:text-2xl">Days</span>
               </div>
             </div>
-            <label className="cursor-pointer rounded-full bg-white/15 px-4 py-2 text-xs font-semibold backdrop-blur-sm transition hover:bg-white/25">
-              {isUploading ? 'Uploading...' : 'Update Cover'}
-              <input type="file" accept="image/*" className="hidden" onChange={handleHeroUpload} />
-            </label>
+            <div className="flex flex-col items-end gap-2">
+              <label className="cursor-pointer rounded-full bg-white/15 px-4 py-2 text-xs font-semibold backdrop-blur-sm transition hover:bg-white/25">
+                {isUploading ? 'Uploading...' : 'Update Cover'}
+                <input type="file" accept="image/*" className="hidden" onChange={handleHeroUpload} />
+              </label>
+              {data.heroImage ? (
+                <button
+                  type="button"
+                  onClick={() => void restoreDefaultHero()}
+                  className="rounded-full bg-white/10 px-4 py-2 text-xs font-semibold text-white/90 backdrop-blur-sm transition hover:bg-white/20"
+                >
+                  Restore Default
+                </button>
+              ) : null}
+            </div>
           </div>
 
           <div className="mt-16 grid gap-3 md:mt-24 md:grid-cols-3">
@@ -478,7 +512,7 @@ export function LoveMemoryClient() {
                       <p className="mt-1 text-sm text-amber-800/70">{milestone.desc || 'No note yet.'}</p>
                     </div>
                     <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-amber-700 shadow-sm">
-                      {milestone.icon}
+                      {formatMilestoneIcon(milestone.icon)}
                     </span>
                   </div>
                 </button>
@@ -486,6 +520,25 @@ export function LoveMemoryClient() {
             </div>
 
             <div className="mt-5 rounded-[24px] border border-dashed border-amber-200 bg-white/80 p-4">
+              <div className="mb-3 flex flex-wrap gap-2">
+                {MILESTONE_ICONS.map((iconItem) => {
+                  const selected = milestoneDraft.icon === iconItem.id;
+                  return (
+                    <button
+                      key={iconItem.id}
+                      type="button"
+                      onClick={() => setMilestoneDraft((current) => ({ ...current, icon: iconItem.id }))}
+                      className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                        selected
+                          ? 'bg-amber-900 text-white'
+                          : 'border border-amber-200 bg-white text-amber-700 hover:bg-amber-50'
+                      }`}
+                    >
+                      {iconItem.label}
+                    </button>
+                  );
+                })}
+              </div>
               <div className="grid gap-3">
                 <input
                   type="text"
