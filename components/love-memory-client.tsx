@@ -27,12 +27,34 @@ type AppData = {
   photos: Photo[];
 };
 
+type Quote = {
+  text: string;
+  author: string;
+};
+
 const DEFAULT_MILESTONE: Omit<Milestone, 'id'> = {
   date: '',
   title: '',
   desc: '',
   icon: 'heart'
 };
+
+const DEFAULT_HERO_IMAGES = [
+  'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=1600&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1494774157365-9e04c6720e47?q=80&w=1600&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?q=80&w=1600&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=1600&auto=format&fit=crop'
+];
+
+const QUOTES: Quote[] = [
+  { text: 'Time expands, then contracts, all in tune with the stirrings of the heart.', author: 'Haruki Murakami' },
+  { text: 'You are my today and all of my tomorrows.', author: 'Leo Christopher' },
+  { text: 'The best thing to hold onto in life is each other.', author: 'Audrey Hepburn' },
+  { text: 'Love turns ordinary moments into timeless memories.', author: 'Unknown' },
+  { text: '初见乍欢，久处仍怦然。', author: '佚名' },
+  { text: '那就在一起，晨昏与四季。', author: '佚名' },
+  { text: '时间会告诉我们，简单的喜欢最长远。', author: '佚名' }
+];
 
 function normalizePhoto(photo: Photo): Photo {
   return {
@@ -74,9 +96,11 @@ export function LoveMemoryClient() {
   const [isUploading, setIsUploading] = useState(false);
   const [deletingPhotoUrl, setDeletingPhotoUrl] = useState('');
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
   const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null);
   const [milestoneDraft, setMilestoneDraft] = useState<Omit<Milestone, 'id'>>(createDefaultMilestoneDraft());
   const [toast, setToast] = useState<string>('');
+  const [currentQuote, setCurrentQuote] = useState<Quote>(QUOTES[0]);
 
   useEffect(() => {
     void loadData();
@@ -87,6 +111,11 @@ export function LoveMemoryClient() {
     const timer = window.setTimeout(() => setToast(''), 2500);
     return () => window.clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    const nextQuote = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+    setCurrentQuote(nextQuote);
+  }, []);
 
   const daysTogether = useMemo(() => {
     if (!data.startDate) return 0;
@@ -105,6 +134,24 @@ export function LoveMemoryClient() {
     }
     return Math.ceil((next.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
   }, [data.startDate]);
+
+  const activeHeroImages = useMemo(() => {
+    return data.heroImage
+      ? [data.heroImage, ...DEFAULT_HERO_IMAGES.slice(0, 3)]
+      : DEFAULT_HERO_IMAGES;
+  }, [data.heroImage]);
+
+  useEffect(() => {
+    setCurrentHeroIndex(0);
+  }, [data.heroImage]);
+
+  useEffect(() => {
+    if (activeHeroImages.length <= 1) return;
+    const timer = window.setInterval(() => {
+      setCurrentHeroIndex((current) => (current + 1) % activeHeroImages.length);
+    }, 7000);
+    return () => window.clearInterval(timer);
+  }, [activeHeroImages]);
 
   async function parseError(response: Response, fallback: string) {
     try {
@@ -131,6 +178,11 @@ export function LoveMemoryClient() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  function refreshQuote() {
+    const nextQuote = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+    setCurrentQuote(nextQuote);
   }
 
   async function saveData(nextData: AppData, successMessage?: string) {
@@ -290,7 +342,7 @@ export function LoveMemoryClient() {
         <div
           className="relative min-h-[320px] bg-cover bg-center p-6 text-white md:min-h-[420px]"
           style={{
-            backgroundImage: `linear-gradient(180deg, rgba(35,20,10,0.08) 0%, rgba(35,20,10,0.58) 100%), url('${data.heroImage || 'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=1600&auto=format&fit=crop'}')`
+            backgroundImage: `linear-gradient(180deg, rgba(35,20,10,0.08) 0%, rgba(35,20,10,0.58) 100%), url('${activeHeroImages[currentHeroIndex]}')`
           }}
         >
           <div className="flex items-start justify-between">
@@ -322,6 +374,15 @@ export function LoveMemoryClient() {
             </div>
           </div>
         </div>
+      </section>
+
+      <section
+        className="rounded-[28px] border border-white/70 bg-white/80 px-6 py-5 text-center shadow-[0_12px_42px_rgba(92,61,42,0.08)] transition hover:border-amber-200"
+        onClick={refreshQuote}
+      >
+        <p className="text-xs uppercase tracking-[0.35em] text-amber-500">Quote</p>
+        <p className="mt-3 font-serif text-xl leading-relaxed text-amber-950">{currentQuote.text}</p>
+        <p className="mt-3 text-xs uppercase tracking-[0.3em] text-amber-600/70">{currentQuote.author}</p>
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
