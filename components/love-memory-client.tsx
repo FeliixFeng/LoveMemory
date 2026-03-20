@@ -115,6 +115,7 @@ export function LoveMemoryClient() {
   const [isUploading, setIsUploading] = useState(false);
   const [deletingPhotoUrl, setDeletingPhotoUrl] = useState('');
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const [galleryOpen, setGalleryOpen] = useState(false);
   const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
   const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null);
   const [milestoneDraft, setMilestoneDraft] = useState<Omit<Milestone, 'id'>>(createDefaultMilestoneDraft());
@@ -426,10 +427,21 @@ export function LoveMemoryClient() {
               <h2 className="font-serif text-2xl font-semibold text-amber-950">甜蜜瞬间</h2>
               <p className="text-sm text-amber-700/70">上传后会自动生成缩略图，浏览更流畅。</p>
             </div>
-            <label className="cursor-pointer rounded-full bg-amber-900 px-4 py-2 text-sm font-semibold text-amber-50 transition hover:bg-amber-800">
-              {isUploading ? 'Uploading...' : 'Add Photos'}
-              <input type="file" multiple accept="image/*" className="hidden" onChange={handlePhotoUpload} />
-            </label>
+            <div className="flex items-center gap-2">
+              {data.photos.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setGalleryOpen(true)}
+                  className="rounded-full border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-50"
+                >
+                  View All
+                </button>
+              ) : null}
+              <label className="cursor-pointer rounded-full bg-amber-900 px-4 py-2 text-sm font-semibold text-amber-50 transition hover:bg-amber-800">
+                {isUploading ? 'Uploading...' : 'Add Photos'}
+                <input type="file" multiple accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+              </label>
+            </div>
           </div>
 
           {data.photos.length === 0 ? (
@@ -598,6 +610,51 @@ export function LoveMemoryClient() {
             alt="Selected memory"
             className="max-h-[90vh] max-w-[90vw] rounded-[28px] object-contain shadow-2xl"
           />
+        </div>
+      ) : null}
+
+      {galleryOpen ? (
+        <div className="fixed inset-0 z-40 flex flex-col bg-[#fffaf3]">
+          <div className="flex items-center justify-between border-b border-amber-100 bg-white/90 px-4 py-4 backdrop-blur-sm">
+            <button
+              type="button"
+              onClick={() => setGalleryOpen(false)}
+              className="rounded-full border border-amber-200 px-4 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-50"
+            >
+              Close
+            </button>
+            <p className="font-serif text-lg font-semibold text-amber-950">甜蜜瞬间</p>
+            <label className="cursor-pointer rounded-full bg-amber-900 px-4 py-2 text-sm font-semibold text-amber-50 transition hover:bg-amber-800">
+              {isUploading ? 'Uploading...' : 'Add'}
+              <input type="file" multiple accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+            </label>
+          </div>
+
+          <div className="grid flex-1 grid-cols-3 gap-1 overflow-y-auto p-3">
+            {data.photos.map((photo) => {
+              const deleting = deletingPhotoUrl === photo.url;
+              return (
+                <div key={`gallery-${photo.uploadedAt}`} className="relative overflow-hidden rounded-2xl bg-amber-100">
+                  <button type="button" className="block w-full" onClick={() => setSelectedPhoto(photo)}>
+                    <img
+                      src={photo.thumbUrl || photo.displayUrl || photo.url}
+                      alt="Moment"
+                      loading="lazy"
+                      className="aspect-square h-full w-full object-cover"
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={deleting}
+                    onClick={() => void handleDeletePhoto(photo)}
+                    className="absolute right-2 top-2 rounded-full bg-black/45 px-2 py-1 text-[11px] font-semibold text-white transition hover:bg-black/60 disabled:opacity-40"
+                  >
+                    {deleting ? '...' : 'Delete'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
       ) : null}
 
