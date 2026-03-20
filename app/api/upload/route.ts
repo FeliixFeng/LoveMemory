@@ -2,7 +2,7 @@ import { randomInt } from 'node:crypto';
 import fs from 'fs/promises';
 import path from 'node:path';
 import sharp from 'sharp';
-import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server.js';
 import env from '../../../src/config/env.js';
 
 const uploadDir = env.UPLOAD_DIR || path.join(process.cwd(), 'public/uploads');

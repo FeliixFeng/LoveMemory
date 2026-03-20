@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server.js';
 import { readAppData, writeAppData } from '../../../src/storage/index.js';
 import { DEFAULT_DATA } from '../../../src/storage/jsonStorage.js';
 

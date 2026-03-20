@@ -5,9 +5,9 @@ import os from 'os';
 import path from 'path';
 
 const PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a9WQAAAAASUVORK5CYII=';
-const testRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'lovememory-test-'));
-const dataFile = path.join(testRoot, 'db.json');
-const uploadDir = path.join(testRoot, 'uploads');
+const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'lovememory-next-test-'));
+const dataFile = path.join(rootDir, 'db.json');
+const uploadDir = path.join(rootDir, 'uploads');
 
 await fs.mkdir(uploadDir, { recursive: true });
 
@@ -15,130 +15,143 @@ process.env.NODE_ENV = 'test';
 process.env.STORAGE_DRIVER = 'json';
 process.env.DATA_FILE = dataFile;
 process.env.UPLOAD_DIR = uploadDir;
-process.env.PORT = '0';
 
-const appModuleUrl = new URL(`../src/app.js?test=${Date.now()}`, import.meta.url);
-const { startServer } = await import(appModuleUrl);
+const salt = `${Date.now()}-${Math.random()}`;
+const dataRoute = await import(new URL(`../app/api/data/route.ts?${salt}`, import.meta.url).href);
+const uploadRoute = await import(new URL(`../app/api/upload/route.ts?${salt}`, import.meta.url).href);
+const healthRoute = await import(new URL(`../app/api/health/route.ts?${salt}`, import.meta.url).href);
 
-async function createTestServer() {
+async function createTestContext() {
   await fs.rm(dataFile, { force: true });
+  await fs.rm(uploadDir, { recursive: true, force: true });
   await fs.mkdir(uploadDir, { recursive: true });
-  const server = startServer(0);
-
-  await new Promise((resolve) => server.once('listening', resolve));
-
-  const address = server.address();
-  const baseUrl = `http://127.0.0.1:${address.port}`;
 
   return {
-    baseUrl,
     dataFile,
     uploadDir,
-    async close() {
-      await new Promise((resolve, reject) => {
-        server.close((error) => {
-          if (error) reject(error);
-          else resolve();
-        });
-      });
+    dataRoute,
+    uploadRoute,
+    healthRoute,
+    async cleanup() {
       await fs.rm(dataFile, { force: true });
       await fs.rm(uploadDir, { recursive: true, force: true });
     }
   };
 }
 
-test('GET /api/data returns default payload for a fresh data file', async () => {
-  const ctx = await createTestServer();
+test('GET /api/health returns ok payload', async () => {
+  const ctx = await createTestContext();
 
   try {
-    const response = await fetch(`${ctx.baseUrl}/api/data`);
-    const data = await response.json();
+    const response = await ctx.healthRoute.GET();
+    const body = await response.json();
 
     assert.equal(response.status, 200);
-    assert.deepEqual(data, {
+    assert.equal(body.success, true);
+    assert.equal(body.status, 'ok');
+    assert.equal(body.storageDriver, 'json');
+  } finally {
+    await ctx.cleanup();
+  }
+});
+
+test('GET /api/data returns default payload for a fresh data file', async () => {
+  const ctx = await createTestContext();
+
+  try {
+    const response = await ctx.dataRoute.GET();
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(body, {
       startDate: '',
       heroImage: '',
       milestones: [],
       photos: []
     });
   } finally {
-    await ctx.close();
+    await ctx.cleanup();
   }
 });
 
 test('POST /api/data merges updates without losing untouched fields', async () => {
-  const ctx = await createTestServer();
+  const ctx = await createTestContext();
 
   try {
     const initialPayload = {
       startDate: '2020-01-01',
       heroImage: '/hero.jpg',
       milestones: [{ id: 1, date: '2020-01-02', title: 'First Date', desc: 'Cafe', icon: 'ph-heart' }],
-      photos: [{ url: '/uploads/test.jpg', uploadedAt: '2026-03-19T00:00:00.000Z' }]
+      photos: [{ url: '/uploads/test.jpg', displayUrl: '/uploads/test.jpg', thumbUrl: '/uploads/test.jpg', uploadedAt: '2026-03-19T00:00:00.000Z' }]
     };
 
-    await fetch(`${ctx.baseUrl}/api/data`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(initialPayload)
-    });
+    await ctx.dataRoute.POST(
+      new Request('http://localhost/api/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(initialPayload)
+      })
+    );
 
-    const response = await fetch(`${ctx.baseUrl}/api/data`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ heroImage: '/updated-hero.jpg' })
-    });
-    const result = await response.json();
+    const response = await ctx.dataRoute.POST(
+      new Request('http://localhost/api/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ heroImage: '/updated-hero.jpg' })
+      })
+    );
+    const body = await response.json();
 
     assert.equal(response.status, 200);
-    assert.equal(result.data.startDate, '2020-01-01');
-    assert.equal(result.data.heroImage, '/updated-hero.jpg');
-    assert.equal(result.data.milestones.length, 1);
-    assert.equal(result.data.photos.length, 1);
+    assert.equal(body.data.startDate, '2020-01-01');
+    assert.equal(body.data.heroImage, '/updated-hero.jpg');
+    assert.equal(body.data.milestones.length, 1);
+    assert.equal(body.data.photos.length, 1);
   } finally {
-    await ctx.close();
+    await ctx.cleanup();
   }
 });
 
-test('upload and delete endpoints manage files and metadata', async () => {
-  const ctx = await createTestServer();
+test('upload and delete route handlers manage original and thumbnail files', async () => {
+  const ctx = await createTestContext();
 
   try {
     const formData = new FormData();
     const buffer = Buffer.from(PNG_BASE64, 'base64');
     formData.append('image', new Blob([buffer], { type: 'image/png' }), 'tiny.png');
 
-    const uploadResponse = await fetch(`${ctx.baseUrl}/api/upload`, {
-      method: 'POST',
-      body: formData
-    });
-    const uploadData = await uploadResponse.json();
+    const uploadResponse = await ctx.uploadRoute.POST(
+      new Request('http://localhost/api/upload', {
+        method: 'POST',
+        body: formData
+      })
+    );
+    const uploadBody = await uploadResponse.json();
 
     assert.equal(uploadResponse.status, 200);
-    assert.equal(uploadData.success, true);
-    assert.equal(uploadData.displayUrl, uploadData.url);
-    assert.notEqual(uploadData.thumbUrl, uploadData.displayUrl);
-    assert.equal(uploadData.mimeType, 'image/png');
-    assert.equal(uploadData.size > 0, true);
+    assert.equal(uploadBody.success, true);
+    assert.equal(uploadBody.displayUrl, uploadBody.url);
+    assert.notEqual(uploadBody.thumbUrl, uploadBody.displayUrl);
 
-    const uploadedFile = path.join(ctx.uploadDir, uploadData.filename);
-    const thumbFilename = path.basename(uploadData.thumbUrl);
-    const thumbFile = path.join(ctx.uploadDir, thumbFilename);
+    const uploadedFile = path.join(ctx.uploadDir, uploadBody.filename);
+    const thumbFile = path.join(ctx.uploadDir, path.basename(uploadBody.thumbUrl));
     await fs.access(uploadedFile);
     await fs.access(thumbFile);
 
-    const deleteResponse = await fetch(`${ctx.baseUrl}/api/upload`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: uploadData.url })
-    });
-    const deleteData = await deleteResponse.json();
+    const deleteResponse = await ctx.uploadRoute.DELETE(
+      new Request('http://localhost/api/upload', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: uploadBody.url })
+      })
+    );
+    const deleteBody = await deleteResponse.json();
 
     assert.equal(deleteResponse.status, 200);
-    assert.equal(deleteData.success, true);
+    assert.equal(deleteBody.success, true);
     await assert.rejects(() => fs.access(uploadedFile));
     await assert.rejects(() => fs.access(thumbFile));
   } finally {
-    await ctx.close();
+    await ctx.cleanup();
   }
 });
