@@ -1,668 +1,318 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-type Milestone = {
-  id: number | string;
-  date: string;
-  title: string;
-  desc: string;
-  icon: string;
-};
+type Milestone = { id: number | string; date: string; title: string; desc: string; icon: string };
+type Photo = { url: string; displayUrl?: string; thumbUrl?: string; filename?: string; mimeType?: string; size?: number; uploadedAt: string };
+type AppData = { startDate: string; heroImage: string; milestones: Milestone[]; photos: Photo[] };
 
-type Photo = {
-  url: string;
-  displayUrl?: string;
-  thumbUrl?: string;
-  filename?: string;
-  mimeType?: string;
-  size?: number;
-  uploadedAt: string;
-};
-
-type AppData = {
-  startDate: string;
-  heroImage: string;
-  milestones: Milestone[];
-  photos: Photo[];
-};
-
-type Quote = {
-  text: string;
-  author: string;
-};
-
-type MilestoneIcon = {
-  id: string;
-  label: string;
-  symbol: string;
-};
-
-const DEFAULT_MILESTONE: Omit<Milestone, 'id'> = {
-  date: '',
-  title: '',
-  desc: '',
-  icon: 'ph-heart'
-};
-
-const DEFAULT_HERO_IMAGES = [
-  'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=1600&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1494774157365-9e04c6720e47?q=80&w=1600&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?q=80&w=1600&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=1600&auto=format&fit=crop'
+const HERO_IMAGES = ['/hero/1.jpg', '/hero/2.jpg', '/hero/3.jpg', '/hero/4.jpg'];
+const ICONS = [
+  { id: 'heart', emoji: '💕', label: '心动' },
+  { id: 'airplane', emoji: '✈️', label: '旅行' },
+  { id: 'house', emoji: '🏠', label: '日常' },
+  { id: 'ring', emoji: '💍', label: '纪念' },
+  { id: 'camera', emoji: '📷', label: '照片' },
+  { id: 'star', emoji: '⭐', label: '特别' },
 ];
+const ICON_MAP: Record<string, string> = { 'ph-heart': 'heart', 'ph-airplane-tilt': 'airplane', 'ph-house': 'house', 'ph-ring': 'ring', 'ph-camera': 'camera', 'ph-star': 'star' };
+function getEmoji(icon: string) { return ICONS.find(i => i.id === (ICON_MAP[icon] || icon))?.emoji || '💕'; }
 
-const QUOTES: Quote[] = [
-  { text: 'Time expands, then contracts, all in tune with the stirrings of the heart.', author: 'Haruki Murakami' },
-  { text: 'You are my today and all of my tomorrows.', author: 'Leo Christopher' },
-  { text: 'The best thing to hold onto in life is each other.', author: 'Audrey Hepburn' },
-  { text: 'Love turns ordinary moments into timeless memories.', author: 'Unknown' },
-  { text: '初见乍欢，久处仍怦然。', author: '佚名' },
-  { text: '那就在一起，晨昏与四季。', author: '佚名' },
-  { text: '时间会告诉我们，简单的喜欢最长远。', author: '佚名' }
-];
-
-const MILESTONE_ICONS: MilestoneIcon[] = [
-  { id: 'ph-heart', label: '心动', symbol: '心动' },
-  { id: 'ph-airplane-tilt', label: '旅行', symbol: '旅行' },
-  { id: 'ph-house', label: '日常', symbol: '日常' },
-  { id: 'ph-ring', label: '纪念', symbol: '纪念' },
-  { id: 'ph-camera', label: '照片', symbol: '照片' },
-  { id: 'ph-star', label: '特别', symbol: '特别' }
-];
-
-function normalizePhoto(photo: Photo): Photo {
-  return {
-    ...photo,
-    displayUrl: photo.displayUrl || photo.url,
-    thumbUrl: photo.thumbUrl || photo.displayUrl || photo.url
-  };
+function fmt(d: string) {
+  if (!d) return '--';
+  return new Date(`${d}T00:00:00`).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
-function formatDate(dateString: string) {
-  if (!dateString) return '--';
-  return new Date(`${dateString}T00:00:00`).toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-}
-
-function formatMilestoneIcon(iconId: string) {
-  return MILESTONE_ICONS.find((item) => item.id === iconId)?.symbol || iconId;
-}
-
-function sortMilestones(milestones: Milestone[]) {
-  return [...milestones].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-}
-
-function createDefaultMilestoneDraft(): Omit<Milestone, 'id'> {
-  return {
-    ...DEFAULT_MILESTONE,
-    date: new Date().toISOString().split('T')[0]
-  };
+function useAnimatedNum(target: number) {
+  const [val, setVal] = useState(0);
+  const prev = useRef(0);
+  useEffect(() => {
+    const start = prev.current, diff = target - start;
+    if (diff === 0) return;
+    let step = 0;
+    const t = setInterval(() => { step++; setVal(Math.round(start + diff * (step / 30))); if (step >= 30) { setVal(target); clearInterval(t); } }, 30);
+    prev.current = target;
+    return () => clearInterval(t);
+  }, [target]);
+  return val;
 }
 
 export function LoveMemoryClient() {
-  const [data, setData] = useState<AppData>({
-    startDate: '',
-    heroImage: '',
-    milestones: [],
-    photos: []
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [deletingPhotoUrl, setDeletingPhotoUrl] = useState('');
-  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
-  const [galleryOpen, setGalleryOpen] = useState(false);
-  const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
-  const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null);
-  const [milestoneDraft, setMilestoneDraft] = useState<Omit<Milestone, 'id'>>(createDefaultMilestoneDraft());
-  const [toast, setToast] = useState<string>('');
-  const [currentQuote, setCurrentQuote] = useState<Quote>(QUOTES[0]);
+  const [data, setData] = useState<AppData>({ startDate: '', heroImage: '', milestones: [], photos: [] });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState('');
+  const [viewPhoto, setViewPhoto] = useState<Photo | null>(null);
+  const [gallery, setGallery] = useState(false);
+  const [editMs, setEditMs] = useState<Milestone | null>(null);
+  const [msDraft, setMsDraft] = useState({ date: new Date().toISOString().split('T')[0], title: '', desc: '', icon: 'heart' });
+  const [msModal, setMsModal] = useState(false);
+  const [settings, setSettings] = useState(false);
+  const [coverMenu, setCoverMenu] = useState(false);
+  const [toast, setToast] = useState('');
+  const [heroIdx, setHeroIdx] = useState(0);
+  const [hearts] = useState(() => Array.from({ length: 6 }).map(() => ({
+    left: `${Math.random() * 100}%`, dur: `${15 + Math.random() * 10}s`, delay: `${-Math.random() * 20}s`,
+    opacity: 0.1 + Math.random() * 0.3, size: `${16 + Math.random() * 12}px`, sway: `${3 + Math.random() * 2}s`
+  })));
+
+  const fileRef = useRef<HTMLInputElement>(null);
+  const heroRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    void loadData();
+    fetch('/api/data', { cache: 'no-store' }).then(r => r.json()).then(d => {
+      setData({ ...d, milestones: (d.milestones || []).sort((a: Milestone, b: Milestone) => new Date(b.date).getTime() - new Date(a.date).getTime()), photos: (d.photos || []).map((p: Photo) => ({ ...p, displayUrl: p.displayUrl || p.url, thumbUrl: p.thumbUrl || p.displayUrl || p.url })) });
+    }).catch(() => setToast('加载失败')).finally(() => setLoading(false));
   }, []);
+  useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 2000); return () => clearTimeout(t); }, [toast]);
+  useEffect(() => { if (HERO_IMAGES.length <= 1) return; const t = setInterval(() => setHeroIdx(i => (i + 1) % HERO_IMAGES.length), 6000); return () => clearInterval(t); }, []);
 
-  useEffect(() => {
-    if (!toast) return;
-    const timer = window.setTimeout(() => setToast(''), 2500);
-    return () => window.clearTimeout(timer);
-  }, [toast]);
-
-  useEffect(() => {
-    const nextQuote = QUOTES[Math.floor(Math.random() * QUOTES.length)];
-    setCurrentQuote(nextQuote);
-  }, []);
-
-  const daysTogether = useMemo(() => {
+  const days = useMemo(() => data.startDate ? Math.max(0, Math.floor((Date.now() - new Date(`${data.startDate}T00:00:00`).getTime()) / 86400000)) : 0, [data.startDate]);
+  const animDays = useAnimatedNum(days);
+  const nextDays = useMemo(() => {
     if (!data.startDate) return 0;
-    const start = new Date(`${data.startDate}T00:00:00`);
-    const diff = Date.now() - start.getTime();
-    return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
+    const s = new Date(`${data.startDate}T00:00:00`), n = new Date(), nx = new Date(n.getFullYear(), s.getMonth(), s.getDate());
+    if (nx.getTime() < n.getTime()) nx.setFullYear(n.getFullYear() + 1);
+    return Math.ceil((nx.getTime() - n.getTime()) / 86400000);
   }, [data.startDate]);
+  const heroImages = data.heroImage ? [data.heroImage, ...HERO_IMAGES.slice(0, 4)] : HERO_IMAGES;
 
-  const nextAnniversaryDays = useMemo(() => {
-    if (!data.startDate) return 0;
-    const start = new Date(`${data.startDate}T00:00:00`);
-    const now = new Date();
-    const next = new Date(now.getFullYear(), start.getMonth(), start.getDate());
-    if (next.getTime() < now.getTime()) {
-      next.setFullYear(now.getFullYear() + 1);
-    }
-    return Math.ceil((next.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  }, [data.startDate]);
-
-  const activeHeroImages = useMemo(() => {
-    return data.heroImage
-      ? [data.heroImage, ...DEFAULT_HERO_IMAGES.slice(0, 3)]
-      : DEFAULT_HERO_IMAGES;
-  }, [data.heroImage]);
-
-  useEffect(() => {
-    setCurrentHeroIndex(0);
-  }, [data.heroImage]);
-
-  useEffect(() => {
-    if (activeHeroImages.length <= 1) return;
-    const timer = window.setInterval(() => {
-      setCurrentHeroIndex((current) => (current + 1) % activeHeroImages.length);
-    }, 7000);
-    return () => window.clearInterval(timer);
-  }, [activeHeroImages]);
-
-  async function parseError(response: Response, fallback: string) {
-    try {
-      const body = await response.json();
-      return body.error || fallback;
-    } catch {
-      return fallback;
-    }
+  async function save(next: AppData, msg?: string) {
+    setData(next); setSaving(true);
+    try { const r = await fetch('/api/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(next) }); if (!r.ok) throw new Error(); if (msg) setToast(msg); } catch { setToast('保存失败'); } finally { setSaving(false); }
   }
-
-  async function loadData() {
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/data', { cache: 'no-store' });
-      const nextData = (await response.json()) as AppData;
-      setData({
-        ...nextData,
-        milestones: sortMilestones(nextData.milestones || []),
-        photos: (nextData.photos || []).map(normalizePhoto)
-      });
-    } catch (error) {
-      console.error(error);
-      setToast('加载数据失败');
-    } finally {
-      setIsLoading(false);
-    }
+  async function doUpload(file: File) {
+    const fd = new FormData(); fd.append('image', file);
+    const r = await fetch('/api/upload', { method: 'POST', body: fd }); if (!r.ok) throw new Error();
+    const d = await r.json(); return { ...d, displayUrl: d.displayUrl || d.url, thumbUrl: d.thumbUrl || d.displayUrl || d.url } as Photo;
   }
-
-  function refreshQuote() {
-    const nextQuote = QUOTES[Math.floor(Math.random() * QUOTES.length)];
-    setCurrentQuote(nextQuote);
+  async function onPhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []); if (!files.length) return; setUploading(true);
+    try { const up: Photo[] = []; for (const f of files) up.push(await doUpload(f)); await save({ ...data, photos: [...up.reverse(), ...data.photos] }, '已上传'); } catch { setToast('上传失败'); } finally { setUploading(false); e.target.value = ''; }
   }
-
-  async function saveData(nextData: AppData, successMessage?: string) {
-    setData(nextData);
-    setIsSaving(true);
-    try {
-      const response = await fetch('/api/data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(nextData)
-      });
-      if (!response.ok) {
-        throw new Error(await parseError(response, '保存失败'));
-      }
-      if (successMessage) setToast(successMessage);
-    } catch (error) {
-      console.error(error);
-      setToast(error instanceof Error ? error.message : '保存失败');
-    } finally {
-      setIsSaving(false);
-    }
+  async function onDelPhoto(p: Photo) {
+    setDeleting(p.url);
+    try { await fetch('/api/upload', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: p.url }) }); await save({ ...data, photos: data.photos.filter(x => x.url !== p.url) }, '已删除'); if (viewPhoto?.url === p.url) setViewPhoto(null); } catch { setToast('删除失败'); } finally { setDeleting(''); }
   }
-
-  async function uploadSingleFile(file: File) {
-    const formData = new FormData();
-    formData.append('image', file);
-    const response = await fetch('/api/upload', { method: 'POST', body: formData });
-    if (!response.ok) {
-      throw new Error(await parseError(response, '上传失败'));
-    }
-    return normalizePhoto(await response.json());
+  async function onHeroUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]; if (!file) return; setUploading(true);
+    try { const u = await doUpload(file); await save({ ...data, heroImage: u.displayUrl || u.url }, '封面已更新'); } catch { setToast('上传失败'); } finally { setUploading(false); e.target.value = ''; }
   }
-
-  async function handlePhotoUpload(event: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files || []);
-    if (files.length === 0) return;
-
-    setIsUploading(true);
-    try {
-      const uploaded: Photo[] = [];
-      for (const file of files) {
-        uploaded.push(await uploadSingleFile(file));
-      }
-
-      const nextData = {
-        ...data,
-        photos: [...uploaded.reverse(), ...data.photos]
-      };
-      await saveData(nextData, '照片已上传');
-    } catch (error) {
-      console.error(error);
-      setToast(error instanceof Error ? error.message : '上传失败');
-    } finally {
-      setIsUploading(false);
-      event.target.value = '';
-    }
+  function openMsCreate() { setEditMs(null); setMsDraft({ date: new Date().toISOString().split('T')[0], title: '', desc: '', icon: 'heart' }); setMsModal(true); }
+  function openMsEdit(m: Milestone) { setEditMs(m); setMsDraft({ date: m.date, title: m.title, desc: m.desc, icon: ICON_MAP[m.icon] || m.icon }); setMsModal(true); }
+  async function saveMs() {
+    if (!msDraft.title || !msDraft.date) { setToast('请填写标题和日期'); return; }
+    const next: Milestone = editMs ? { ...editMs, ...msDraft } : { ...msDraft, id: Date.now() };
+    const list = editMs ? data.milestones.map(m => m.id === editMs.id ? next : m) : [...data.milestones, next];
+    await save({ ...data, milestones: list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) }, '已保存');
+    setMsModal(false); setEditMs(null);
   }
+  async function deleteMs() { if (!editMs) return; await save({ ...data, milestones: data.milestones.filter(m => m.id !== editMs.id) }, '已删除'); setMsModal(false); setEditMs(null); }
 
-  async function handleDeletePhoto(photo: Photo) {
-    setDeletingPhotoUrl(photo.url);
-    try {
-      const response = await fetch('/api/upload', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: photo.url })
-      });
-      if (!response.ok) {
-        throw new Error(await parseError(response, '删除失败'));
-      }
-      const nextData = {
-        ...data,
-        photos: data.photos.filter((item) => item.url !== photo.url)
-      };
-      await saveData(nextData, '照片已删除');
-      if (selectedPhoto?.url === photo.url) {
-        setSelectedPhoto(null);
-      }
-    } catch (error) {
-      console.error(error);
-      setToast(error instanceof Error ? error.message : '删除失败');
-    } finally {
-      setDeletingPhotoUrl('');
-    }
-  }
+  if (loading) return <main className="flex min-h-screen items-center justify-center"><div className="lm-card rounded-full px-6 py-3 text-sm font-medium text-[#5c3d2a]"><span className="mr-2">💕</span>加载中...</div></main>;
 
-  async function handleHeroUpload(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    try {
-      const uploaded = await uploadSingleFile(file);
-      await saveData({ ...data, heroImage: uploaded.displayUrl || uploaded.url }, '封面已更新');
-    } catch (error) {
-      console.error(error);
-      setToast(error instanceof Error ? error.message : '封面上传失败');
-    } finally {
-      setIsUploading(false);
-      event.target.value = '';
-    }
-  }
-
-  async function restoreDefaultHero() {
-    await saveData({ ...data, heroImage: '' }, '已恢复默认封面');
-  }
-
-  function beginMilestoneCreate() {
-    setEditingMilestone(null);
-    setMilestoneDraft(createDefaultMilestoneDraft());
-  }
-
-  function beginMilestoneEdit(milestone: Milestone) {
-    setEditingMilestone(milestone);
-    setMilestoneDraft({
-      date: milestone.date,
-      title: milestone.title,
-      desc: milestone.desc,
-      icon: milestone.icon
-    });
-  }
-
-  async function submitMilestone() {
-    if (!milestoneDraft.title || !milestoneDraft.date) {
-      setToast('请先填写标题和日期');
-      return;
-    }
-
-    const nextMilestone: Milestone = editingMilestone
-      ? { ...editingMilestone, ...milestoneDraft }
-      : { ...milestoneDraft, id: Date.now() };
-
-    const nextMilestones = editingMilestone
-      ? data.milestones.map((item) => (item.id === editingMilestone.id ? nextMilestone : item))
-      : [...data.milestones, nextMilestone];
-
-    await saveData({ ...data, milestones: sortMilestones(nextMilestones) }, '里程碑已保存');
-    beginMilestoneCreate();
-  }
-
-  async function deleteMilestone(id: Milestone['id']) {
-    const nextMilestones = data.milestones.filter((item) => item.id !== id);
-    await saveData({ ...data, milestones: nextMilestones }, '里程碑已删除');
-    if (editingMilestone?.id === id) {
-      beginMilestoneCreate();
-    }
-  }
-
-  if (isLoading) {
-    return (
-      <main className="mx-auto flex min-h-screen max-w-5xl items-center justify-center px-6">
-        <div className="rounded-full bg-white/80 px-5 py-3 text-sm font-semibold text-amber-900 shadow-sm">
-          正在载入回忆...
-        </div>
-      </main>
-    );
-  }
+  const leftPhotos = data.photos.filter((_, i) => i % 2 === 0);
+  const rightPhotos = data.photos.filter((_, i) => i % 2 !== 0);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 px-4 py-6 md:px-6">
-      <section className="lm-card overflow-hidden rounded-[32px]">
-        <div
-          className="relative min-h-[320px] bg-cover bg-center p-5 text-white md:min-h-[420px] md:p-6"
-          style={{
-            backgroundImage: `linear-gradient(180deg, rgba(35,20,10,0.08) 0%, rgba(35,20,10,0.58) 100%), url('${activeHeroImages[currentHeroIndex]}')`
-          }}
-        >
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.35em] text-white/70">在一起</p>
-              <div className="mt-3 flex items-end gap-2 md:gap-3">
-                <span className="font-serif text-5xl leading-none md:text-8xl">{daysTogether}</span>
-                <span className="pb-1 text-base text-white/80 md:pb-2 md:text-2xl">天</span>
-              </div>
+    <>
+      {/* Falling hearts */}
+      <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+        <div className="absolute top-0 left-1/4 w-64 h-64 rounded-full blur-3xl opacity-50" style={{ background: 'rgba(239,216,195,0.4)' }} />
+        <div className="absolute bottom-0 right-1/4 w-64 h-64 rounded-full blur-3xl opacity-50" style={{ background: 'rgba(255,182,193,0.3)' }} />
+        {hearts.map((h, i) => (
+          <div key={i} className="absolute -top-8 animate-fall" style={{ left: h.left, opacity: h.opacity, fontSize: h.size, animationDuration: h.dur, animationDelay: h.delay }}>
+            <div className="animate-sway" style={{ animationDuration: h.sway }}>💕</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Nav */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#fdfbf7]/90 border-b border-[#efd8c3]/30 px-4 py-3">
+        <div className="max-w-lg mx-auto flex justify-between items-center">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold tracking-[0.2em] text-[#aa6f4d] uppercase" style={{ fontFamily: 'Playfair Display, serif' }}>TODAY</span>
+            <span className="text-sm font-semibold text-[#3d281c]">{new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-lg font-bold text-gradient" style={{ fontFamily: 'Noto Serif SC, serif' }}>珍藏回忆</span>
+            <span className="text-[8px] text-[#aa6f4d] tracking-[0.3em] uppercase" style={{ fontFamily: 'Playfair Display, serif' }}>OUR STORY</span>
+          </div>
+          <button onClick={() => setSettings(true)} className="w-8 h-8 rounded-full bg-white border border-[#efd8c3] flex items-center justify-center text-sm hover:bg-amber-50">⚙</button>
+        </div>
+      </nav>
+
+      <main className="max-w-lg mx-auto pt-20 pb-24 px-4 flex flex-col gap-6">
+        {/* Hero */}
+        <section className="relative rounded-3xl overflow-hidden shadow-lg" style={{ aspectRatio: '3.5/4.5', animation: 'slideUp 0.6s ease-out' }}>
+          {heroImages.map((img, i) => <img key={i} src={img} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: heroIdx === i ? 1 : 0, transition: 'opacity 1.5s' }} />)}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
+          <button className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/20 text-white text-sm flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity" onClick={() => setCoverMenu(true)}>✏</button>
+          <div className="absolute top-4 left-4"><div className="px-2.5 py-1 rounded-full bg-white/20 text-[10px] text-white font-medium tracking-wide" style={{ fontFamily: 'Playfair Display, serif' }}>{saving ? 'SYNCING' : 'LOVING'}</div></div>
+          <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+            <span className="text-[10px] font-medium text-white/70 tracking-[0.3em] uppercase" style={{ fontFamily: 'Playfair Display, serif' }}>TOGETHER FOR</span>
+            <div className="flex items-baseline mt-1">
+              <span className="text-7xl font-bold leading-none" style={{ fontFamily: 'Noto Serif SC, serif', textShadow: '0 8px 20px rgba(0,0,0,0.3)' }}>{animDays}</span>
+              <span className="text-2xl font-light italic opacity-80 ml-2 mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>Days</span>
             </div>
-            <div className="flex flex-col items-end gap-2">
-              <label className="cursor-pointer rounded-full bg-white/15 px-3 py-2 text-xs font-semibold backdrop-blur-sm transition hover:bg-white/25 md:px-4">
-                {isUploading ? '上传中...' : '更换封面'}
-                <input type="file" accept="image/*" className="hidden" onChange={handleHeroUpload} />
-              </label>
-              {data.heroImage ? (
-                <button
-                  type="button"
-                  onClick={() => void restoreDefaultHero()}
-                  className="rounded-full bg-white/10 px-3 py-2 text-xs font-semibold text-white/90 backdrop-blur-sm transition hover:bg-white/20 md:px-4"
-                >
-                  恢复默认
-                </button>
-              ) : null}
+            <div className="flex items-center gap-3 mt-3 text-xs text-white/70">
+              <span>📅 {fmt(data.startDate)}</span><span>·</span><span>⏰ 下次 {nextDays} 天</span>
             </div>
           </div>
+          <input ref={heroRef} type="file" accept="image/*" className="hidden" onChange={onHeroUpload} />
+        </section>
 
-          <div className="mt-12 grid gap-3 md:mt-24 md:grid-cols-3">
-            <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-[0.25em] text-white/60">纪念日</p>
-              <p className="mt-2 text-lg font-medium">{formatDate(data.startDate)}</p>
-            </div>
-            <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-[0.25em] text-white/60">下一个纪念点</p>
-              <p className="mt-2 text-lg font-medium">{nextAnniversaryDays} 天</p>
-            </div>
-            <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-[0.25em] text-white/60">状态</p>
-              <p className="mt-2 text-lg font-medium">{isSaving ? '同步中...' : '甜蜜进行时'}</p>
+        {/* Milestones */}
+        <div style={{ animation: 'slideUp 0.6s ease-out 0.1s both' }}>
+          <div className="flex justify-between items-end mb-3">
+            <h2 className="text-lg font-bold text-[#3d281c]" style={{ fontFamily: 'Noto Serif SC, serif' }}>恋爱里程碑</h2>
+            <span className="text-[10px] text-[#aa6f4d] font-bold tracking-widest uppercase" style={{ fontFamily: 'Playfair Display, serif' }}>MILESTONES</span>
+          </div>
+          <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4">
+            {data.milestones.map(m => (
+              <div key={m.id} onClick={() => openMsEdit(m)} className="flex-none w-36 p-3 rounded-2xl bg-white border border-[#efd8c3]/40 shadow-sm cursor-pointer hover:-translate-y-0.5 transition-transform">
+                <span className="text-xl mb-2 block">{getEmoji(m.icon)}</span>
+                <p className="text-[10px] text-[#aa6f4d] mb-0.5" style={{ fontFamily: 'Playfair Display, serif' }}>{m.date.replace(/-/g, '.')}</p>
+                <p className="text-sm font-semibold text-[#3d281c] truncate">{m.title}</p>
+                <p className="text-[10px] text-[#aa6f4d]/70 truncate">{m.desc || '—'}</p>
+              </div>
+            ))}
+            <div onClick={openMsCreate} className="flex-none w-16 flex flex-col items-center justify-center gap-1 cursor-pointer group">
+              <div className="w-12 h-12 rounded-2xl border-2 border-dashed border-[#efd8c3] flex items-center justify-center text-[#aa6f4d] group-hover:bg-amber-50 group-hover:border-[#d48b60] transition-colors text-lg">+</div>
+              <span className="text-[10px] text-[#aa6f4d]">Add</span>
             </div>
           </div>
         </div>
-      </section>
 
-      <section
-        className="lm-card-strong rounded-[28px] px-6 py-5 text-center transition hover:border-[rgba(212,139,96,0.35)]"
-        onClick={refreshQuote}
-      >
-        <p className="text-xs uppercase tracking-[0.35em] text-[var(--lm-accent-deep)]">今日一句</p>
-        <p className="mt-3 font-serif text-xl leading-relaxed text-[var(--lm-text-strong)]">{currentQuote.text}</p>
-        <p className="lm-soft mt-3 text-xs uppercase tracking-[0.3em]">{currentQuote.author}</p>
-      </section>
-
-      <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="lm-card-strong rounded-[28px] p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="font-serif text-2xl font-semibold text-[var(--lm-text-strong)]">甜蜜瞬间</h2>
-              <p className="lm-muted text-sm">把值得记住的时刻慢慢留下来。</p>
-            </div>
-            <div className="flex items-center gap-2">
-              {data.photos.length > 0 ? (
-                <button
-                  type="button"
-                  onClick={() => setGalleryOpen(true)}
-                  className="lm-secondary-btn rounded-full px-4 py-2 text-sm font-semibold transition"
-                >
-                  查看全部
-                </button>
-              ) : null}
-              <label className="lm-primary-btn cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition">
-                {isUploading ? '上传中...' : '添加照片'}
-                <input type="file" multiple accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+        {/* Photos */}
+        <div style={{ animation: 'slideUp 0.6s ease-out 0.2s both' }}>
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-lg font-bold text-[#3d281c]" style={{ fontFamily: 'Noto Serif SC, serif' }}>甜蜜瞬间</h2>
+            <div className="flex gap-2">
+              {data.photos.length > 0 && <button onClick={() => setGallery(true)} className="text-[10px] text-[#aa6f4d] font-bold tracking-widest uppercase" style={{ fontFamily: 'Playfair Display, serif' }}>VIEW ALL</button>}
+              <label className="lm-btn cursor-pointer rounded-full px-3 py-1.5 text-xs font-semibold">
+                {uploading ? '上传中...' : '+ 添加'}
+                <input ref={fileRef} type="file" multiple accept="image/*" className="hidden" onChange={onPhotoUpload} />
               </label>
             </div>
           </div>
-
           {data.photos.length === 0 ? (
-            <div className="flex min-h-[240px] flex-col items-center justify-center rounded-[24px] border border-dashed border-[var(--lm-border)] bg-[rgba(247,241,227,0.58)] text-center text-[var(--lm-text)]">
-              <p className="text-lg font-semibold">还没有照片</p>
-              <p className="lm-muted mt-2 text-sm">上传第一张照片，开始记录你们的故事。</p>
+            <div className="aspect-[4/3] rounded-2xl border-2 border-dashed border-[#efd8c3] flex flex-col items-center justify-center text-[#aa6f4d] cursor-pointer hover:bg-amber-50/50" onClick={() => fileRef.current?.click()}>
+              <span className="text-3xl mb-2">📷</span><span className="text-sm">上传第一张照片</span>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-              {data.photos.map((photo) => {
-                const deleting = deletingPhotoUrl === photo.url;
-                return (
-                  <div key={photo.uploadedAt} className="group relative overflow-hidden rounded-[24px] bg-[var(--lm-bg-soft)]">
-                    <button type="button" className="block w-full" onClick={() => setSelectedPhoto(photo)}>
-                      <img
-                        src={photo.thumbUrl || photo.displayUrl || photo.url}
-                        alt="Moment"
-                        loading="lazy"
-                        className="aspect-[4/5] h-full w-full object-cover"
-                      />
-                    </button>
-                    <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/60 to-transparent px-3 py-3 text-xs text-white">
-                      <span>{new Date(photo.uploadedAt).toLocaleDateString('zh-CN')}</span>
-                      <button
-                        type="button"
-                        disabled={deleting}
-                        onClick={() => void handleDeletePhoto(photo)}
-                        className="rounded-full bg-white/15 px-2 py-1 font-semibold backdrop-blur-sm transition hover:bg-white/25 disabled:opacity-50"
-                      >
-                        {deleting ? '删除中...' : '删除'}
-                      </button>
+            <div className="flex gap-2 items-start">
+              <div className="flex flex-col gap-2 w-1/2">
+                {leftPhotos.map(p => (
+                  <div key={p.uploadedAt} className="relative rounded-2xl overflow-hidden cursor-pointer group bg-amber-50" onClick={() => setViewPhoto(p)}>
+                    <img src={p.thumbUrl || p.url} alt="" loading="lazy" className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3">
+                      <button disabled={deleting === p.url} onClick={e => { e.stopPropagation(); void onDelPhoto(p); }} className="w-7 h-7 rounded-full bg-white/90 text-red-500 text-xs flex items-center justify-center">🗑</button>
                     </div>
                   </div>
-                );
-              })}
+                ))}
+              </div>
+              <div className="flex flex-col gap-2 w-1/2">
+                {rightPhotos.map(p => (
+                  <div key={p.uploadedAt} className="relative rounded-2xl overflow-hidden cursor-pointer group bg-amber-50" onClick={() => setViewPhoto(p)}>
+                    <img src={p.thumbUrl || p.url} alt="" loading="lazy" className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3">
+                      <button disabled={deleting === p.url} onClick={e => { e.stopPropagation(); void onDelPhoto(p); }} className="w-7 h-7 rounded-full bg-white/90 text-red-500 text-xs flex items-center justify-center">🗑</button>
+                    </div>
+                  </div>
+                ))}
+                <div className="aspect-square rounded-2xl border-2 border-dashed border-[#efd8c3]/60 flex flex-col items-center justify-center cursor-pointer hover:bg-amber-50/50" onClick={() => fileRef.current?.click()}>
+                  <span className="text-[#aa6f4d] text-lg">+</span><span className="text-[10px] text-[#aa6f4d]">Add</span>
+                </div>
+              </div>
             </div>
           )}
         </div>
 
-        <div className="flex flex-col gap-6">
-          <section className="lm-card-strong rounded-[28px] p-5">
-            <h2 className="font-serif text-2xl font-semibold text-[var(--lm-text-strong)]">纪念日设置</h2>
-            <div className="mt-4 flex items-center gap-3">
-              <input
-                type="date"
-                value={data.startDate}
-                onChange={(event) => void saveData({ ...data, startDate: event.target.value }, '纪念日已保存')}
-                className="lm-input w-full rounded-2xl px-4 py-3 outline-none transition"
-              />
-            </div>
-          </section>
+        <footer className="text-center py-6 opacity-30"><span className="text-sm">💕</span></footer>
+      </main>
 
-          <section className="lm-card-strong rounded-[28px] p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h2 className="font-serif text-2xl font-semibold text-[var(--lm-text-strong)]">恋爱里程碑</h2>
-                <p className="lm-muted text-sm">把重要的日子一点点留下来。</p>
-              </div>
-              <button
-                type="button"
-                onClick={beginMilestoneCreate}
-                className="lm-secondary-btn rounded-full px-4 py-2 text-sm font-semibold transition"
-              >
-                新建
-              </button>
+      {/* Milestone Modal */}
+      {msModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setMsModal(false)} />
+          <div className="relative w-full sm:max-w-sm bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl p-5" style={{ animation: 'slideUp 0.3s ease-out' }}>
+            <div className="w-10 h-1 bg-amber-200 rounded-full mx-auto mb-4 sm:hidden" />
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-base font-bold text-[#3d281c]" style={{ fontFamily: 'Noto Serif SC, serif' }}>{editMs ? '编辑里程碑' : '新里程碑'}</h3>
+              {editMs && <button onClick={void deleteMs} className="text-red-400 text-sm">删除</button>}
             </div>
+            <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
+              {ICONS.map(ic => <button key={ic.id} onClick={() => setMsDraft(d => ({ ...d, icon: ic.id }))} className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg border transition-all ${msDraft.icon === ic.id ? 'bg-[#d48b60] border-[#d48b60] scale-105' : 'bg-white border-amber-100'}`}>{ic.emoji}</button>)}
+            </div>
+            <div className="space-y-3 mb-4">
+              <input type="text" placeholder="标题" value={msDraft.title} onChange={e => setMsDraft(d => ({ ...d, title: e.target.value }))} className="w-full bg-white border border-[#efd8c3]/60 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#d48b60]" />
+              <input type="date" value={msDraft.date} onChange={e => setMsDraft(d => ({ ...d, date: e.target.value }))} className="w-full bg-white border border-[#efd8c3]/60 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#d48b60]" />
+              <input type="text" placeholder="备注（可选）" value={msDraft.desc} onChange={e => setMsDraft(d => ({ ...d, desc: e.target.value }))} className="w-full bg-white border border-[#efd8c3]/60 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#d48b60]" />
+            </div>
+            <button onClick={void saveMs} className="w-full py-3 bg-[#3d281c] text-amber-50 rounded-xl font-medium shadow-lg active:scale-[0.98] transition-transform">保存</button>
+          </div>
+        </div>
+      )}
 
-            <div className="space-y-3">
-              {data.milestones.map((milestone) => (
-                <button
-                  key={milestone.id}
-                  type="button"
-                  onClick={() => beginMilestoneEdit(milestone)}
-                  className="w-full rounded-2xl border border-[var(--lm-border-soft)] bg-[rgba(247,241,227,0.45)] p-4 text-left transition hover:border-[var(--lm-border)] hover:bg-white"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.25em] text-[var(--lm-accent-deep)]">{milestone.date}</p>
-                      <h3 className="mt-2 text-lg font-semibold text-[var(--lm-text-strong)]">{milestone.title}</h3>
-                      <p className="lm-muted mt-1 text-sm">{milestone.desc || '还没有写备注'}</p>
-                    </div>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--lm-text)] shadow-sm">
-                      {formatMilestoneIcon(milestone.icon)}
-                    </span>
-                  </div>
-                </button>
+      {/* Settings */}
+      {settings && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/20" onClick={() => setSettings(false)} />
+          <div className="relative w-full sm:max-w-sm bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl p-5" style={{ animation: 'slideUp 0.3s ease-out' }}>
+            <div className="w-10 h-1 bg-amber-200 rounded-full mx-auto mb-4" />
+            <h3 className="text-base font-bold text-[#3d281c] mb-4 text-center" style={{ fontFamily: 'Noto Serif SC, serif' }}>设置纪念日</h3>
+            <input type="date" value={data.startDate} onChange={e => { void save({ ...data, startDate: e.target.value }, '已保存'); }} className="w-full bg-white border border-[#efd8c3]/60 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#d48b60] mb-4" />
+            <button onClick={() => setSettings(false)} className="w-full py-3 bg-[#3d281c] text-amber-50 rounded-xl font-medium shadow-lg active:scale-[0.98] transition-transform">完成</button>
+          </div>
+        </div>
+      )}
+
+      {/* Cover Menu */}
+      {coverMenu && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setCoverMenu(false)} />
+          <div className="relative w-full sm:max-w-sm mx-4 mb-4 sm:mb-0 bg-white rounded-2xl overflow-hidden shadow-xl" style={{ animation: 'slideUp 0.3s ease-out' }}>
+            <div className="py-2.5 px-4 border-b border-gray-100 text-center"><span className="text-xs text-gray-400 font-medium">Manage Cover</span></div>
+            <button onClick={() => { heroRef.current?.click(); setCoverMenu(false); }} className="w-full py-3 text-sm text-[#3d281c] border-b border-gray-100">🖼 更换封面</button>
+            {data.heroImage && <button onClick={() => { void save({ ...data, heroImage: '' }, '已恢复'); setCoverMenu(false); }} className="w-full py-3 text-sm text-red-500 border-b border-gray-100">🗑 恢复默认</button>}
+            <button onClick={() => setCoverMenu(false)} className="w-full py-3 text-sm text-gray-500">取消</button>
+          </div>
+        </div>
+      )}
+
+      {/* Gallery */}
+      {gallery && (
+        <div className="fixed inset-0 z-50 bg-[#fdfbf7] flex flex-col" style={{ animation: 'slideUp 0.3s ease-out' }}>
+          <div className="flex justify-between items-center px-4 py-3 border-b border-[#efd8c3]/30">
+            <button onClick={() => setGallery(false)} className="text-sm text-[#3d281c]">← 返回</button>
+            <span className="text-sm font-bold text-[#3d281c]" style={{ fontFamily: 'Noto Serif SC, serif' }}>甜蜜瞬间</span>
+            <button onClick={() => fileRef.current?.click()} className="text-sm text-[#aa6f4d]">+ 添加</button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-2">
+            <div className="grid grid-cols-3 gap-1">
+              {data.photos.map(p => (
+                <div key={p.uploadedAt} className="relative aspect-square bg-amber-50 cursor-pointer group" onClick={() => { setViewPhoto(p); setGallery(false); }}>
+                  <img src={p.thumbUrl || p.url} alt="" loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                  <button disabled={deleting === p.url} onClick={e => { e.stopPropagation(); void onDelPhoto(p); }} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/50 text-white text-xs opacity-0 group-hover:opacity-100 flex items-center justify-center">✕</button>
+                </div>
               ))}
             </div>
-
-            <div className="mt-5 rounded-[24px] border border-dashed border-[var(--lm-border)] bg-white/80 p-4">
-              <div className="mb-3 flex flex-wrap gap-2">
-                {MILESTONE_ICONS.map((iconItem) => {
-                  const selected = milestoneDraft.icon === iconItem.id;
-                  return (
-                    <button
-                      key={iconItem.id}
-                      type="button"
-                      onClick={() => setMilestoneDraft((current) => ({ ...current, icon: iconItem.id }))}
-                      className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                        selected
-                          ? 'lm-primary-btn'
-                          : 'lm-secondary-btn'
-                      }`}
-                    >
-                      {iconItem.label}
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="grid gap-3">
-                <input
-                  type="text"
-                  placeholder="里程碑标题"
-                  value={milestoneDraft.title}
-                  onChange={(event) => setMilestoneDraft((current) => ({ ...current, title: event.target.value }))}
-                  className="lm-input rounded-2xl px-4 py-3 outline-none"
-                />
-                <input
-                  type="date"
-                  value={milestoneDraft.date}
-                  onChange={(event) => setMilestoneDraft((current) => ({ ...current, date: event.target.value }))}
-                  className="lm-input rounded-2xl px-4 py-3 outline-none"
-                />
-                <input
-                  type="text"
-                  placeholder="一句备注"
-                  value={milestoneDraft.desc}
-                  onChange={(event) => setMilestoneDraft((current) => ({ ...current, desc: event.target.value }))}
-                  className="lm-input rounded-2xl px-4 py-3 outline-none"
-                />
-              </div>
-              <div className="mt-4 flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => void submitMilestone()}
-                  className="lm-primary-btn rounded-full px-4 py-2 text-sm font-semibold transition"
-                >
-                  {editingMilestone ? '更新' : '保存'}
-                </button>
-                {editingMilestone ? (
-                  <button
-                    type="button"
-                    onClick={() => void deleteMilestone(editingMilestone.id)}
-                    className="rounded-full border border-red-200 px-4 py-2 text-sm font-semibold text-red-500 transition hover:bg-red-50"
-                  >
-                    删除
-                  </button>
-                ) : null}
-              </div>
-            </div>
-          </section>
-        </div>
-      </section>
-
-      {selectedPhoto ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4" onClick={() => setSelectedPhoto(null)}>
-          <button
-            type="button"
-            className="absolute right-5 top-5 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm"
-            onClick={() => setSelectedPhoto(null)}
-          >
-            关闭
-          </button>
-          <img
-            src={selectedPhoto.displayUrl || selectedPhoto.url}
-            alt="Selected memory"
-            className="max-h-[88vh] max-w-[94vw] rounded-[24px] object-contain shadow-2xl md:max-w-[90vw] md:rounded-[28px]"
-          />
-        </div>
-      ) : null}
-
-      {galleryOpen ? (
-        <div className="fixed inset-0 z-40 flex flex-col bg-[#fffaf3]">
-          <div className="flex items-center justify-between border-b border-amber-100 bg-white/90 px-3 py-4 backdrop-blur-sm md:px-4">
-            <button
-              type="button"
-              onClick={() => setGalleryOpen(false)}
-              className="rounded-full border border-amber-200 px-4 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-50"
-            >
-              关闭
-            </button>
-            <p className="font-serif text-lg font-semibold text-amber-950">甜蜜瞬间</p>
-            <label className="lm-primary-btn cursor-pointer rounded-full px-3 py-2 text-sm font-semibold transition md:px-4">
-              {isUploading ? '上传中...' : '添加'}
-              <input type="file" multiple accept="image/*" className="hidden" onChange={handlePhotoUpload} />
-            </label>
-          </div>
-
-          <div className="grid flex-1 grid-cols-2 gap-2 overflow-y-auto p-3 sm:grid-cols-3 lg:grid-cols-4">
-            {data.photos.map((photo) => {
-              const deleting = deletingPhotoUrl === photo.url;
-              return (
-                <div key={`gallery-${photo.uploadedAt}`} className="relative overflow-hidden rounded-2xl bg-[var(--lm-bg-soft)]">
-                  <button type="button" className="block w-full" onClick={() => setSelectedPhoto(photo)}>
-                    <img
-                      src={photo.thumbUrl || photo.displayUrl || photo.url}
-                      alt="Moment"
-                      loading="lazy"
-                      className="aspect-square h-full w-full object-cover"
-                    />
-                  </button>
-                  <button
-                    type="button"
-                    disabled={deleting}
-                    onClick={() => void handleDeletePhoto(photo)}
-                    className="absolute right-2 top-2 rounded-full bg-black/45 px-2 py-1 text-[11px] font-semibold text-white transition hover:bg-black/60 disabled:opacity-40"
-                  >
-                    {deleting ? '...' : '删除'}
-                  </button>
-                </div>
-              );
-            })}
+            {data.photos.length === 0 && <p className="text-center text-[#aa6f4d] text-sm py-20">还没有照片</p>}
           </div>
         </div>
-      ) : null}
+      )}
 
-      {toast ? (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-amber-950 px-4 py-2 text-sm font-semibold text-amber-50 shadow-lg">
-          {toast}
+      {/* Lightbox */}
+      {viewPhoto && (
+        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center" onClick={() => setViewPhoto(null)}>
+          <button className="absolute top-4 right-4 text-white text-xl" onClick={() => setViewPhoto(null)}>✕</button>
+          <img src={viewPhoto.displayUrl || viewPhoto.url} alt="" className="max-w-full max-h-full object-contain" onClick={e => e.stopPropagation()} />
         </div>
-      ) : null}
-    </main>
+      )}
+
+      {toast && <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-[#3d281c] text-amber-50 text-xs px-4 py-2 rounded-full shadow-lg">{toast}</div>}
+    </>
   );
 }

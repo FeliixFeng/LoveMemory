@@ -29,7 +29,7 @@ model Milestone {
 
 model Photo {
   id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  url        String   @db.Text
+  url        String   @db.VarChar(500)
   displayUrl String   @map("display_url") @db.Text
   thumbUrl   String   @map("thumb_url") @db.Text
   filename   String   @default("") @db.VarChar(255)

@@ -1,12 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  images: {
-    remotePatterns: [
+  async rewrites() {
+    return [
       {
-        protocol: 'https',
-        hostname: 'images.unsplash.com'
+        source: '/uploads/:path*',
+        destination: 'https://lovexin.felixfeng.online/uploads/:path*'
       }
-    ]
+    ];
   }
 };
 
