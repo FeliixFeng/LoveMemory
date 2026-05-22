@@ -6,7 +6,12 @@ type Milestone = { id: number | string; date: string; title: string; desc: strin
 type Photo = { url: string; displayUrl?: string; thumbUrl?: string; filename?: string; mimeType?: string; size?: number; uploadedAt: string };
 type AppData = { startDate: string; heroImage: string; milestones: Milestone[]; photos: Photo[] };
 
-const HERO_IMAGES = ['/hero/1.jpg', '/hero/2.jpg', '/hero/3.jpg', '/hero/4.jpg'];
+const HERO_IMAGES = [
+  'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/hero/1.jpg',
+  'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/hero/2.jpg',
+  'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/hero/3.jpg',
+  'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/hero/4.jpg'
+];
 const ICONS = [
   { id: 'heart', emoji: '💕', label: '心动' },
   { id: 'airplane', emoji: '✈️', label: '旅行' },

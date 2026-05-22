@@ -1,13 +1,4 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  async rewrites() {
-    return [
-      {
-        source: '/uploads/:path*',
-        destination: 'https://lovexin.felixfeng.online/uploads/:path*'
-      }
-    ];
-  }
-};
+const nextConfig = {};
 
 export default nextConfig;

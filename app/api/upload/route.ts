@@ -5,6 +5,7 @@ import sharp from 'sharp';
 import { NextResponse } from 'next/server.js';
 import { createPhotoWithPrisma, deletePhotoWithPrisma } from '../../lib/app-data.ts';
 import { getStorageDriver, getUploadDir } from '../../lib/env.ts';
+import { uploadToOss, deleteFromOss, getOssUrl, getOssClient } from '../../lib/oss.ts';
 
 const uploadDir = getUploadDir();
 
@@ -40,18 +41,28 @@ export async function POST(request: Request) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const filename = buildFilename(file.name);
-    const filePath = path.join(uploadDir, filename);
     const thumbFilename = buildThumbFilename(filename);
-    const thumbPath = path.join(uploadDir, thumbFilename);
 
-    await fs.writeFile(filePath, buffer);
-    await sharp(buffer)
+    const thumbBuffer = await sharp(buffer)
       .resize({ width: 480, height: 480, fit: 'inside', withoutEnlargement: true })
-      .toFile(thumbPath);
+      .toBuffer();
 
-    const url = `/uploads/${filename}`;
+    let url: string;
+    let thumbUrl: string;
+
+    if (getOssClient()) {
+      url = await uploadToOss(filename, buffer, file.type);
+      thumbUrl = await uploadToOss(thumbFilename, thumbBuffer, file.type);
+    } else {
+      const filePath = path.join(uploadDir, filename);
+      const thumbPath = path.join(uploadDir, thumbFilename);
+      await fs.writeFile(filePath, buffer);
+      await fs.writeFile(thumbPath, thumbBuffer);
+      url = `/uploads/${filename}`;
+      thumbUrl = `/uploads/${thumbFilename}`;
+    }
+
     const displayUrl = url;
-    const thumbUrl = `/uploads/${thumbFilename}`;
     const uploadedPhoto = getStorageDriver() === 'mysql'
       ? await createPhotoWithPrisma({
           url,
@@ -84,24 +95,30 @@ export async function DELETE(request: Request) {
   try {
     await ensureUploadDir();
     const { url } = (await request.json()) as { url?: string };
-    if (!url || typeof url !== 'string' || !url.startsWith('/uploads/')) {
+    if (!url || typeof url !== 'string') {
       return NextResponse.json({ error: 'Invalid photo url' }, { status: 400 });
     }
 
     const filename = path.basename(url);
-    const filePath = path.join(uploadDir, filename);
-    const thumbPath = path.join(uploadDir, buildThumbFilename(filename));
+    const thumbFilename = buildThumbFilename(filename);
 
     if (getStorageDriver() === 'mysql') {
       await deletePhotoWithPrisma(url);
     }
 
-    await fs.unlink(filePath).catch((error) => {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-    });
-    await fs.unlink(thumbPath).catch((error) => {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-    });
+    if (getOssClient()) {
+      await deleteFromOss(filename);
+      await deleteFromOss(thumbFilename);
+    } else {
+      const filePath = path.join(uploadDir, filename);
+      const thumbPath = path.join(uploadDir, thumbFilename);
+      await fs.unlink(filePath).catch((error) => {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      });
+      await fs.unlink(thumbPath).catch((error) => {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      });
+    }
 
     return NextResponse.json({ success: true, filename });
   } catch (error) {
