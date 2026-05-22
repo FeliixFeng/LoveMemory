@@ -146,7 +146,7 @@ export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise
       : currentData.milestones
   };
 
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: any) => {
     await tx.settings.upsert({
       where: { id: 1 },
       create: {
