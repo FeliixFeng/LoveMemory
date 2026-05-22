@@ -13,6 +13,9 @@ RUN npm ci
 # 复制项目源代码
 COPY . .
 
+# Generate Prisma client
+RUN npx prisma generate
+
 # 构建 Next.js 应用
 RUN npm run build
 
