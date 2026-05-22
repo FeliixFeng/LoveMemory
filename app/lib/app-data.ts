@@ -67,14 +67,14 @@ export async function readAppDataWithPrisma(): Promise<AppData> {
   return {
     startDate: settings?.startDate || '',
     heroImage: settings?.heroImage || '',
-    milestones: milestones.map((item) => ({
+    milestones: milestones.map((item: any) => ({
       id: normalizeMilestoneId(item.id),
       date: item.date,
       title: item.title,
       desc: item.description,
       icon: item.icon
     })),
-    photos: photos.map((item) =>
+    photos: photos.map((item: any) =>
       normalizePhoto({
         url: item.url,
         displayUrl: item.displayUrl,
