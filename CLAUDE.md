@@ -25,7 +25,7 @@ No linter or formatter is configured.
 
 **API routes** under `app/api/`:
 - `data/route.ts` — GET/POST all app data (settings, milestones, photos)
-- `upload/route.ts` — POST upload image + auto-generate 480x480 thumbnail via sharp; DELETE removes both files
+- `upload/route.ts` — POST upload image to OSS + auto-generate 480x480 thumbnail; DELETE removes from OSS
 - `health/route.ts` — GET runtime health check
 
 **Data access** goes through `app/lib/app-data.ts` — do not add direct Prisma/SQL calls elsewhere. This layer handles branching between MySQL and JSON fallback based on `STORAGE_DRIVER` env var.
@@ -34,27 +34,27 @@ No linter or formatter is configured.
 - `mysql` (primary) — Prisma ORM, schema at `prisma/schema.prisma`, singleton client at `app/lib/prisma.ts`
 - `json` (fallback) — reads/writes `data/db.json`
 
-**Image contract:** Photos have three URLs — `url` (original), `displayUrl` (lightbox), `thumbUrl` (gallery/grid). Thumbnails get a `_thumb` suffix. When changing upload behavior, keep delete in sync.
+**Image storage:** Alibaba Cloud OSS (`app/lib/oss.ts`). Photos have three URLs — `url` (original), `displayUrl` (lightbox), `thumbUrl` (gallery/grid). When changing upload behavior, keep delete in sync.
 
-**Styling:** Tailwind CSS loaded via CDN `<Script>` tag in `app/layout.tsx` (no PostCSS/tailwind.config). Custom CSS variables and utility classes (`.lm-card`, `.lm-primary-btn`, etc.) in `app/globals.css`.
+**Styling:** Tailwind CSS v4 via PostCSS build (`postcss.config.mjs`). Custom CSS variables and utility classes in `app/globals.css`.
 
 ## Conventions
 
 - All data changes must go through `app/lib/app-data.ts`
 - Preserve the data contract between frontend and API — update both together
 - Keep edits minimal and scoped
-- The `src/`, `legacy-src/`, `legacy-public/` directories are empty remnants — ignore them
+- Never commit `.env.local` or credentials
 
 ## Environment
 
 Key env vars (see `.env.example`):
 - `STORAGE_DRIVER` — `mysql` or `json`
 - `DATABASE_URL` or individual `MYSQL_HOST/PORT/DATABASE/USER/PASSWORD`
-- `UPLOAD_DIR` — defaults to `./public/uploads`
+- `OSS_REGION`, `OSS_BUCKET`, `OSS_ACCESS_KEY_ID`, `OSS_ACCESS_KEY_SECRET`, `OSS_ENDPOINT`
 
 ## Deployment
 
-GitHub Actions (`.github/workflows/deploy.yml`) rsyncs to server, runs `docker-compose up -d --build`, verifies via `curl /api/health`. Server env file: `.env.production`. Volumes mount `public/uploads` and `data/` for persistence.
+GitHub Actions (`.github/workflows/deploy.yml`) rsyncs to server, runs `docker-compose up -d --build`, verifies via `curl /api/health`. Server env file: `.env.production`.
 
 ## Verification
 
