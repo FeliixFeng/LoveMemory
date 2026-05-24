@@ -61,16 +61,22 @@ export async function POST(request: Request) {
     }
 
     const displayUrl = url;
-    const uploadedPhoto = getStorageDriver() === 'mysql'
-      ? await createPhotoWithPrisma({
+    let uploadedPhoto;
+
+    if (getStorageDriver() === 'mysql') {
+      try {
+        uploadedPhoto = await createPhotoWithPrisma({
           url,
           displayUrl,
           thumbUrl,
           filename,
           mimeType: file.type,
           size: file.size
-        })
-      : {
+        });
+      } catch (dbError) {
+        console.error('Database save error:', dbError);
+        // Still return success since OSS upload succeeded
+        uploadedPhoto = {
           url,
           displayUrl,
           thumbUrl,
@@ -78,6 +84,17 @@ export async function POST(request: Request) {
           mimeType: file.type,
           size: file.size
         };
+      }
+    } else {
+      uploadedPhoto = {
+        url,
+        displayUrl,
+        thumbUrl,
+        filename,
+        mimeType: file.type,
+        size: file.size
+      };
+    }
 
     return NextResponse.json({
       success: true,
