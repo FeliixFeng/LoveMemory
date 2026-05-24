@@ -135,7 +135,7 @@ export function LoveMemoryClient() {
 
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#fdfbf7]/90 border-b border-[#efd8c3]/30 px-4 py-3">
-        <div className="max-w-lg mx-auto flex justify-between items-center">
+        <div className="max-w-lg md:max-w-2xl lg:max-w-3xl mx-auto flex justify-between items-center">
           <div className="flex flex-col">
             <span className="text-[10px] font-bold tracking-[0.2em] text-[#aa6f4d] uppercase" style={{ fontFamily: 'Playfair Display, serif' }}>TODAY</span>
             <span className="text-sm font-semibold text-[#3d281c]">{new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
@@ -148,9 +148,9 @@ export function LoveMemoryClient() {
         </div>
       </nav>
 
-      <main className="max-w-lg mx-auto pt-20 pb-24 px-4 flex flex-col gap-6">
+      <main className="max-w-lg md:max-w-2xl lg:max-w-3xl mx-auto pt-20 pb-24 px-4 flex flex-col gap-6">
         {/* Hero */}
-        <section className="relative rounded-3xl overflow-hidden shadow-lg" style={{ aspectRatio: '3.5/4.5', animation: 'slideUp 0.6s ease-out' }}>
+        <section className="relative rounded-3xl overflow-hidden shadow-lg aspect-[3.5/4.5] md:aspect-[4/3] lg:aspect-[16/9]" style={{ animation: 'slideUp 0.6s ease-out' }}>
           {heroImages.map((img, i) => <img key={i} src={img} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: heroIdx === i ? 1 : 0, transition: 'opacity 1.5s' }} />)}
           <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
           <button className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/20 text-white text-sm flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity" onClick={() => setCoverMenu(true)}>✏</button>
@@ -207,29 +207,17 @@ export function LoveMemoryClient() {
               <span className="text-3xl mb-2">📷</span><span className="text-sm">上传第一张照片</span>
             </div>
           ) : (
-            <div className="flex gap-2 items-start">
-              <div className="flex flex-col gap-2 w-1/2">
-                {leftPhotos.map(p => (
-                  <div key={p.uploadedAt} className="relative rounded-2xl overflow-hidden cursor-pointer group bg-amber-50" onClick={() => setViewPhoto(p)}>
-                    <img src={p.thumbUrl || p.url} alt="" loading="lazy" className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3">
-                      <button disabled={deleting === p.url} onClick={e => { e.stopPropagation(); void onDelPhoto(p); }} className="w-7 h-7 rounded-full bg-white/90 text-red-500 text-xs flex items-center justify-center">🗑</button>
-                    </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {data.photos.map(p => (
+                <div key={p.uploadedAt} className="relative rounded-2xl overflow-hidden cursor-pointer group bg-amber-50" onClick={() => setViewPhoto(p)}>
+                  <img src={p.thumbUrl || p.url} alt="" loading="lazy" className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3">
+                    <button disabled={deleting === p.url} onClick={e => { e.stopPropagation(); void onDelPhoto(p); }} className="w-7 h-7 rounded-full bg-white/90 text-red-500 text-xs flex items-center justify-center">🗑</button>
                   </div>
-                ))}
-              </div>
-              <div className="flex flex-col gap-2 w-1/2">
-                {rightPhotos.map(p => (
-                  <div key={p.uploadedAt} className="relative rounded-2xl overflow-hidden cursor-pointer group bg-amber-50" onClick={() => setViewPhoto(p)}>
-                    <img src={p.thumbUrl || p.url} alt="" loading="lazy" className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3">
-                      <button disabled={deleting === p.url} onClick={e => { e.stopPropagation(); void onDelPhoto(p); }} className="w-7 h-7 rounded-full bg-white/90 text-red-500 text-xs flex items-center justify-center">🗑</button>
-                    </div>
-                  </div>
-                ))}
-                <div className="aspect-square rounded-2xl border-2 border-dashed border-[#efd8c3]/60 flex flex-col items-center justify-center cursor-pointer hover:bg-amber-50/50" onClick={() => fileRef.current?.click()}>
-                  <span className="text-[#aa6f4d] text-lg">+</span><span className="text-[10px] text-[#aa6f4d]">Add</span>
                 </div>
+              ))}
+              <div className="aspect-square rounded-2xl border-2 border-dashed border-[#efd8c3]/60 flex flex-col items-center justify-center cursor-pointer hover:bg-amber-50/50" onClick={() => fileRef.current?.click()}>
+                <span className="text-[#aa6f4d] text-lg">+</span><span className="text-[10px] text-[#aa6f4d]">Add</span>
               </div>
             </div>
           )}
@@ -296,7 +284,7 @@ export function LoveMemoryClient() {
             <button onClick={() => fileRef.current?.click()} className="text-sm text-[#aa6f4d]">+ 添加</button>
           </div>
           <div className="flex-1 overflow-y-auto p-2">
-            <div className="grid grid-cols-3 gap-1">
+            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
               {data.photos.map(p => (
                 <div key={p.uploadedAt} className="relative aspect-square bg-amber-50 cursor-pointer group" onClick={() => { setViewPhoto(p); setGallery(false); }}>
                   <img src={p.thumbUrl || p.url} alt="" loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
