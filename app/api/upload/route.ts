@@ -15,9 +15,7 @@ function buildFilename(originalName: string) {
 }
 
 function buildThumbFilename(filename: string) {
-  const extension = path.extname(filename);
-  const name = filename.slice(0, filename.length - extension.length);
-  return `${name}_thumb${extension}`;
+  return `thumbs/${filename}`;
 }
 
 async function ensureUploadDir() {
