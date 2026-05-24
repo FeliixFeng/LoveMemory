@@ -60,6 +60,8 @@ export function LoveMemoryClient() {
   const [viewPhoto, setViewPhoto] = useState<Photo | null>(null);
   const [gallery, setGallery] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<Photo | null>(null);
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [editMs, setEditMs] = useState<Milestone | null>(null);
   const [msDraft, setMsDraft] = useState({ date: new Date().toISOString().split('T')[0], title: '', desc: '', icon: 'heart' });
   const [msModal, setMsModal] = useState(false);
@@ -129,6 +131,21 @@ export function LoveMemoryClient() {
 
   function onDragStart(index: number) { setDragIndex(index); }
   function onDragOver(e: React.DragEvent) { e.preventDefault(); }
+  function onLongPressStart(p: Photo) {
+    const timer = setTimeout(() => setDeleteConfirm(p), 500);
+    setLongPressTimer(timer);
+  }
+  function onLongPressEnd() {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  }
+  async function confirmDelete() {
+    if (!deleteConfirm) return;
+    await onDelPhoto(deleteConfirm);
+    setDeleteConfirm(null);
+  }
   function onDrop(targetIndex: number) {
     if (dragIndex === null || dragIndex === targetIndex) return;
     const photos = [...data.photos];
@@ -280,9 +297,12 @@ export function LoveMemoryClient() {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               {data.photos.map((p, idx) => (
-                <div key={p.uploadedAt} draggable onDragStart={() => onDragStart(idx)} onDragOver={onDragOver} onDrop={() => onDrop(idx)} className={`relative aspect-square rounded-2xl overflow-hidden cursor-pointer group bg-amber-50 transition-opacity ${dragIndex === idx ? 'opacity-50' : ''}`} onClick={() => setViewPhoto(p)}>
+                <div key={p.uploadedAt} draggable onDragStart={() => onDragStart(idx)} onDragOver={onDragOver} onDrop={() => onDrop(idx)} className={`relative aspect-square rounded-2xl overflow-hidden cursor-pointer group bg-amber-50 transition-opacity ${dragIndex === idx ? 'opacity-50' : ''}`} onClick={() => setViewPhoto(p)} onTouchStart={() => onLongPressStart(p)} onTouchEnd={onLongPressEnd} onMouseDown={() => onLongPressStart(p)} onMouseUp={onLongPressEnd} onMouseLeave={onLongPressEnd}>
                   <img src={p.thumbUrl || p.url} alt="" loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                  <button disabled={deleting === p.url} onClick={e => { e.stopPropagation(); void onDelPhoto(p); }} className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/50 text-white text-xs flex items-center justify-center opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-opacity">✕</button>
+                  {/* Desktop: show delete button on hover at bottom center */}
+                  <div className="hidden md:flex absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity items-end justify-center pb-3">
+                    <button disabled={deleting === p.url} onClick={e => { e.stopPropagation(); setDeleteConfirm(p); }} className="w-7 h-7 rounded-full bg-white/90 text-red-500 text-xs flex items-center justify-center">🗑</button>
+                  </div>
                 </div>
               ))}
               <div className="aspect-square rounded-2xl border-2 border-dashed border-[#efd8c3]/60 flex flex-col items-center justify-center cursor-pointer hover:bg-amber-50/50" onClick={() => fileRef.current?.click()}>
@@ -377,6 +397,25 @@ export function LoveMemoryClient() {
             </>
           )}
           <img src={viewPhoto.displayUrl || viewPhoto.url} alt="" className="max-w-full max-h-full object-contain" onClick={e => e.stopPropagation()} />
+        </div>
+      )}
+
+      {/* Delete Confirmation */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setDeleteConfirm(null)} />
+          <div className="relative w-full sm:max-w-sm bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl p-5" style={{ animation: 'slideUp 0.3s ease-out' }}>
+            <div className="w-10 h-1 bg-amber-200 rounded-full mx-auto mb-4 sm:hidden" />
+            <h3 className="text-base font-bold text-[#3d281c] mb-2 text-center" style={{ fontFamily: 'Noto Serif SC, serif' }}>确认删除</h3>
+            <p className="text-sm text-[#aa6f4d] text-center mb-4">确定要删除这张照片吗？删除后无法恢复。</p>
+            <div className="aspect-square rounded-xl overflow-hidden mb-4 max-w-[200px] mx-auto">
+              <img src={deleteConfirm.thumbUrl || deleteConfirm.url} alt="" className="w-full h-full object-cover" />
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-3 bg-white border border-[#efd8c3] text-[#3d281c] rounded-xl font-medium">取消</button>
+              <button onClick={void confirmDelete} className="flex-1 py-3 bg-red-500 text-white rounded-xl font-medium">删除</button>
+            </div>
+          </div>
         </div>
       )}
 
