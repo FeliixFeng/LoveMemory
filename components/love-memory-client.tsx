@@ -115,6 +115,14 @@ export function LoveMemoryClient() {
   }
   async function deleteMs() { if (!editMs) return; await save({ ...data, milestones: data.milestones.filter(m => m.id !== editMs.id) }, '已删除'); setMsModal(false); setEditMs(null); }
 
+  const currentPhotoIndex = viewPhoto ? data.photos.findIndex(p => p.url === viewPhoto.url) : -1;
+  function goToPhoto(index: number) {
+    const len = data.photos.length;
+    if (len === 0) return;
+    const next = (index + len) % len;
+    setViewPhoto(data.photos[next]);
+  }
+
   if (loading) return <main className="flex min-h-screen items-center justify-center"><div className="lm-card rounded-full px-6 py-3 text-sm font-medium text-[#5c3d2a]"><span className="mr-2">💕</span>加载中...</div></main>;
 
   const leftPhotos = data.photos.filter((_, i) => i % 2 === 0);
@@ -135,7 +143,7 @@ export function LoveMemoryClient() {
 
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#fdfbf7]/90 border-b border-[#efd8c3]/30 px-4 py-3">
-        <div className="max-w-lg md:max-w-2xl lg:max-w-3xl mx-auto flex justify-between items-center">
+        <div className="max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto flex justify-between items-center">
           <div className="flex flex-col">
             <span className="text-[10px] font-bold tracking-[0.2em] text-[#aa6f4d] uppercase" style={{ fontFamily: 'Playfair Display, serif' }}>TODAY</span>
             <span className="text-sm font-semibold text-[#3d281c]">{new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
@@ -148,7 +156,7 @@ export function LoveMemoryClient() {
         </div>
       </nav>
 
-      <main className="max-w-lg md:max-w-2xl lg:max-w-3xl mx-auto pt-20 pb-24 px-4 flex flex-col gap-6">
+      <main className="max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto pt-20 pb-24 px-4 md:px-8 flex flex-col gap-6">
         {/* Hero */}
         <section className="relative rounded-3xl overflow-hidden shadow-lg aspect-[3.5/4.5] md:aspect-[4/3] lg:aspect-[16/9]" style={{ animation: 'slideUp 0.6s ease-out' }}>
           {heroImages.map((img, i) => <img key={i} src={img} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: heroIdx === i ? 1 : 0, transition: 'opacity 1.5s' }} />)}
@@ -209,8 +217,8 @@ export function LoveMemoryClient() {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               {data.photos.map(p => (
-                <div key={p.uploadedAt} className="relative rounded-2xl overflow-hidden cursor-pointer group bg-amber-50" onClick={() => setViewPhoto(p)}>
-                  <img src={p.thumbUrl || p.url} alt="" loading="lazy" className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105" />
+                <div key={p.uploadedAt} className="relative aspect-square rounded-2xl overflow-hidden cursor-pointer group bg-amber-50" onClick={() => setViewPhoto(p)}>
+                  <img src={p.thumbUrl || p.url} alt="" loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3">
                     <button disabled={deleting === p.url} onClick={e => { e.stopPropagation(); void onDelPhoto(p); }} className="w-7 h-7 rounded-full bg-white/90 text-red-500 text-xs flex items-center justify-center">🗑</button>
                   </div>
@@ -300,7 +308,13 @@ export function LoveMemoryClient() {
       {/* Lightbox */}
       {viewPhoto && (
         <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center" onClick={() => setViewPhoto(null)}>
-          <button className="absolute top-4 right-4 text-white text-xl" onClick={() => setViewPhoto(null)}>✕</button>
+          <button className="absolute top-4 right-4 text-white text-xl z-10" onClick={() => setViewPhoto(null)}>✕</button>
+          {data.photos.length > 1 && (
+            <>
+              <button className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 text-white text-lg flex items-center justify-center hover:bg-white/40 transition-colors z-10" onClick={e => { e.stopPropagation(); goToPhoto(currentPhotoIndex - 1); }}>‹</button>
+              <button className="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 text-white text-lg flex items-center justify-center hover:bg-white/40 transition-colors z-10" onClick={e => { e.stopPropagation(); goToPhoto(currentPhotoIndex + 1); }}>›</button>
+            </>
+          )}
           <img src={viewPhoto.displayUrl || viewPhoto.url} alt="" className="max-w-full max-h-full object-contain" onClick={e => e.stopPropagation()} />
         </div>
       )}
