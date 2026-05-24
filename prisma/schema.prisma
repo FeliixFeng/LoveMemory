@@ -35,9 +35,19 @@ model Photo {
   filename   String   @default("") @db.VarChar(255)
   mimeType   String   @default("") @map("mime_type") @db.VarChar(100)
   fileSize   Int      @default(0) @map("file_size") @db.UnsignedInt
+  sortOrder  Int      @default(0) @map("sort_order") @db.Int
   uploadedAt String   @map("uploaded_at") @db.VarChar(40)
   createdAt  DateTime @default(now()) @map("created_at")
 
   @@unique([url], map: "photos_url_unique")
   @@map("photos")
+}
+
+model LoveQuote {
+  id        Int      @id @default(autoincrement())
+  content   String   @db.Text
+  sortOrder Int      @default(0) @map("sort_order") @db.Int
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("love_quotes")
 }

@@ -21,18 +21,31 @@ export type AppPhoto = {
   uploadedAt: string;
 };
 
+export type AppLoveQuote = {
+  id: number;
+  content: string;
+};
+
 export type AppData = {
   startDate: string;
   heroImage: string;
   milestones: AppMilestone[];
   photos: AppPhoto[];
+  loveQuotes: AppLoveQuote[];
 };
 
 export const DEFAULT_APP_DATA: AppData = {
   startDate: '',
   heroImage: '',
   milestones: [],
-  photos: []
+  photos: [],
+  loveQuotes: [
+    { id: 1, content: '余生请多指教' },
+    { id: 2, content: '你是我最美丽的意外' },
+    { id: 3, content: '每天都是情人节' },
+    { id: 4, content: '和你在一起，每天都很特别' },
+    { id: 5, content: '你是我最好的选择' }
+  ]
 };
 
 const dataFile = getDataFilePath();
@@ -58,10 +71,11 @@ function normalizePhoto(photo: Partial<AppPhoto> & { url?: string }) {
 }
 
 export async function readAppDataWithPrisma(): Promise<AppData> {
-  const [settings, milestones, photos] = await Promise.all([
+  const [settings, milestones, photos, loveQuotes] = await Promise.all([
     prisma.settings.findUnique({ where: { id: 1 } }),
     prisma.milestone.findMany({ orderBy: [{ date: 'desc' }, { createdAt: 'desc' }] }),
-    prisma.photo.findMany({ orderBy: { id: 'desc' } })
+    prisma.photo.findMany({ orderBy: [{ sortOrder: 'asc' }, { id: 'desc' }] }),
+    prisma.loveQuote.findMany({ orderBy: { sortOrder: 'asc' } })
   ]);
 
   return {
@@ -84,7 +98,11 @@ export async function readAppDataWithPrisma(): Promise<AppData> {
         size: item.fileSize,
         uploadedAt: item.uploadedAt
       })
-    )
+    ),
+    loveQuotes: loveQuotes.map((item: any) => ({
+      id: item.id,
+      content: item.content
+    }))
   };
 }
 
@@ -112,7 +130,8 @@ export async function readAppDataFromJson(): Promise<AppData> {
     ...DEFAULT_APP_DATA,
     ...parsed,
     milestones: Array.isArray(parsed.milestones) ? parsed.milestones : [],
-    photos: Array.isArray(parsed.photos) ? parsed.photos.map((photo: AppPhoto) => normalizePhoto(photo)) : []
+    photos: Array.isArray(parsed.photos) ? parsed.photos.map((photo: AppPhoto) => normalizePhoto(photo)) : [],
+    loveQuotes: Array.isArray(parsed.loveQuotes) ? parsed.loveQuotes : DEFAULT_APP_DATA.loveQuotes
   };
 }
 
@@ -125,7 +144,8 @@ export async function writeAppDataToJson(payload: Partial<AppData>): Promise<App
     milestones: Array.isArray(payload.milestones) ? payload.milestones : currentData.milestones,
     photos: Array.isArray(payload.photos)
       ? payload.photos.map((photo) => normalizePhoto(photo))
-      : currentData.photos
+      : currentData.photos,
+    loveQuotes: Array.isArray(payload.loveQuotes) ? payload.loveQuotes : currentData.loveQuotes
   };
 
   await fs.writeFile(dataFile, JSON.stringify(nextData, null, 2));
@@ -143,7 +163,10 @@ export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise
       : currentData.photos,
     milestones: Array.isArray(payload.milestones)
       ? payload.milestones
-      : currentData.milestones
+      : currentData.milestones,
+    loveQuotes: Array.isArray(payload.loveQuotes)
+      ? payload.loveQuotes
+      : currentData.loveQuotes
   };
 
   await prisma.$transaction(async (tx: any) => {
@@ -159,6 +182,34 @@ export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise
         heroImage: nextData.heroImage || ''
       }
     });
+
+    if (Array.isArray(payload.loveQuotes)) {
+      const ids = nextData.loveQuotes.map((item) => item.id);
+
+      if (ids.length > 0) {
+        await tx.loveQuote.deleteMany({
+          where: { id: { notIn: ids } }
+        });
+      } else {
+        await tx.loveQuote.deleteMany();
+      }
+
+      for (let i = 0; i < nextData.loveQuotes.length; i++) {
+        const quote = nextData.loveQuotes[i];
+        await tx.loveQuote.upsert({
+          where: { id: quote.id },
+          create: {
+            id: quote.id,
+            content: quote.content,
+            sortOrder: i
+          },
+          update: {
+            content: quote.content,
+            sortOrder: i
+          }
+        });
+      }
+    }
 
     if (Array.isArray(payload.milestones)) {
       const ids = nextData.milestones.map((item) => String(item.id));
@@ -202,7 +253,8 @@ export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise
         await tx.photo.deleteMany();
       }
 
-      for (const photo of nextData.photos) {
+      for (let i = 0; i < nextData.photos.length; i++) {
+        const photo = nextData.photos[i];
         const existing = await tx.photo.findFirst({
           where: { url: photo.url },
           select: { id: true }
@@ -217,6 +269,7 @@ export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise
               filename: photo.filename,
               mimeType: photo.mimeType,
               fileSize: photo.size,
+              sortOrder: i,
               uploadedAt: photo.uploadedAt
             }
           });
@@ -231,6 +284,7 @@ export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise
             filename: photo.filename,
             mimeType: photo.mimeType,
             fileSize: photo.size,
+            sortOrder: i,
             uploadedAt: photo.uploadedAt
           }
         });
@@ -243,6 +297,7 @@ export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise
 
 export async function createPhotoWithPrisma(photo: Partial<AppPhoto> & { url: string }): Promise<AppPhoto> {
   const normalized = normalizePhoto(photo);
+  const count = await prisma.photo.count();
 
   await prisma.photo.create({
     data: {
@@ -252,6 +307,7 @@ export async function createPhotoWithPrisma(photo: Partial<AppPhoto> & { url: st
       filename: normalized.filename,
       mimeType: normalized.mimeType,
       fileSize: normalized.size,
+      sortOrder: count,
       uploadedAt: normalized.uploadedAt
     }
   });

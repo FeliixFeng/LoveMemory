@@ -4,13 +4,16 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 type Milestone = { id: number | string; date: string; title: string; desc: string; icon: string };
 type Photo = { url: string; displayUrl?: string; thumbUrl?: string; filename?: string; mimeType?: string; size?: number; uploadedAt: string };
-type AppData = { startDate: string; heroImage: string; milestones: Milestone[]; photos: Photo[] };
+type LoveQuote = { id: number; content: string };
+type AppData = { startDate: string; heroImage: string; milestones: Milestone[]; photos: Photo[]; loveQuotes: LoveQuote[] };
 
 const HERO_IMAGES = [
-  'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/hero/1.jpg',
-  'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/hero/2.jpg',
-  'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/hero/3.jpg',
-  'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/hero/4.jpg'
+  'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/hero/1.jpg?v=20260524',
+  'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/hero/2.jpg?v=20260524',
+  'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/hero/3.jpg?v=20260524',
+  'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/hero/4.jpg?v=20260524',
+  'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/hero/5.jpg?v=20260524',
+  'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/hero/6.jpg?v=20260524'
 ];
 const ICONS = [
   { id: 'heart', emoji: '💕', label: '心动' },
@@ -19,6 +22,12 @@ const ICONS = [
   { id: 'ring', emoji: '💍', label: '纪念' },
   { id: 'camera', emoji: '📷', label: '照片' },
   { id: 'star', emoji: '⭐', label: '特别' },
+  { id: 'gift', emoji: '🎁', label: '礼物' },
+  { id: 'cake', emoji: '🎂', label: '生日' },
+  { id: 'music', emoji: '🎵', label: '音乐' },
+  { id: 'food', emoji: '🍽️', label: '美食' },
+  { id: 'park', emoji: '🌳', label: '公园' },
+  { id: 'movie', emoji: '🎬', label: '电影' },
 ];
 const ICON_MAP: Record<string, string> = { 'ph-heart': 'heart', 'ph-airplane-tilt': 'airplane', 'ph-house': 'house', 'ph-ring': 'ring', 'ph-camera': 'camera', 'ph-star': 'star' };
 function getEmoji(icon: string) { return ICONS.find(i => i.id === (ICON_MAP[icon] || icon))?.emoji || '💕'; }
@@ -43,13 +52,14 @@ function useAnimatedNum(target: number) {
 }
 
 export function LoveMemoryClient() {
-  const [data, setData] = useState<AppData>({ startDate: '', heroImage: '', milestones: [], photos: [] });
+  const [data, setData] = useState<AppData>({ startDate: '', heroImage: '', milestones: [], photos: [], loveQuotes: [] });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState('');
   const [viewPhoto, setViewPhoto] = useState<Photo | null>(null);
   const [gallery, setGallery] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [editMs, setEditMs] = useState<Milestone | null>(null);
   const [msDraft, setMsDraft] = useState({ date: new Date().toISOString().split('T')[0], title: '', desc: '', icon: 'heart' });
   const [msModal, setMsModal] = useState(false);
@@ -57,6 +67,7 @@ export function LoveMemoryClient() {
   const [coverMenu, setCoverMenu] = useState(false);
   const [toast, setToast] = useState('');
   const [heroIdx, setHeroIdx] = useState(0);
+  const [quoteIdx, setQuoteIdx] = useState(0);
   const [hearts] = useState(() => Array.from({ length: 6 }).map(() => ({
     left: `${Math.random() * 100}%`, dur: `${15 + Math.random() * 10}s`, delay: `${-Math.random() * 20}s`,
     opacity: 0.1 + Math.random() * 0.3, size: `${16 + Math.random() * 12}px`, sway: `${3 + Math.random() * 2}s`
@@ -72,6 +83,7 @@ export function LoveMemoryClient() {
   }, []);
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 2000); return () => clearTimeout(t); }, [toast]);
   useEffect(() => { if (HERO_IMAGES.length <= 1) return; const t = setInterval(() => setHeroIdx(i => (i + 1) % HERO_IMAGES.length), 6000); return () => clearInterval(t); }, []);
+  useEffect(() => { if (data.loveQuotes.length <= 1) return; const t = setInterval(() => setQuoteIdx(i => (i + 1) % data.loveQuotes.length), 4500); return () => clearInterval(t); }, [data.loveQuotes.length]);
 
   const days = useMemo(() => data.startDate ? Math.max(0, Math.floor((Date.now() - new Date(`${data.startDate}T00:00:00`).getTime()) / 86400000)) : 0, [data.startDate]);
   const animDays = useAnimatedNum(days);
@@ -81,7 +93,7 @@ export function LoveMemoryClient() {
     if (nx.getTime() < n.getTime()) nx.setFullYear(n.getFullYear() + 1);
     return Math.ceil((nx.getTime() - n.getTime()) / 86400000);
   }, [data.startDate]);
-  const heroImages = data.heroImage ? [data.heroImage, ...HERO_IMAGES.slice(0, 4)] : HERO_IMAGES;
+  const heroImages = data.heroImage ? [data.heroImage, ...HERO_IMAGES] : HERO_IMAGES;
 
   async function save(next: AppData, msg?: string) {
     setData(next); setSaving(true);
@@ -115,6 +127,17 @@ export function LoveMemoryClient() {
   }
   async function deleteMs() { if (!editMs) return; await save({ ...data, milestones: data.milestones.filter(m => m.id !== editMs.id) }, '已删除'); setMsModal(false); setEditMs(null); }
 
+  function onDragStart(index: number) { setDragIndex(index); }
+  function onDragOver(e: React.DragEvent) { e.preventDefault(); }
+  function onDrop(targetIndex: number) {
+    if (dragIndex === null || dragIndex === targetIndex) return;
+    const photos = [...data.photos];
+    const [moved] = photos.splice(dragIndex, 1);
+    photos.splice(targetIndex, 0, moved);
+    void save({ ...data, photos }, '已排序');
+    setDragIndex(null);
+  }
+
   const currentPhotoIndex = viewPhoto ? data.photos.findIndex(p => p.url === viewPhoto.url) : -1;
   function goToPhoto(index: number) {
     const len = data.photos.length;
@@ -122,6 +145,26 @@ export function LoveMemoryClient() {
     const next = (index + len) % len;
     setViewPhoto(data.photos[next]);
   }
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (!viewPhoto) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') goToPhoto(currentPhotoIndex - 1);
+      if (e.key === 'ArrowRight') goToPhoto(currentPhotoIndex + 1);
+      if (e.key === 'Escape') setViewPhoto(null);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [viewPhoto, currentPhotoIndex]);
+
+  // Preload adjacent images
+  useEffect(() => {
+    if (!viewPhoto || data.photos.length <= 1) return;
+    const prev = data.photos[(currentPhotoIndex - 1 + data.photos.length) % data.photos.length];
+    const next = data.photos[(currentPhotoIndex + 1) % data.photos.length];
+    [prev, next].forEach(p => { const img = new Image(); img.src = p.displayUrl || p.url; });
+  }, [viewPhoto, currentPhotoIndex]);
 
   if (loading) return <main className="flex min-h-screen items-center justify-center"><div className="lm-card rounded-full px-6 py-3 text-sm font-medium text-[#5c3d2a]"><span className="mr-2">💕</span>加载中...</div></main>;
 
@@ -162,7 +205,7 @@ export function LoveMemoryClient() {
           {heroImages.map((img, i) => <img key={i} src={img} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: heroIdx === i ? 1 : 0, transition: 'opacity 1.5s' }} />)}
           <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
           <button className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/20 text-white text-sm flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity" onClick={() => setCoverMenu(true)}>✏</button>
-          <div className="absolute top-4 left-4"><div className="px-2.5 py-1 rounded-full bg-white/20 text-[10px] text-white font-medium tracking-wide" style={{ fontFamily: 'Playfair Display, serif' }}>{saving ? 'SYNCING' : 'LOVING'}</div></div>
+          <div className="absolute top-4 left-4"><div className="px-2.5 py-1 rounded-full bg-black/30 text-[10px] text-emerald-400 font-medium tracking-wide" style={{ fontFamily: 'Playfair Display, serif' }}>{saving ? 'SYNCING' : 'LOVING'}</div></div>
           <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
             <span className="text-[10px] font-medium text-white/70 tracking-[0.3em] uppercase" style={{ fontFamily: 'Playfair Display, serif' }}>TOGETHER FOR</span>
             <div className="flex items-baseline mt-1">
@@ -175,6 +218,26 @@ export function LoveMemoryClient() {
           </div>
           <input ref={heroRef} type="file" accept="image/*" className="hidden" onChange={onHeroUpload} />
         </section>
+
+        {/* Love Quotes */}
+        {data.loveQuotes.length > 0 && (
+          <div className="text-center py-2" style={{ animation: 'slideUp 0.6s ease-out 0.05s both' }}>
+            <div className="relative h-8 overflow-hidden">
+              {data.loveQuotes.map((quote, i) => (
+                <p
+                  key={quote.id}
+                  className="absolute inset-0 flex items-center justify-center text-sm text-[#aa6f4d] italic transition-opacity duration-1000"
+                  style={{
+                    fontFamily: 'Noto Serif SC, serif',
+                    opacity: quoteIdx === i ? 1 : 0
+                  }}
+                >
+                  "{quote.content}"
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Milestones */}
         <div style={{ animation: 'slideUp 0.6s ease-out 0.1s both' }}>
@@ -216,8 +279,8 @@ export function LoveMemoryClient() {
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {data.photos.map(p => (
-                <div key={p.uploadedAt} className="relative aspect-square rounded-2xl overflow-hidden cursor-pointer group bg-amber-50" onClick={() => setViewPhoto(p)}>
+              {data.photos.map((p, idx) => (
+                <div key={p.uploadedAt} draggable onDragStart={() => onDragStart(idx)} onDragOver={onDragOver} onDrop={() => onDrop(idx)} className={`relative aspect-square rounded-2xl overflow-hidden cursor-pointer group bg-amber-50 transition-opacity ${dragIndex === idx ? 'opacity-50' : ''}`} onClick={() => setViewPhoto(p)}>
                   <img src={p.thumbUrl || p.url} alt="" loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3">
                     <button disabled={deleting === p.url} onClick={e => { e.stopPropagation(); void onDelPhoto(p); }} className="w-7 h-7 rounded-full bg-white/90 text-red-500 text-xs flex items-center justify-center">🗑</button>
