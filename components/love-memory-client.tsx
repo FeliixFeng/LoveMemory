@@ -282,9 +282,7 @@ export function LoveMemoryClient() {
               {data.photos.map((p, idx) => (
                 <div key={p.uploadedAt} draggable onDragStart={() => onDragStart(idx)} onDragOver={onDragOver} onDrop={() => onDrop(idx)} className={`relative aspect-square rounded-2xl overflow-hidden cursor-pointer group bg-amber-50 transition-opacity ${dragIndex === idx ? 'opacity-50' : ''}`} onClick={() => setViewPhoto(p)}>
                   <img src={p.thumbUrl || p.url} alt="" loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3">
-                    <button disabled={deleting === p.url} onClick={e => { e.stopPropagation(); void onDelPhoto(p); }} className="w-7 h-7 rounded-full bg-white/90 text-red-500 text-xs flex items-center justify-center">🗑</button>
-                  </div>
+                  <button disabled={deleting === p.url} onClick={e => { e.stopPropagation(); void onDelPhoto(p); }} className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/50 text-white text-xs flex items-center justify-center opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-opacity">✕</button>
                 </div>
               ))}
               <div className="aspect-square rounded-2xl border-2 border-dashed border-[#efd8c3]/60 flex flex-col items-center justify-center cursor-pointer hover:bg-amber-50/50" onClick={() => fileRef.current?.click()}>
