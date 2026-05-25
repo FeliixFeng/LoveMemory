@@ -323,7 +323,7 @@ export function LoveMemoryClient() {
             <div className="w-10 h-1 bg-amber-200 rounded-full mx-auto mb-4 sm:hidden" />
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-base font-bold text-[#3d281c]" style={{ fontFamily: 'Noto Serif SC, serif' }}>{editMs ? '编辑里程碑' : '新里程碑'}</h3>
-              {editMs && <button onClick={void deleteMs} className="text-red-400 text-sm">删除</button>}
+              {editMs && <button onClick={() => void deleteMs()} className="text-red-400 text-sm">删除</button>}
             </div>
             <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
               {ICONS.map(ic => <button key={ic.id} onClick={() => setMsDraft(d => ({ ...d, icon: ic.id }))} className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg border transition-all ${msDraft.icon === ic.id ? 'bg-[#d48b60] border-[#d48b60] scale-105' : 'bg-white border-amber-100'}`}>{ic.emoji}</button>)}
@@ -333,7 +333,7 @@ export function LoveMemoryClient() {
               <input type="date" value={msDraft.date} onChange={e => setMsDraft(d => ({ ...d, date: e.target.value }))} className="w-full bg-white border border-[#efd8c3]/60 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#d48b60]" />
               <input type="text" placeholder="备注（可选）" value={msDraft.desc} onChange={e => setMsDraft(d => ({ ...d, desc: e.target.value }))} className="w-full bg-white border border-[#efd8c3]/60 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#d48b60]" />
             </div>
-            <button onClick={void saveMs} className="w-full py-3 bg-[#3d281c] text-amber-50 rounded-xl font-medium shadow-lg active:scale-[0.98] transition-transform">保存</button>
+            <button onClick={() => void saveMs()} className="w-full py-3 bg-[#3d281c] text-amber-50 rounded-xl font-medium shadow-lg active:scale-[0.98] transition-transform">保存</button>
           </div>
         </div>
       )}
