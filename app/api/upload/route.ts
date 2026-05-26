@@ -4,10 +4,21 @@ import path from 'node:path';
 import sharp from 'sharp';
 import { NextResponse } from 'next/server.js';
 import { createPhotoWithPrisma, deletePhotoWithPrisma } from '../../lib/app-data.ts';
-import { getStorageDriver, getUploadDir } from '../../lib/env.ts';
+import { getStorageDriver, getUploadDir, getPin } from '../../lib/env.ts';
+import { verifyToken } from '../../lib/auth.ts';
 import { uploadToOss, deleteFromOss, getOssUrl, getOssClient } from '../../lib/oss.ts';
 
 const uploadDir = getUploadDir();
+
+function checkAuth(request: Request): NextResponse | null {
+  if (!getPin()) return null;
+  const authHeader = request.headers.get('authorization') || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  if (!token || !verifyToken(token)) {
+    return NextResponse.json({ error: '需要验证 PIN 码' }, { status: 401 });
+  }
+  return null;
+}
 
 function buildFilename(originalName: string) {
   const extension = path.extname(originalName) || '.jpg';
@@ -23,6 +34,9 @@ async function ensureUploadDir() {
 }
 
 export async function POST(request: Request) {
+  const authErr = checkAuth(request);
+  if (authErr) return authErr;
+
   try {
     await ensureUploadDir();
     const formData = await request.formData();
@@ -107,6 +121,9 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const authErr = checkAuth(request);
+  if (authErr) return authErr;
+
   try {
     await ensureUploadDir();
     const { url } = (await request.json()) as { url?: string };

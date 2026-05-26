@@ -17,6 +17,7 @@ import { MilestoneModal } from './modals/MilestoneModal';
 import { SettingsModal } from './modals/SettingsModal';
 import { DeleteConfirmDialog } from './modals/DeleteConfirmDialog';
 import { CoverMenu } from './modals/CoverMenu';
+import { PinModal } from './modals/PinModal';
 
 function useAnimatedNum(target: number) {
   const [val, setVal] = useState(0);
@@ -50,6 +51,13 @@ export function LoveMemoryClient() {
   const [coverMenu, setCoverMenu] = useState(false);
   const [toast, setToast] = useState('');
   const [quoteIdx, setQuoteIdx] = useState(0);
+  const [showPin, setShowPin] = useState(false);
+  const [token, setToken] = useState(() => {
+    if (typeof window === 'undefined') return '';
+    try { return localStorage.getItem('lm_token') || ''; } catch { return ''; }
+  });
+  const tokenRef = useRef(token);
+  const pendingOp = useRef<(() => Promise<void>) | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const heroRef = useRef<HTMLInputElement>(null);
@@ -74,13 +82,22 @@ export function LoveMemoryClient() {
   }, [data.startDate]);
   const heroImages = data.heroImage ? [data.heroImage, ...HERO_IMAGES] : HERO_IMAGES;
 
-  async function save(next: AppData, msg?: string) {
+  async function save(next: AppData, msg?: string, authToken?: string) {
     const prev = data;
     setData(next);
     if (msg) setToast(msg);
     setSaving(true);
     try {
-      const r = await fetch('/api/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(next) });
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      const t = authToken || tokenRef.current;
+      if (t) headers['Authorization'] = `Bearer ${t}`;
+      const r = await fetch('/api/data', { method: 'POST', headers, body: JSON.stringify(next) });
+      if (r.status === 401) {
+        setData(prev);
+        pendingOp.current = () => save(next, msg);
+        setShowPin(true);
+        return;
+      }
       if (!r.ok) throw new Error();
     } catch {
       setData(prev);
@@ -90,25 +107,46 @@ export function LoveMemoryClient() {
     }
   }
 
-  async function doUpload(file: File) {
+  async function doUpload(file: File, authToken?: string) {
     const fd = new FormData(); fd.append('image', file);
-    const r = await fetch('/api/upload', { method: 'POST', body: fd }); if (!r.ok) throw new Error();
+    const headers: Record<string, string> = {};
+    const t = authToken || tokenRef.current;
+    if (t) headers['Authorization'] = `Bearer ${t}`;
+    const r = await fetch('/api/upload', { method: 'POST', headers, body: fd });
+    if (r.status === 401) {
+      pendingOp.current = () => doUpload(file).then(() => {});
+      setShowPin(true);
+      throw new Error('auth');
+    }
+    if (!r.ok) throw new Error();
     const d = await r.json(); return { ...d, displayUrl: d.displayUrl || d.url, thumbUrl: d.thumbUrl || d.displayUrl || d.url } as Photo;
   }
 
   async function onPhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []); if (!files.length) return; setUploading(true);
-    try { const up: Photo[] = []; for (const f of files) up.push(await doUpload(f)); await save({ ...data, photos: [...up.reverse(), ...data.photos] }, '已上传'); } catch { setToast('上传失败'); } finally { setUploading(false); e.target.value = ''; }
+    try { const up: Photo[] = []; for (const f of files) up.push(await doUpload(f)); await save({ ...data, photos: [...up.reverse(), ...data.photos] }, '已上传'); } catch (err) { if ((err as Error)?.message !== 'auth') setToast('上传失败'); } finally { setUploading(false); e.target.value = ''; }
   }
 
   async function onDelPhoto(p: Photo) {
     setDeleting(p.url);
-    try { await fetch('/api/upload', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: p.url }) }); await save({ ...data, photos: data.photos.filter(x => x.url !== p.url) }, '已删除'); if (viewPhoto?.url === p.url) setViewPhoto(null); } catch { setToast('删除失败'); } finally { setDeleting(''); }
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (tokenRef.current) headers['Authorization'] = `Bearer ${tokenRef.current}`;
+      const r = await fetch('/api/upload', { method: 'DELETE', headers, body: JSON.stringify({ url: p.url }) });
+      if (r.status === 401) {
+        pendingOp.current = () => onDelPhoto(p);
+        setShowPin(true);
+        setDeleting('');
+        return;
+      }
+      await save({ ...data, photos: data.photos.filter(x => x.url !== p.url) }, '已删除');
+      if (viewPhoto?.url === p.url) setViewPhoto(null);
+    } catch { setToast('删除失败'); } finally { setDeleting(''); }
   }
 
   async function onHeroUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]; if (!file) return; setUploading(true);
-    try { const u = await doUpload(file); await save({ ...data, heroImage: u.displayUrl || u.url }, '封面已更新'); } catch { setToast('上传失败'); } finally { setUploading(false); e.target.value = ''; }
+    try { const u = await doUpload(file); await save({ ...data, heroImage: u.displayUrl || u.url }, '封面已更新'); } catch (err) { if ((err as Error)?.message !== 'auth') setToast('上传失败'); } finally { setUploading(false); e.target.value = ''; }
   }
 
   function openMsCreate() { setEditMs(null); setMsDraft({ date: new Date().toISOString().split('T')[0], title: '', desc: '', icon: 'heart' }); setMsModal(true); }
@@ -177,18 +215,37 @@ export function LoveMemoryClient() {
     [prev, next].forEach(p => { const img = new Image(); img.src = p.displayUrl || p.url; });
   }, [viewPhoto, currentPhotoIndex]);
 
+  function onPinVerified(newToken: string) {
+    setToken(newToken);
+    tokenRef.current = newToken;
+    try { localStorage.setItem('lm_token', newToken); } catch {}
+    setShowPin(false);
+    const op = pendingOp.current;
+    pendingOp.current = null;
+    if (op) void op();
+  }
+
+  function withAuth(action: () => void | Promise<void>) {
+    if (!tokenRef.current) {
+      pendingOp.current = () => { void action(); };
+      setShowPin(true);
+      return;
+    }
+    void action();
+  }
+
   if (loading) return <main className="flex min-h-screen items-center justify-center"><div className="lm-card rounded-full px-6 py-3 text-sm font-medium text-[#5c3d2a]"><span className="mr-2">💕</span>加载中...</div></main>;
 
   return (
     <>
       <FallingHearts />
-      <NavBar onSettings={() => setSettings(true)} />
+      <NavBar onSettings={() => withAuth(() => setSettings(true))} />
 
       <main className="max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto pt-20 pb-24 px-4 md:px-8 flex flex-col gap-6">
         <HeroSection
           heroImages={heroImages} saving={saving}
           animDays={animDays} nextDays={nextDays} startDate={data.startDate}
-          onCoverMenu={() => setCoverMenu(true)}
+          onCoverMenu={() => withAuth(() => setCoverMenu(true))}
           onHeroUpload={onHeroUpload}
           heroRef={heroRef}
         />
@@ -197,17 +254,17 @@ export function LoveMemoryClient() {
 
         <MilestoneList
           milestones={data.milestones}
-          onEdit={openMsEdit}
-          onCreate={openMsCreate}
+          onEdit={m => withAuth(() => openMsEdit(m))}
+          onCreate={() => withAuth(openMsCreate)}
         />
 
         <PhotoGrid
           photos={data.photos} uploading={uploading} deleting={deleting} dragIndex={dragIndex}
           onViewPhoto={setViewPhoto}
-          onDeleteConfirm={setDeleteConfirm}
-          onDragStart={onDragStart} onDragOver={onDragOver} onDrop={onDrop}
+          onDeleteConfirm={p => withAuth(() => setDeleteConfirm(p))}
+          onDragStart={onDragStart} onDragOver={onDragOver} onDrop={i => withAuth(() => onDrop(i))}
           onLongPressStart={onLongPressStart} onLongPressEnd={onLongPressEnd}
-          onAddClick={() => fileRef.current?.click()}
+          onAddClick={() => withAuth(() => fileRef.current?.click())}
         />
 
         <footer className="text-center py-6 opacity-30"><span className="text-sm">💕</span></footer>
@@ -243,8 +300,8 @@ export function LoveMemoryClient() {
         <Gallery
           photos={data.photos} deleting={deleting}
           onViewPhoto={p => { setViewPhoto(p); setGallery(false); }}
-          onDelete={p => void onDelPhoto(p)}
-          onAdd={() => fileRef.current?.click()}
+          onDelete={p => withAuth(() => onDelPhoto(p))}
+          onAdd={() => withAuth(() => fileRef.current?.click())}
           onClose={() => setGallery(false)}
         />
       )}
@@ -261,12 +318,19 @@ export function LoveMemoryClient() {
       {deleteConfirm && (
         <DeleteConfirmDialog
           photo={deleteConfirm}
-          onConfirm={() => void confirmDelete()}
+          onConfirm={() => withAuth(confirmDelete)}
           onCancel={() => setDeleteConfirm(null)}
         />
       )}
 
       <Toast message={toast} />
+
+      {showPin && (
+        <PinModal
+          onVerify={onPinVerified}
+          onClose={() => { setShowPin(false); pendingOp.current = null; }}
+        />
+      )}
 
       <input ref={fileRef} type="file" multiple accept="image/*" className="hidden" onChange={onPhotoUpload} />
     </>

@@ -6,7 +6,8 @@ import {
   writeAppDataToJson,
   writeAppDataWithPrisma
 } from '../../lib/app-data.ts';
-import { getStorageDriver } from '../../lib/env.ts';
+import { getStorageDriver, getPin } from '../../lib/env.ts';
+import { verifyToken } from '../../lib/auth.ts';
 
 export async function GET() {
   try {
@@ -22,6 +23,14 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    if (getPin()) {
+      const authHeader = request.headers.get('authorization') || '';
+      const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+      if (!token || !verifyToken(token)) {
+        return NextResponse.json({ error: '需要验证 PIN 码' }, { status: 401 });
+      }
+    }
+
     const payload = await request.json();
     const normalizedPayload = payload && typeof payload === 'object' ? payload : {};
     const nextData = getStorageDriver() === 'mysql'
