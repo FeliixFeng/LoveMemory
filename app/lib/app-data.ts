@@ -2,37 +2,13 @@ import { prisma } from './prisma.ts';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { getDataFilePath } from './env.ts';
+import type { Milestone, Photo, LoveQuote, AppData } from '../../lib/types.ts';
 
-export type AppMilestone = {
-  id: number | string;
-  date: string;
-  title: string;
-  desc: string;
-  icon: string;
-};
-
-export type AppPhoto = {
-  url: string;
-  displayUrl: string;
-  thumbUrl: string;
-  filename: string;
-  mimeType: string;
-  size: number;
-  uploadedAt: string;
-};
-
-export type AppLoveQuote = {
-  id: number;
-  content: string;
-};
-
-export type AppData = {
-  startDate: string;
-  heroImage: string;
-  milestones: AppMilestone[];
-  photos: AppPhoto[];
-  loveQuotes: AppLoveQuote[];
-};
+// Re-export types for backward compatibility
+export type AppMilestone = Milestone;
+export type AppPhoto = Photo;
+export type AppLoveQuote = LoveQuote;
+export type { AppData };
 
 export const DEFAULT_APP_DATA: AppData = {
   startDate: '',
@@ -169,11 +145,11 @@ export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise
       : currentData.loveQuotes
   };
 
-  // Only sync changed data
+  // Only sync changed data - compare with current data to detect actual changes
   const hasSettingsChange = payload.startDate !== undefined || payload.heroImage !== undefined;
-  const hasMilestonesChange = Array.isArray(payload.milestones);
-  const hasPhotosChange = Array.isArray(payload.photos);
-  const hasLoveQuotesChange = Array.isArray(payload.loveQuotes);
+  const hasMilestonesChange = Array.isArray(payload.milestones) && JSON.stringify(payload.milestones) !== JSON.stringify(currentData.milestones);
+  const hasPhotosChange = Array.isArray(payload.photos) && JSON.stringify(payload.photos) !== JSON.stringify(currentData.photos);
+  const hasLoveQuotesChange = Array.isArray(payload.loveQuotes) && JSON.stringify(payload.loveQuotes) !== JSON.stringify(currentData.loveQuotes);
 
   await prisma.$transaction(async (tx: any) => {
     if (hasSettingsChange) {
@@ -298,6 +274,9 @@ export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise
         });
       }
     }
+  }, {
+    maxWait: 10000,
+    timeout: 10000
   });
 
   return nextData;

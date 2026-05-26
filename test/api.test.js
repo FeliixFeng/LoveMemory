@@ -10,6 +10,7 @@ const dataFile = path.join(rootDir, 'db.json');
 const uploadDir = path.join(rootDir, 'uploads');
 
 await fs.mkdir(uploadDir, { recursive: true });
+await fs.mkdir(path.join(uploadDir, 'thumbs'), { recursive: true });
 
 process.env.NODE_ENV = 'test';
 process.env.STORAGE_DRIVER = 'json';
@@ -25,6 +26,7 @@ async function createTestContext() {
   await fs.rm(dataFile, { force: true });
   await fs.rm(uploadDir, { recursive: true, force: true });
   await fs.mkdir(uploadDir, { recursive: true });
+  await fs.mkdir(path.join(uploadDir, 'thumbs'), { recursive: true });
 
   return {
     dataFile,
@@ -63,12 +65,11 @@ test('GET /api/data returns default payload for a fresh data file', async () => 
     const body = await response.json();
 
     assert.equal(response.status, 200);
-    assert.deepEqual(body, {
-      startDate: '',
-      heroImage: '',
-      milestones: [],
-      photos: []
-    });
+    assert.equal(body.startDate, '');
+    assert.equal(body.heroImage, '');
+    assert.deepEqual(body.milestones, []);
+    assert.deepEqual(body.photos, []);
+    assert.ok(Array.isArray(body.loveQuotes));
   } finally {
     await ctx.cleanup();
   }
