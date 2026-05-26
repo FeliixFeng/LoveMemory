@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Event, Photo, Expense, AppData } from '../lib/types';
 import { HERO_IMAGES } from '../lib/constants';
-import { fmt } from '../lib/utils';
 import { FallingHearts } from './FallingHearts';
 import { NavBar } from './NavBar';
 import { HeroSection } from './HeroSection';
@@ -186,13 +185,11 @@ export function LoveMemoryClient() {
     if (!eventDraft.title || !eventDraft.date) { setToast('请填写标题和日期'); return; }
 
     if (editEvent) {
-      // Update existing
       const events = data.events.map(e => e.id === editEvent.id ? { ...e, ...eventDraft } : e);
       const sorted = events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setEventModal(false); setEditEvent(null);
       await save({ ...data, events }, '已保存');
     } else {
-      // Create new via API
       try {
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
         if (tokenRef.current) headers['Authorization'] = `Bearer ${tokenRef.current}`;
@@ -297,31 +294,37 @@ export function LoveMemoryClient() {
       <FallingHearts />
       <NavBar onSettings={() => withAuth(() => setSettings(true))} />
 
-      <main className="max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto pt-20 pb-24 px-4 md:px-8 flex flex-col gap-6">
-        <HeroSection
-          heroImages={heroImages} saving={saving}
-          animDays={animDays} nextDays={nextDays} startDate={data.startDate}
-          quotes={data.loveQuotes}
-          onCoverMenu={() => withAuth(() => setCoverMenu(true))}
-          onHeroUpload={onHeroUpload}
-          heroRef={heroRef}
-        />
+      <main className="max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto pt-16 pb-24 px-0 md:px-8 flex flex-col gap-4">
+        {/* Hero + Timeline in one box */}
+        <div className="px-4">
+          <HeroSection
+            heroImages={heroImages} saving={saving}
+            animDays={animDays} nextDays={nextDays} startDate={data.startDate}
+            quotes={data.loveQuotes}
+            onCoverMenu={() => withAuth(() => setCoverMenu(true))}
+            onHeroUpload={onHeroUpload}
+            heroRef={heroRef}
+          >
+            <HorizontalTimeline
+              events={data.events}
+              selectedId={selectedEventId}
+              onSelect={setSelectedEventId}
+              onAdd={() => withAuth(openEventCreate)}
+            />
+          </HeroSection>
+        </div>
 
-        <HorizontalTimeline
-          events={data.events}
-          selectedId={selectedEventId}
-          onSelect={setSelectedEventId}
-          onAdd={() => withAuth(openEventCreate)}
-        />
-
+        {/* Event preview */}
         <EventPreviewCard
           event={selectedEvent}
           photos={selectedPhotos}
           expenses={selectedExpenses}
           onExpand={() => setEventDetailId(selectedEventId)}
           onEdit={() => withAuth(() => { if (selectedEvent) openEventEdit(selectedEvent); })}
+          onViewPhoto={setViewPhoto}
         />
 
+        {/* Stats */}
         <StatsSection
           events={data.events}
           photos={data.photos}
@@ -329,7 +332,7 @@ export function LoveMemoryClient() {
           days={days}
         />
 
-        <footer className="text-center py-6 opacity-30"><span className="text-sm">💕</span></footer>
+        <footer className="text-center py-4 opacity-20"><span className="text-xs">💕</span></footer>
       </main>
 
       <FloatingAddButton onClick={() => withAuth(openEventCreate)} />

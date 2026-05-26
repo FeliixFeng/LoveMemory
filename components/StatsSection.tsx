@@ -23,14 +23,13 @@ export function StatsSection({
   ];
 
   return (
-    <section className="lm-card rounded-2xl p-4" style={{ animation: 'slideUp 0.6s ease-out 0.4s both' }}>
-      <h2 className="text-sm font-bold text-[#3d281c] mb-3" style={{ fontFamily: 'Noto Serif SC, serif' }}>我们的足迹</h2>
-      <div className="grid grid-cols-5 gap-2">
-        {stats.map(s => (
-          <div key={s.label} className="flex flex-col items-center py-2 rounded-xl bg-white/50">
-            <span className="text-base mb-0.5">{s.emoji}</span>
-            <span className="text-sm font-bold text-[#3d281c]">{s.value}</span>
-            <span className="text-[10px] text-[#5c3d2a]/50">{s.label}</span>
+    <section className="px-4 py-4" style={{ animation: 'slideUp 0.5s ease-out 0.2s both' }}>
+      <div className="flex items-center justify-between px-2">
+        {stats.map((s, i) => (
+          <div key={s.label} className="flex flex-col items-center gap-0.5">
+            <span className="text-lg">{s.emoji}</span>
+            <span className="text-base font-bold text-[#3d281c]">{s.value}</span>
+            <span className="text-[10px] text-[#5c3d2a]/40">{s.label}</span>
           </div>
         ))}
       </div>

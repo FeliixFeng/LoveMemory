@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from 'react';
 import { Event } from '../lib/types';
-import { getEmoji, fmt } from '../lib/utils';
+import { getEmoji } from '../lib/utils';
 
 export function HorizontalTimeline({
   events, selectedId, onSelect, onAdd
@@ -28,78 +28,116 @@ export function HorizontalTimeline({
   }
 
   return (
-    <section
-      className="rounded-2xl p-4 timeline-texture"
-      style={{
-        animation: 'slideUp 0.6s ease-out 0.2s both',
-        border: '1px solid rgba(239,216,195,0.4)',
-        boxShadow: '0 8px 30px rgba(92,61,42,0.06)'
-      }}
-    >
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-bold text-[#3d281c]" style={{ fontFamily: 'Noto Serif SC, serif' }}>时间轴</h2>
-        <span className="text-xs text-[#5c3d2a]/50">{sorted.length} 个事件</span>
-      </div>
-
-      <div ref={scrollRef} className="flex items-start gap-4 overflow-x-auto no-scrollbar pb-2 px-1 relative">
+    <div className="px-4 pt-5 pb-3">
+      <div ref={scrollRef} className="flex items-start overflow-x-auto no-scrollbar px-2 pt-2 pb-1 relative" style={{ gap: '48px' }}>
         {/* Connecting line */}
         {sorted.length > 1 && (
-          <div
-            className="absolute top-5 h-[2px] rounded-full shrink-0"
-            style={{
-              left: '28px',
-              right: '68px',
-              background: 'linear-gradient(to right, #efd8c3, #d48b60)'
-            }}
-          />
+          <>
+            {/* Main line */}
+            <div
+              className="absolute rounded-full"
+              style={{
+                top: '37px',
+                left: '46px',
+                right: '68px',
+                height: '2.5px',
+                background: 'linear-gradient(to right, rgba(212,139,96,0.1), #d48b60 30%, #aa6f4d 70%, rgba(170,111,77,0.15))'
+              }}
+            />
+            {/* Glow underneath */}
+            <div
+              className="absolute rounded-full"
+              style={{
+                top: '33px',
+                left: '46px',
+                right: '68px',
+                height: '10px',
+                background: 'linear-gradient(to right, transparent, rgba(212,139,96,0.12) 30%, rgba(170,111,77,0.12) 70%, transparent)',
+                filter: 'blur(5px)'
+              }}
+            />
+            {/* Dot at each node position */}
+            {sorted.map((_, i) => (
+              <div
+                key={i}
+                className="absolute rounded-full z-[5]"
+                style={{
+                  width: '5px',
+                  height: '5px',
+                  top: '36px',
+                  left: `calc(46px + ${i} * (48px + 88px) / ${Math.max(sorted.length - 1, 1)} * ${sorted.length > 1 ? (sorted.length - 1) / sorted.length : 0})`,
+                  background: 'rgba(255,255,255,0.3)',
+                  boxShadow: '0 0 4px rgba(212,139,96,0.3)'
+                }}
+              />
+            ))}
+          </>
         )}
 
         {sorted.map((ev) => {
           const isSelected = String(ev.id) === selectedId;
-          const size = isSelected ? 48 : 40;
+          const size = isSelected ? 74 : 58;
           return (
             <button
               key={ev.id}
               data-event-id={ev.id}
               onClick={() => onSelect(String(ev.id))}
               className="flex flex-col items-center shrink-0 relative z-10"
-              style={{ minWidth: isSelected ? '64px' : '56px' }}
+              style={{ minWidth: '88px' }}
             >
+              {/* Outer glow ring for selected */}
+              {isSelected && (
+                <div
+                  className="absolute rounded-full animate-pulse"
+                  style={{
+                    width: `${size + 16}px`,
+                    height: `${size + 16}px`,
+                    top: '-8px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    background: 'radial-gradient(circle, rgba(212,139,96,0.25) 0%, transparent 70%)',
+                    animationDuration: '2s'
+                  }}
+                />
+              )}
               <div
-                className="rounded-full flex items-center justify-center transition-all duration-300"
+                className="rounded-full flex items-center justify-center relative hover:scale-110 cursor-pointer"
                 style={{
+                  transition: 'transform 0.25s ease-out',
                   width: `${size}px`,
                   height: `${size}px`,
-                  fontSize: isSelected ? '20px' : '16px',
+                  fontSize: isSelected ? '30px' : '24px',
                   background: isSelected
                     ? 'linear-gradient(135deg, #d48b60, #aa6f4d)'
-                    : 'rgba(255,255,255,0.8)',
-                  border: isSelected ? 'none' : '1.5px solid rgba(239,216,195,0.6)',
+                    : 'rgba(0,0,0,0.25)',
+                  border: isSelected ? '3px solid rgba(255,255,255,0.6)' : '2px solid rgba(255,255,255,0.2)',
                   boxShadow: isSelected
-                    ? '0 0 16px rgba(212,139,96,0.4), 0 4px 12px rgba(170,111,77,0.2)'
-                    : '0 2px 8px rgba(92,61,42,0.06)',
-                  transform: isSelected ? 'scale(1)' : 'scale(1)'
+                    ? '0 0 24px rgba(212,139,96,0.5), 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2)'
+                    : '0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.1)',
+                  backdropFilter: 'blur(4px)'
                 }}
               >
                 {getEmoji(ev.icon)}
               </div>
               <span
-                className="mt-1.5 truncate transition-all duration-300 text-center"
+                className="mt-2 truncate text-center leading-tight"
                 style={{
-                  maxWidth: '56px',
-                  fontSize: isSelected ? '11px' : '10px',
+                  maxWidth: '84px',
+                  fontSize: '12px',
                   fontWeight: isSelected ? 700 : 500,
-                  color: isSelected ? '#3d281c' : '#5c3d2a'
+                  color: isSelected ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.5)',
+                  textShadow: '0 1px 3px rgba(0,0,0,0.5)'
                 }}
               >
                 {ev.title || '未命名'}
               </span>
               <span
-                className="transition-all duration-300"
+                className="leading-tight"
                 style={{
-                  fontSize: '9px',
-                  color: isSelected ? '#d48b60' : 'rgba(92,61,42,0.4)',
-                  fontWeight: isSelected ? 600 : 400
+                  fontSize: '10px',
+                  color: isSelected ? '#d48b60' : 'rgba(255,255,255,0.3)',
+                  fontWeight: isSelected ? 600 : 400,
+                  textShadow: '0 1px 2px rgba(0,0,0,0.3)'
                 }}
               >
                 {shortDate(ev.date)}
@@ -110,22 +148,23 @@ export function HorizontalTimeline({
 
         <button
           onClick={onAdd}
-          className="flex flex-col items-center shrink-0 relative z-10 hover:opacity-80 transition-opacity"
-          style={{ minWidth: '56px' }}
+          className="flex flex-col items-center shrink-0 relative z-10 hover:opacity-70 transition-opacity"
+          style={{ minWidth: '88px' }}
         >
           <div
-            className="w-10 h-10 rounded-full flex items-center justify-center text-lg"
+            className="w-16 h-16 rounded-full flex items-center justify-center text-2xl"
             style={{
-              border: '2px dashed rgba(212,139,96,0.4)',
-              background: 'rgba(255,255,255,0.5)',
-              color: '#d48b60'
+              border: '2.5px dashed rgba(255,255,255,0.25)',
+              background: 'rgba(0,0,0,0.15)',
+              color: 'rgba(255,255,255,0.4)',
+              backdropFilter: 'blur(4px)'
             }}
           >
             +
           </div>
-          <span className="mt-1.5 text-[10px] text-[#5c3d2a]/40">添加</span>
+          <span className="mt-2 text-[11px] text-white/25" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>添加</span>
         </button>
       </div>
-    </section>
+    </div>
   );
 }
