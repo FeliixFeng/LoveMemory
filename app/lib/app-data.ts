@@ -169,21 +169,29 @@ export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise
       : currentData.loveQuotes
   };
 
-  await prisma.$transaction(async (tx: any) => {
-    await tx.settings.upsert({
-      where: { id: 1 },
-      create: {
-        id: 1,
-        startDate: nextData.startDate || '',
-        heroImage: nextData.heroImage || ''
-      },
-      update: {
-        startDate: nextData.startDate || '',
-        heroImage: nextData.heroImage || ''
-      }
-    });
+  // Only sync changed data
+  const hasSettingsChange = payload.startDate !== undefined || payload.heroImage !== undefined;
+  const hasMilestonesChange = Array.isArray(payload.milestones);
+  const hasPhotosChange = Array.isArray(payload.photos);
+  const hasLoveQuotesChange = Array.isArray(payload.loveQuotes);
 
-    if (Array.isArray(payload.loveQuotes)) {
+  await prisma.$transaction(async (tx: any) => {
+    if (hasSettingsChange) {
+      await tx.settings.upsert({
+        where: { id: 1 },
+        create: {
+          id: 1,
+          startDate: nextData.startDate || '',
+          heroImage: nextData.heroImage || ''
+        },
+        update: {
+          startDate: nextData.startDate || '',
+          heroImage: nextData.heroImage || ''
+        }
+      });
+    }
+
+    if (hasLoveQuotesChange) {
       const ids = nextData.loveQuotes.map((item) => item.id);
 
       if (ids.length > 0) {
@@ -211,7 +219,7 @@ export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise
       }
     }
 
-    if (Array.isArray(payload.milestones)) {
+    if (hasMilestonesChange) {
       const ids = nextData.milestones.map((item) => String(item.id));
 
       if (ids.length > 0) {
@@ -242,7 +250,7 @@ export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise
       }
     }
 
-    if (Array.isArray(payload.photos)) {
+    if (hasPhotosChange) {
       const urls = nextData.photos.map((photo) => photo.url);
 
       if (urls.length > 0) {

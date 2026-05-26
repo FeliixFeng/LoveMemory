@@ -86,6 +86,10 @@ export function LoveMemoryClient() {
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 2000); return () => clearTimeout(t); }, [toast]);
   useEffect(() => { if (HERO_IMAGES.length <= 1) return; const t = setInterval(() => setHeroIdx(i => (i + 1) % HERO_IMAGES.length), 6000); return () => clearInterval(t); }, []);
   useEffect(() => { if (data.loveQuotes.length <= 1) return; const t = setInterval(() => setQuoteIdx(i => (i + 1) % data.loveQuotes.length), 4500); return () => clearInterval(t); }, [data.loveQuotes.length]);
+  // Preload hero images
+  useEffect(() => {
+    HERO_IMAGES.forEach(src => { const img = new Image(); img.src = src; });
+  }, []);
 
   const days = useMemo(() => data.startDate ? Math.max(0, Math.floor((Date.now() - new Date(`${data.startDate}T00:00:00`).getTime()) / 86400000)) : 0, [data.startDate]);
   const animDays = useAnimatedNum(days);
@@ -98,8 +102,17 @@ export function LoveMemoryClient() {
   const heroImages = data.heroImage ? [data.heroImage, ...HERO_IMAGES] : HERO_IMAGES;
 
   async function save(next: AppData, msg?: string) {
-    setData(next); setSaving(true);
-    try { const r = await fetch('/api/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(next) }); if (!r.ok) throw new Error(); if (msg) setToast(msg); } catch { setToast('保存失败'); } finally { setSaving(false); }
+    setData(next);
+    if (msg) setToast(msg);
+    setSaving(true);
+    try {
+      const r = await fetch('/api/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(next) });
+      if (!r.ok) throw new Error();
+    } catch {
+      setToast('保存失败');
+    } finally {
+      setSaving(false);
+    }
   }
   async function doUpload(file: File) {
     const fd = new FormData(); fd.append('image', file);
@@ -124,8 +137,9 @@ export function LoveMemoryClient() {
     if (!msDraft.title || !msDraft.date) { setToast('请填写标题和日期'); return; }
     const next: Milestone = editMs ? { ...editMs, ...msDraft } : { ...msDraft, id: Date.now() };
     const list = editMs ? data.milestones.map(m => m.id === editMs.id ? next : m) : [...data.milestones, next];
-    await save({ ...data, milestones: list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) }, '已保存');
+    const sorted = list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     setMsModal(false); setEditMs(null);
+    await save({ ...data, milestones: sorted }, '已保存');
   }
   async function deleteMs() { if (!editMs) return; await save({ ...data, milestones: data.milestones.filter(m => m.id !== editMs.id) }, '已删除'); setMsModal(false); setEditMs(null); }
 
@@ -219,7 +233,7 @@ export function LoveMemoryClient() {
       <main className="max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto pt-20 pb-24 px-4 md:px-8 flex flex-col gap-6">
         {/* Hero */}
         <section className="relative rounded-3xl overflow-hidden shadow-lg aspect-[3.5/4.5] md:aspect-[4/3] lg:aspect-[16/9]" style={{ animation: 'slideUp 0.6s ease-out' }}>
-          {heroImages.map((img, i) => <img key={i} src={img} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: heroIdx === i ? 1 : 0, transition: 'opacity 1.5s' }} />)}
+          {heroImages.map((img, i) => <img key={i} src={img} alt="" loading={i === 0 ? "eager" : "lazy"} fetchPriority={i === 0 ? "high" : "auto"} className="absolute inset-0 w-full h-full object-cover" style={{ opacity: heroIdx === i ? 1 : 0, transition: 'opacity 1.5s' }} />)}
           <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
           <button className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/20 text-white text-sm flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity" onClick={() => setCoverMenu(true)}>✏</button>
           <div className="absolute top-4 left-4"><div className="px-2.5 py-1 rounded-full bg-black/30 text-[10px] text-emerald-400 font-medium tracking-wide" style={{ fontFamily: 'Playfair Display, serif' }}>{saving ? 'SYNCING' : 'LOVING'}</div></div>
