@@ -1,9 +1,13 @@
-export type Milestone = {
+export type Event = {
   id: number | string;
-  date: string;
   title: string;
+  date: string;
   desc: string;
   icon: string;
+  location: string;
+  mood: string;
+  coverPhoto: string;
+  sortOrder?: number;
 };
 
 export type Photo = {
@@ -14,6 +18,15 @@ export type Photo = {
   mimeType?: string;
   size?: number;
   uploadedAt: string;
+  eventId?: string | null;
+};
+
+export type Expense = {
+  id: number;
+  eventId: string;
+  amount: number;
+  category: string;
+  note: string;
 };
 
 export type LoveQuote = {
@@ -24,7 +37,10 @@ export type LoveQuote = {
 export type AppData = {
   startDate: string;
   heroImage: string;
-  milestones: Milestone[];
+  events: Event[];
   photos: Photo[];
+  expenses: Expense[];
   loveQuotes: LoveQuote[];
 };
+
+export type Milestone = Event;

@@ -67,8 +67,9 @@ test('GET /api/data returns default payload for a fresh data file', async () => 
     assert.equal(response.status, 200);
     assert.equal(body.startDate, '');
     assert.equal(body.heroImage, '');
-    assert.deepEqual(body.milestones, []);
+    assert.deepEqual(body.events, []);
     assert.deepEqual(body.photos, []);
+    assert.deepEqual(body.expenses, []);
     assert.ok(Array.isArray(body.loveQuotes));
   } finally {
     await ctx.cleanup();
@@ -82,8 +83,9 @@ test('POST /api/data merges updates without losing untouched fields', async () =
     const initialPayload = {
       startDate: '2020-01-01',
       heroImage: '/hero.jpg',
-      milestones: [{ id: 1, date: '2020-01-02', title: 'First Date', desc: 'Cafe', icon: 'ph-heart' }],
-      photos: [{ url: '/uploads/test.jpg', displayUrl: '/uploads/test.jpg', thumbUrl: '/uploads/test.jpg', uploadedAt: '2026-03-19T00:00:00.000Z' }]
+      events: [{ id: 1, date: '2020-01-02', title: 'First Date', desc: 'Cafe', icon: 'heart', location: '', mood: '', coverPhoto: '' }],
+      photos: [{ url: '/uploads/test.jpg', displayUrl: '/uploads/test.jpg', thumbUrl: '/uploads/test.jpg', uploadedAt: '2026-03-19T00:00:00.000Z' }],
+      expenses: [{ id: 1, eventId: '1', amount: 100, category: 'food', note: 'dinner' }]
     };
 
     await ctx.dataRoute.POST(
@@ -106,8 +108,9 @@ test('POST /api/data merges updates without losing untouched fields', async () =
     assert.equal(response.status, 200);
     assert.equal(body.data.startDate, '2020-01-01');
     assert.equal(body.data.heroImage, '/updated-hero.jpg');
-    assert.equal(body.data.milestones.length, 1);
+    assert.equal(body.data.events.length, 1);
     assert.equal(body.data.photos.length, 1);
+    assert.equal(body.data.expenses.length, 1);
   } finally {
     await ctx.cleanup();
   }

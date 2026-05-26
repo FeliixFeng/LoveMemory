@@ -41,6 +41,7 @@ export async function POST(request: Request) {
     await ensureUploadDir();
     const formData = await request.formData();
     const file = formData.get('image');
+    const eventId = typeof formData.get('eventId') === 'string' ? formData.get('eventId') as string : null;
 
     if (!(file instanceof File)) {
       return NextResponse.json({ error: '请选择要上传的图片' }, { status: 400 });
@@ -85,7 +86,8 @@ export async function POST(request: Request) {
           thumbUrl,
           filename,
           mimeType: file.type,
-          size: file.size
+          size: file.size,
+          eventId
         });
       } catch (dbError) {
         console.error('Database save error:', dbError);

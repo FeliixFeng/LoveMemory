@@ -1,22 +1,23 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Milestone, Photo, AppData } from '../lib/types';
-import { HERO_IMAGES, ICONS, ICON_MAP } from '../lib/constants';
-import { getEmoji, fmt } from '../lib/utils';
+import { Event, Photo, Expense, AppData } from '../lib/types';
+import { HERO_IMAGES } from '../lib/constants';
+import { fmt } from '../lib/utils';
 import { FallingHearts } from './FallingHearts';
 import { NavBar } from './NavBar';
 import { HeroSection } from './HeroSection';
-import { LoveQuotes } from './LoveQuotes';
-import { MilestoneList } from './MilestoneList';
-import { PhotoGrid } from './PhotoGrid';
-import { Gallery } from './Gallery';
+import { HorizontalTimeline } from './HorizontalTimeline';
+import { EventPreviewCard } from './EventPreviewCard';
+import { EventDetail } from './EventDetail';
+import { EventModal, EventDraft } from './EventModal';
+import { StatsSection } from './StatsSection';
+import { FloatingAddButton } from './FloatingAddButton';
 import { Lightbox } from './Lightbox';
 import { Toast } from './Toast';
-import { MilestoneModal } from './modals/MilestoneModal';
 import { SettingsModal } from './modals/SettingsModal';
-import { DeleteConfirmDialog } from './modals/DeleteConfirmDialog';
 import { CoverMenu } from './modals/CoverMenu';
+import { DeleteConfirmDialog } from './modals/DeleteConfirmDialog';
 import { PinModal } from './modals/PinModal';
 
 function useAnimatedNum(target: number) {
@@ -34,43 +35,44 @@ function useAnimatedNum(target: number) {
 }
 
 export function LoveMemoryClient() {
-  const [data, setData] = useState<AppData>({ startDate: '', heroImage: '', milestones: [], photos: [], loveQuotes: [] });
+  const [data, setData] = useState<AppData>({ startDate: '', heroImage: '', events: [], photos: [], expenses: [], loveQuotes: [] });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState('');
   const [viewPhoto, setViewPhoto] = useState<Photo | null>(null);
-  const [gallery, setGallery] = useState(false);
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Photo | null>(null);
-  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
-  const [editMs, setEditMs] = useState<Milestone | null>(null);
-  const [msDraft, setMsDraft] = useState({ date: new Date().toISOString().split('T')[0], title: '', desc: '', icon: 'heart' });
-  const [msModal, setMsModal] = useState(false);
   const [settings, setSettings] = useState(false);
   const [coverMenu, setCoverMenu] = useState(false);
   const [toast, setToast] = useState('');
-  const [quoteIdx, setQuoteIdx] = useState(0);
   const [showPin, setShowPin] = useState(false);
   const [token, setToken] = useState(() => {
     if (typeof window === 'undefined') return '';
     try { return localStorage.getItem('lm_token') || ''; } catch { return ''; }
   });
   const tokenRef = useRef(token);
-  const pendingOp = useRef<(() => Promise<void>) | null>(null);
+  const pendingOp = useRef<(() => void | Promise<void>) | null>(null);
+
+  // Event state
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [eventDetailId, setEventDetailId] = useState<string | null>(null);
+  const [eventModal, setEventModal] = useState(false);
+  const [editEvent, setEditEvent] = useState<Event | null>(null);
+  const [eventDraft, setEventDraft] = useState<EventDraft>({ date: new Date().toISOString().split('T')[0], title: '', desc: '', icon: 'heart', location: '', mood: '' });
 
   const fileRef = useRef<HTMLInputElement>(null);
   const heroRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch('/api/data', { cache: 'no-store' }).then(r => r.json()).then(d => {
-      setData({ ...d, milestones: (d.milestones || []).sort((a: Milestone, b: Milestone) => new Date(b.date).getTime() - new Date(a.date).getTime()), photos: (d.photos || []).map((p: Photo) => ({ ...p, displayUrl: p.displayUrl || p.url, thumbUrl: p.thumbUrl || p.displayUrl || p.url })) });
+      const events = (d.events || []).sort((a: Event, b: Event) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      const photos = (d.photos || []).map((p: Photo) => ({ ...p, displayUrl: p.displayUrl || p.url, thumbUrl: p.thumbUrl || p.displayUrl || p.url }));
+      setData({ ...d, events, photos, expenses: d.expenses || [], loveQuotes: d.loveQuotes || [] });
+      if (events.length > 0 && !selectedEventId) setSelectedEventId(String(events[0].id));
     }).catch(() => setToast('加载失败')).finally(() => setLoading(false));
   }, []);
 
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 2000); return () => clearTimeout(t); }, [toast]);
-
-  useEffect(() => { if (data.loveQuotes.length <= 1) return; const t = setInterval(() => setQuoteIdx(i => (i + 1) % data.loveQuotes.length), 4500); return () => clearInterval(t); }, [data.loveQuotes.length]);
 
   const days = useMemo(() => data.startDate ? Math.max(0, Math.floor((Date.now() - new Date(`${data.startDate}T00:00:00`).getTime()) / 86400000)) : 0, [data.startDate]);
   const animDays = useAnimatedNum(days);
@@ -81,6 +83,11 @@ export function LoveMemoryClient() {
     return Math.ceil((nx.getTime() - n.getTime()) / 86400000);
   }, [data.startDate]);
   const heroImages = data.heroImage ? [data.heroImage, ...HERO_IMAGES] : HERO_IMAGES;
+
+  const selectedEvent = useMemo(() => data.events.find(e => String(e.id) === selectedEventId) || null, [data.events, selectedEventId]);
+  const detailEvent = useMemo(() => data.events.find(e => String(e.id) === eventDetailId) || null, [data.events, eventDetailId]);
+  const selectedPhotos = useMemo(() => selectedEvent ? data.photos.filter(p => p.eventId === selectedEventId) : [], [data.photos, selectedEventId]);
+  const selectedExpenses = useMemo(() => selectedEvent ? data.expenses.filter(e => e.eventId === selectedEventId) : [], [data.expenses, selectedEventId]);
 
   async function save(next: AppData, msg?: string, authToken?: string) {
     const prev = data;
@@ -107,8 +114,10 @@ export function LoveMemoryClient() {
     }
   }
 
-  async function doUpload(file: File, authToken?: string) {
-    const fd = new FormData(); fd.append('image', file);
+  async function doUpload(file: File, authToken?: string, eventId?: string) {
+    const fd = new FormData();
+    fd.append('image', file);
+    if (eventId) fd.append('eventId', eventId);
     const headers: Record<string, string> = {};
     const t = authToken || tokenRef.current;
     if (t) headers['Authorization'] = `Bearer ${t}`;
@@ -123,8 +132,19 @@ export function LoveMemoryClient() {
   }
 
   async function onPhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files || []); if (!files.length) return; setUploading(true);
-    try { const up: Photo[] = []; for (const f of files) up.push(await doUpload(f)); await save({ ...data, photos: [...up.reverse(), ...data.photos] }, '已上传'); } catch (err) { if ((err as Error)?.message !== 'auth') setToast('上传失败'); } finally { setUploading(false); e.target.value = ''; }
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      const up: Photo[] = [];
+      for (const f of files) up.push(await doUpload(f, undefined, selectedEventId || undefined));
+      await save({ ...data, photos: [...up.reverse(), ...data.photos] }, '已上传');
+    } catch (err) {
+      if ((err as Error)?.message !== 'auth') setToast('上传失败');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
   }
 
   async function onDelPhoto(p: Photo) {
@@ -149,71 +169,107 @@ export function LoveMemoryClient() {
     try { const u = await doUpload(file); await save({ ...data, heroImage: u.displayUrl || u.url }, '封面已更新'); } catch (err) { if ((err as Error)?.message !== 'auth') setToast('上传失败'); } finally { setUploading(false); e.target.value = ''; }
   }
 
-  function openMsCreate() { setEditMs(null); setMsDraft({ date: new Date().toISOString().split('T')[0], title: '', desc: '', icon: 'heart' }); setMsModal(true); }
-  function openMsEdit(m: Milestone) { setEditMs(m); setMsDraft({ date: m.date, title: m.title, desc: m.desc, icon: ICON_MAP[m.icon] || m.icon }); setMsModal(true); }
-
-  async function saveMs() {
-    if (!msDraft.title || !msDraft.date) { setToast('请填写标题和日期'); return; }
-    const next: Milestone = editMs ? { ...editMs, ...msDraft } : { ...msDraft, id: Date.now() };
-    const list = editMs ? data.milestones.map(m => m.id === editMs.id ? next : m) : [...data.milestones, next];
-    const sorted = list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    setMsModal(false); setEditMs(null);
-    await save({ ...data, milestones: sorted }, '已保存');
+  // Event CRUD
+  function openEventCreate() {
+    setEditEvent(null);
+    setEventDraft({ date: new Date().toISOString().split('T')[0], title: '', desc: '', icon: 'heart', location: '', mood: '' });
+    setEventModal(true);
   }
 
-  async function deleteMs() { if (!editMs) return; await save({ ...data, milestones: data.milestones.filter(m => m.id !== editMs.id) }, '已删除'); setMsModal(false); setEditMs(null); }
-
-  function onDragStart(index: number) { setDragIndex(index); }
-  function onDragOver(e: React.DragEvent) { e.preventDefault(); }
-  function onLongPressStart(p: Photo) {
-    const timer = setTimeout(() => setDeleteConfirm(p), 500);
-    setLongPressTimer(timer);
+  function openEventEdit(ev: Event) {
+    setEditEvent(ev);
+    setEventDraft({ date: ev.date, title: ev.title, desc: ev.desc, icon: ev.icon, location: ev.location, mood: ev.mood });
+    setEventModal(true);
   }
-  function onLongPressEnd() {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      setLongPressTimer(null);
+
+  async function saveEvent() {
+    if (!eventDraft.title || !eventDraft.date) { setToast('请填写标题和日期'); return; }
+
+    if (editEvent) {
+      // Update existing
+      const events = data.events.map(e => e.id === editEvent.id ? { ...e, ...eventDraft } : e);
+      const sorted = events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setEventModal(false); setEditEvent(null);
+      await save({ ...data, events }, '已保存');
+    } else {
+      // Create new via API
+      try {
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (tokenRef.current) headers['Authorization'] = `Bearer ${tokenRef.current}`;
+        const r = await fetch('/api/events', {
+          method: 'POST', headers,
+          body: JSON.stringify(eventDraft)
+        });
+        if (r.status === 401) {
+          pendingOp.current = () => saveEvent();
+          setShowPin(true);
+          return;
+        }
+        if (!r.ok) throw new Error();
+        const { event: created } = await r.json();
+        const events = [...data.events, created].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setEventModal(false);
+        await save({ ...data, events }, '已创建');
+        setSelectedEventId(String(created.id));
+      } catch {
+        setToast('创建失败');
+      }
     }
   }
-  async function confirmDelete() {
-    if (!deleteConfirm) return;
-    await onDelPhoto(deleteConfirm);
-    setDeleteConfirm(null);
-  }
-  function onDrop(targetIndex: number) {
-    if (dragIndex === null || dragIndex === targetIndex) return;
-    const photos = [...data.photos];
-    const [moved] = photos.splice(dragIndex, 1);
-    photos.splice(targetIndex, 0, moved);
-    void save({ ...data, photos }, '已排序');
-    setDragIndex(null);
-  }
 
-  const currentPhotoIndex = viewPhoto ? data.photos.findIndex(p => p.url === viewPhoto.url) : -1;
-  function goToPhoto(index: number) {
-    const len = data.photos.length;
-    if (len === 0) return;
-    const next = (index + len) % len;
-    setViewPhoto(data.photos[next]);
+  async function deleteEvent() {
+    if (!editEvent) return;
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (tokenRef.current) headers['Authorization'] = `Bearer ${tokenRef.current}`;
+      const r = await fetch(`/api/events/${editEvent.id}`, { method: 'DELETE', headers });
+      if (r.status === 401) {
+        pendingOp.current = () => deleteEvent();
+        setShowPin(true);
+        return;
+      }
+      const events = data.events.filter(e => e.id !== editEvent.id);
+      const expenses = data.expenses.filter(e => e.eventId !== String(editEvent.id));
+      setEventModal(false); setEditEvent(null);
+      if (selectedEventId === String(editEvent.id)) setSelectedEventId(events.length > 0 ? String(events[0].id) : null);
+      await save({ ...data, events, expenses }, '已删除');
+    } catch { setToast('删除失败'); }
   }
 
-  useEffect(() => {
-    if (!viewPhoto) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') goToPhoto(currentPhotoIndex - 1);
-      if (e.key === 'ArrowRight') goToPhoto(currentPhotoIndex + 1);
-      if (e.key === 'Escape') setViewPhoto(null);
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [viewPhoto, currentPhotoIndex]);
+  // Expense CRUD
+  async function addExpense(expenseData: { amount: number; category: string; note: string }) {
+    if (!eventDetailId) return;
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (tokenRef.current) headers['Authorization'] = `Bearer ${tokenRef.current}`;
+      const r = await fetch(`/api/events/${eventDetailId}/expenses`, {
+        method: 'POST', headers,
+        body: JSON.stringify(expenseData)
+      });
+      if (r.status === 401) {
+        pendingOp.current = () => addExpense(expenseData);
+        setShowPin(true);
+        return;
+      }
+      if (!r.ok) throw new Error();
+      const { expense } = await r.json();
+      await save({ ...data, expenses: [...data.expenses, expense] }, '已添加');
+    } catch { setToast('添加失败'); }
+  }
 
-  useEffect(() => {
-    if (!viewPhoto || data.photos.length <= 1) return;
-    const prev = data.photos[(currentPhotoIndex - 1 + data.photos.length) % data.photos.length];
-    const next = data.photos[(currentPhotoIndex + 1) % data.photos.length];
-    [prev, next].forEach(p => { const img = new Image(); img.src = p.displayUrl || p.url; });
-  }, [viewPhoto, currentPhotoIndex]);
+  async function deleteExpense(id: number) {
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (tokenRef.current) headers['Authorization'] = `Bearer ${tokenRef.current}`;
+      const r = await fetch(`/api/expenses/${id}`, { method: 'DELETE', headers });
+      if (r.status === 401) {
+        pendingOp.current = () => deleteExpense(id);
+        setShowPin(true);
+        return;
+      }
+      await save({ ...data, expenses: data.expenses.filter(e => e.id !== id) }, '已删除');
+    } catch { setToast('删除失败'); }
+  }
 
   function onPinVerified(newToken: string) {
     setToken(newToken);
@@ -245,37 +301,62 @@ export function LoveMemoryClient() {
         <HeroSection
           heroImages={heroImages} saving={saving}
           animDays={animDays} nextDays={nextDays} startDate={data.startDate}
+          quotes={data.loveQuotes}
           onCoverMenu={() => withAuth(() => setCoverMenu(true))}
           onHeroUpload={onHeroUpload}
           heroRef={heroRef}
         />
 
-        <LoveQuotes quotes={data.loveQuotes} />
-
-        <MilestoneList
-          milestones={data.milestones}
-          onEdit={m => withAuth(() => openMsEdit(m))}
-          onCreate={() => withAuth(openMsCreate)}
+        <HorizontalTimeline
+          events={data.events}
+          selectedId={selectedEventId}
+          onSelect={setSelectedEventId}
+          onAdd={() => withAuth(openEventCreate)}
         />
 
-        <PhotoGrid
-          photos={data.photos} uploading={uploading} deleting={deleting} dragIndex={dragIndex}
-          onViewPhoto={setViewPhoto}
-          onDeleteConfirm={p => withAuth(() => setDeleteConfirm(p))}
-          onDragStart={onDragStart} onDragOver={onDragOver} onDrop={i => withAuth(() => onDrop(i))}
-          onLongPressStart={onLongPressStart} onLongPressEnd={onLongPressEnd}
-          onAddClick={() => withAuth(() => fileRef.current?.click())}
+        <EventPreviewCard
+          event={selectedEvent}
+          photos={selectedPhotos}
+          expenses={selectedExpenses}
+          onExpand={() => setEventDetailId(selectedEventId)}
+          onEdit={() => withAuth(() => { if (selectedEvent) openEventEdit(selectedEvent); })}
+        />
+
+        <StatsSection
+          events={data.events}
+          photos={data.photos}
+          expenses={data.expenses}
+          days={days}
         />
 
         <footer className="text-center py-6 opacity-30"><span className="text-sm">💕</span></footer>
       </main>
 
-      {msModal && (
-        <MilestoneModal
-          editMs={editMs} msDraft={msDraft} setMsDraft={setMsDraft}
-          onSave={() => void saveMs()}
-          onDelete={() => void deleteMs()}
-          onClose={() => setMsModal(false)}
+      <FloatingAddButton onClick={() => withAuth(openEventCreate)} />
+
+      {eventModal && (
+        <EventModal
+          editEvent={editEvent} draft={eventDraft} setDraft={setEventDraft}
+          onSave={() => void saveEvent()}
+          onDelete={() => void deleteEvent()}
+          onClose={() => setEventModal(false)}
+        />
+      )}
+
+      {detailEvent && (
+        <EventDetail
+          event={detailEvent}
+          photos={data.photos.filter(p => p.eventId === eventDetailId)}
+          expenses={data.expenses.filter(e => e.eventId === eventDetailId)}
+          onClose={() => setEventDetailId(null)}
+          onEdit={() => withAuth(() => openEventEdit(detailEvent))}
+          onAddPhoto={() => withAuth(() => fileRef.current?.click())}
+          onDeletePhoto={p => withAuth(() => onDelPhoto(p))}
+          onAddExpense={addExpense}
+          onDeleteExpense={id => withAuth(() => deleteExpense(id))}
+          onViewPhoto={setViewPhoto}
+          uploading={uploading}
+          deleting={deleting}
         />
       )}
 
@@ -296,29 +377,19 @@ export function LoveMemoryClient() {
         />
       )}
 
-      {gallery && (
-        <Gallery
-          photos={data.photos} deleting={deleting}
-          onViewPhoto={p => { setViewPhoto(p); setGallery(false); }}
-          onDelete={p => withAuth(() => onDelPhoto(p))}
-          onAdd={() => withAuth(() => fileRef.current?.click())}
-          onClose={() => setGallery(false)}
-        />
-      )}
-
       {viewPhoto && (
         <Lightbox
-          photo={viewPhoto} hasMultiple={data.photos.length > 1}
+          photo={viewPhoto} hasMultiple={false}
           onClose={() => setViewPhoto(null)}
-          onPrev={() => goToPhoto(currentPhotoIndex - 1)}
-          onNext={() => goToPhoto(currentPhotoIndex + 1)}
+          onPrev={() => {}}
+          onNext={() => {}}
         />
       )}
 
       {deleteConfirm && (
         <DeleteConfirmDialog
           photo={deleteConfirm}
-          onConfirm={() => withAuth(confirmDelete)}
+          onConfirm={() => withAuth(async () => { await onDelPhoto(deleteConfirm); setDeleteConfirm(null); })}
           onCancel={() => setDeleteConfirm(null)}
         />
       )}

@@ -2,19 +2,20 @@ import { prisma } from './prisma.ts';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { getDataFilePath } from './env.ts';
-import type { Milestone, Photo, LoveQuote, AppData } from '../../lib/types.ts';
+import type { Event, Photo, Expense, LoveQuote, AppData } from '../../lib/types.ts';
 
-// Re-export types for backward compatibility
-export type AppMilestone = Milestone;
+export type AppEvent = Event;
 export type AppPhoto = Photo;
+export type AppExpense = Expense;
 export type AppLoveQuote = LoveQuote;
 export type { AppData };
 
 export const DEFAULT_APP_DATA: AppData = {
   startDate: '',
   heroImage: '',
-  milestones: [],
+  events: [],
   photos: [],
+  expenses: [],
   loveQuotes: [
     { id: 1, content: '余生请多指教' },
     { id: 2, content: '你是我最美丽的意外' },
@@ -42,39 +43,64 @@ function normalizePhoto(photo: Partial<AppPhoto> & { url?: string }) {
     filename: photo.filename || '',
     mimeType: photo.mimeType || '',
     size: Number(photo.size) || 0,
-    uploadedAt: photo.uploadedAt || new Date().toISOString()
+    uploadedAt: photo.uploadedAt || new Date().toISOString(),
+    eventId: photo.eventId || null
   };
 }
 
 export async function readAppDataWithPrisma(): Promise<AppData> {
-  const [settings, milestones, photos, loveQuotes] = await Promise.all([
+  const [settings, events, standalonePhotos, loveQuotes] = await Promise.all([
     prisma.settings.findUnique({ where: { id: 1 } }),
-    prisma.milestone.findMany({ orderBy: [{ date: 'desc' }, { createdAt: 'desc' }] }),
-    prisma.photo.findMany({ orderBy: [{ sortOrder: 'asc' }, { id: 'desc' }] }),
+    prisma.event.findMany({
+      include: { photos: true, expenses: true },
+      orderBy: [{ date: 'desc' }, { createdAt: 'desc' }]
+    }),
+    prisma.photo.findMany({
+      where: { eventId: null },
+      orderBy: [{ sortOrder: 'asc' }, { id: 'desc' }]
+    }),
     prisma.loveQuote.findMany({ orderBy: { sortOrder: 'asc' } })
   ]);
+
+  const eventPhotos = events.flatMap((e: any) => e.photos);
+  const allPhotos = [...eventPhotos, ...standalonePhotos].map((item: any) =>
+    normalizePhoto({
+      url: item.url,
+      displayUrl: item.displayUrl,
+      thumbUrl: item.thumbUrl,
+      filename: item.filename,
+      mimeType: item.mimeType,
+      size: item.fileSize,
+      uploadedAt: item.uploadedAt,
+      eventId: item.eventId
+    })
+  );
+
+  const allExpenses: Expense[] = events.flatMap((e: any) =>
+    e.expenses.map((exp: any) => ({
+      id: exp.id,
+      eventId: exp.eventId,
+      amount: exp.amount,
+      category: exp.category,
+      note: exp.note
+    }))
+  );
 
   return {
     startDate: settings?.startDate || '',
     heroImage: settings?.heroImage || '',
-    milestones: milestones.map((item: any) => ({
+    events: events.map((item: any) => ({
       id: normalizeMilestoneId(item.id),
-      date: item.date,
       title: item.title,
+      date: item.date,
       desc: item.description,
-      icon: item.icon
+      icon: item.icon,
+      location: item.location || '',
+      mood: item.mood || '',
+      coverPhoto: item.coverPhoto || ''
     })),
-    photos: photos.map((item: any) =>
-      normalizePhoto({
-        url: item.url,
-        displayUrl: item.displayUrl,
-        thumbUrl: item.thumbUrl,
-        filename: item.filename,
-        mimeType: item.mimeType,
-        size: item.fileSize,
-        uploadedAt: item.uploadedAt
-      })
-    ),
+    photos: allPhotos,
+    expenses: allExpenses,
     loveQuotes: loveQuotes.map((item: any) => ({
       id: item.id,
       content: item.content
@@ -97,18 +123,34 @@ async function ensureJsonDataFile() {
   }
 }
 
+function migrateLegacyData(parsed: any): AppData {
+  const events = Array.isArray(parsed.events)
+    ? parsed.events
+    : Array.isArray(parsed.milestones)
+      ? parsed.milestones.map((m: any) => ({
+          ...m,
+          location: m.location || '',
+          mood: m.mood || '',
+          coverPhoto: m.coverPhoto || ''
+        }))
+      : [];
+
+  return {
+    ...DEFAULT_APP_DATA,
+    ...parsed,
+    events,
+    photos: Array.isArray(parsed.photos) ? parsed.photos.map((photo: Photo) => normalizePhoto(photo)) : [],
+    expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
+    loveQuotes: Array.isArray(parsed.loveQuotes) ? parsed.loveQuotes : DEFAULT_APP_DATA.loveQuotes
+  };
+}
+
 export async function readAppDataFromJson(): Promise<AppData> {
   await ensureJsonDataFile();
   const content = await fs.readFile(dataFile, 'utf-8');
   const parsed = JSON.parse(content);
 
-  return {
-    ...DEFAULT_APP_DATA,
-    ...parsed,
-    milestones: Array.isArray(parsed.milestones) ? parsed.milestones : [],
-    photos: Array.isArray(parsed.photos) ? parsed.photos.map((photo: AppPhoto) => normalizePhoto(photo)) : [],
-    loveQuotes: Array.isArray(parsed.loveQuotes) ? parsed.loveQuotes : DEFAULT_APP_DATA.loveQuotes
-  };
+  return migrateLegacyData(parsed);
 }
 
 export async function writeAppDataToJson(payload: Partial<AppData>): Promise<AppData> {
@@ -117,10 +159,11 @@ export async function writeAppDataToJson(payload: Partial<AppData>): Promise<App
     ...DEFAULT_APP_DATA,
     ...currentData,
     ...payload,
-    milestones: Array.isArray(payload.milestones) ? payload.milestones : currentData.milestones,
+    events: Array.isArray(payload.events) ? payload.events : currentData.events,
     photos: Array.isArray(payload.photos)
       ? payload.photos.map((photo) => normalizePhoto(photo))
       : currentData.photos,
+    expenses: Array.isArray(payload.expenses) ? payload.expenses : currentData.expenses,
     loveQuotes: Array.isArray(payload.loveQuotes) ? payload.loveQuotes : currentData.loveQuotes
   };
 
@@ -137,18 +180,19 @@ export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise
     photos: Array.isArray(payload.photos)
       ? payload.photos.map((photo) => normalizePhoto(photo))
       : currentData.photos,
-    milestones: Array.isArray(payload.milestones)
-      ? payload.milestones
-      : currentData.milestones,
-    loveQuotes: Array.isArray(payload.loveQuotes)
-      ? payload.loveQuotes
-      : currentData.loveQuotes
+    events: Array.isArray(payload.events)
+      ? payload.events
+      : currentData.events,
+    expenses: Array.isArray(payload.expenses)
+      ? payload.expenses
+      : currentData.expenses,
+    loveQuotes: Array.isArray(payload.loveQuotes) ? payload.loveQuotes : currentData.loveQuotes
   };
 
-  // Only sync changed data - compare with current data to detect actual changes
   const hasSettingsChange = payload.startDate !== undefined || payload.heroImage !== undefined;
-  const hasMilestonesChange = Array.isArray(payload.milestones) && JSON.stringify(payload.milestones) !== JSON.stringify(currentData.milestones);
+  const hasEventsChange = Array.isArray(payload.events) && JSON.stringify(payload.events) !== JSON.stringify(currentData.events);
   const hasPhotosChange = Array.isArray(payload.photos) && JSON.stringify(payload.photos) !== JSON.stringify(currentData.photos);
+  const hasExpensesChange = Array.isArray(payload.expenses) && JSON.stringify(payload.expenses) !== JSON.stringify(currentData.expenses);
   const hasLoveQuotesChange = Array.isArray(payload.loveQuotes) && JSON.stringify(payload.loveQuotes) !== JSON.stringify(currentData.loveQuotes);
 
   await prisma.$transaction(async (tx: any) => {
@@ -195,32 +239,72 @@ export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise
       }
     }
 
-    if (hasMilestonesChange) {
-      const ids = nextData.milestones.map((item) => String(item.id));
+    if (hasEventsChange) {
+      const ids = nextData.events.map((item) => String(item.id));
 
       if (ids.length > 0) {
-        await tx.milestone.deleteMany({
+        await tx.event.deleteMany({
           where: { id: { notIn: ids } }
         });
       } else {
-        await tx.milestone.deleteMany();
+        await tx.event.deleteMany();
       }
 
-      for (const milestone of nextData.milestones) {
-        await tx.milestone.upsert({
-          where: { id: String(milestone.id) },
+      for (let i = 0; i < nextData.events.length; i++) {
+        const event = nextData.events[i];
+        await tx.event.upsert({
+          where: { id: String(event.id) },
           create: {
-            id: String(milestone.id),
-            date: milestone.date,
-            title: milestone.title,
-            description: milestone.desc,
-            icon: milestone.icon || 'ph-heart'
+            id: String(event.id),
+            title: event.title,
+            date: event.date,
+            description: event.desc,
+            icon: event.icon || 'heart',
+            location: event.location || '',
+            mood: event.mood || '',
+            coverPhoto: event.coverPhoto || '',
+            sortOrder: i
           },
           update: {
-            date: milestone.date,
-            title: milestone.title,
-            description: milestone.desc,
-            icon: milestone.icon || 'ph-heart'
+            title: event.title,
+            date: event.date,
+            description: event.desc,
+            icon: event.icon || 'heart',
+            location: event.location || '',
+            mood: event.mood || '',
+            coverPhoto: event.coverPhoto || '',
+            sortOrder: i
+          }
+        });
+      }
+    }
+
+    if (hasExpensesChange) {
+      const ids = nextData.expenses.map((item) => item.id);
+
+      if (ids.length > 0) {
+        await tx.expense.deleteMany({
+          where: { id: { notIn: ids } }
+        });
+      } else {
+        await tx.expense.deleteMany();
+      }
+
+      for (const expense of nextData.expenses) {
+        await tx.expense.upsert({
+          where: { id: expense.id },
+          create: {
+            id: expense.id,
+            eventId: expense.eventId,
+            amount: expense.amount,
+            category: expense.category,
+            note: expense.note
+          },
+          update: {
+            eventId: expense.eventId,
+            amount: expense.amount,
+            category: expense.category,
+            note: expense.note
           }
         });
       }
@@ -254,7 +338,8 @@ export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise
               mimeType: photo.mimeType,
               fileSize: photo.size,
               sortOrder: i,
-              uploadedAt: photo.uploadedAt
+              uploadedAt: photo.uploadedAt,
+              eventId: photo.eventId || null
             }
           });
           continue;
@@ -269,7 +354,8 @@ export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise
             mimeType: photo.mimeType,
             fileSize: photo.size,
             sortOrder: i,
-            uploadedAt: photo.uploadedAt
+            uploadedAt: photo.uploadedAt,
+            eventId: photo.eventId || null
           }
         });
       }
@@ -295,7 +381,8 @@ export async function createPhotoWithPrisma(photo: Partial<AppPhoto> & { url: st
       mimeType: normalized.mimeType,
       fileSize: normalized.size,
       sortOrder: count,
-      uploadedAt: normalized.uploadedAt
+      uploadedAt: normalized.uploadedAt,
+      eventId: normalized.eventId || null
     }
   });
 
@@ -305,5 +392,80 @@ export async function createPhotoWithPrisma(photo: Partial<AppPhoto> & { url: st
 export async function deletePhotoWithPrisma(url: string): Promise<void> {
   await prisma.photo.deleteMany({
     where: { url }
+  });
+}
+
+export async function createEventWithPrisma(event: Partial<Event> & { id: string }): Promise<Event> {
+  const count = await prisma.event.count();
+
+  await prisma.event.create({
+    data: {
+      id: event.id,
+      title: event.title || '',
+      date: event.date || '',
+      description: event.desc || '',
+      icon: event.icon || 'heart',
+      location: event.location || '',
+      mood: event.mood || '',
+      coverPhoto: event.coverPhoto || '',
+      sortOrder: event.sortOrder ?? count
+    }
+  });
+
+  return {
+    id: event.id,
+    title: event.title || '',
+    date: event.date || '',
+    desc: event.desc || '',
+    icon: event.icon || 'heart',
+    location: event.location || '',
+    mood: event.mood || '',
+    coverPhoto: event.coverPhoto || ''
+  };
+}
+
+export async function updateEventWithPrisma(id: string, data: Partial<Event>): Promise<void> {
+  await prisma.event.update({
+    where: { id },
+    data: {
+      ...(data.title !== undefined && { title: data.title }),
+      ...(data.date !== undefined && { date: data.date }),
+      ...(data.desc !== undefined && { description: data.desc }),
+      ...(data.icon !== undefined && { icon: data.icon }),
+      ...(data.location !== undefined && { location: data.location }),
+      ...(data.mood !== undefined && { mood: data.mood }),
+      ...(data.coverPhoto !== undefined && { coverPhoto: data.coverPhoto })
+    }
+  });
+}
+
+export async function deleteEventWithPrisma(id: string): Promise<void> {
+  await prisma.event.delete({
+    where: { id }
+  });
+}
+
+export async function addExpenseWithPrisma(expense: Omit<Expense, 'id'>): Promise<Expense> {
+  const created = await prisma.expense.create({
+    data: {
+      eventId: expense.eventId,
+      amount: expense.amount,
+      category: expense.category,
+      note: expense.note
+    }
+  });
+
+  return {
+    id: created.id,
+    eventId: created.eventId,
+    amount: created.amount,
+    category: created.category,
+    note: created.note
+  };
+}
+
+export async function deleteExpenseWithPrisma(id: number): Promise<void> {
+  await prisma.expense.delete({
+    where: { id }
   });
 }

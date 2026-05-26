@@ -30,3 +30,22 @@ export const ICON_MAP: Record<string, string> = {
   'ph-camera': 'camera',
   'ph-star': 'star'
 };
+
+export const MOODS = [
+  { id: 'happy', emoji: '😊', label: '开心' },
+  { id: 'excited', emoji: '🤩', label: '兴奋' },
+  { id: 'romantic', emoji: '🥰', label: '浪漫' },
+  { id: 'peaceful', emoji: '😌', label: '平静' },
+  { id: 'nostalgic', emoji: '🥺', label: '怀旧' },
+  { id: 'grateful', emoji: '🙏', label: '感恩' },
+];
+
+export const EXPENSE_CATEGORIES = [
+  { id: 'food', emoji: '🍽️', label: '餐饮' },
+  { id: 'transport', emoji: '🚗', label: '交通' },
+  { id: 'accommodation', emoji: '🏨', label: '住宿' },
+  { id: 'tickets', emoji: '🎫', label: '门票' },
+  { id: 'shopping', emoji: '🛍️', label: '购物' },
+  { id: 'gift', emoji: '🎁', label: '礼物' },
+  { id: 'other', emoji: '📝', label: '其他' },
+];

@@ -33,6 +33,13 @@ export async function POST(request: Request) {
 
     const payload = await request.json();
     const normalizedPayload = payload && typeof payload === 'object' ? payload : {};
+
+    // Backward compat: accept milestones key as events
+    if (normalizedPayload.milestones && !normalizedPayload.events) {
+      normalizedPayload.events = normalizedPayload.milestones;
+    }
+    delete normalizedPayload.milestones;
+
     const nextData = getStorageDriver() === 'mysql'
       ? await writeAppDataWithPrisma(normalizedPayload)
       : await writeAppDataToJson(normalizedPayload);

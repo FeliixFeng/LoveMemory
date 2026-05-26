@@ -1,0 +1,174 @@
+'use client';
+
+import { useState } from 'react';
+import { Event, Photo, Expense } from '../lib/types';
+import { getEmoji, fmt, formatCurrency, calcTotalExpenses, getMoodEmoji } from '../lib/utils';
+import { EXPENSE_CATEGORIES } from '../lib/constants';
+import { ExpenseItem } from './ExpenseItem';
+
+export function EventDetail({
+  event, photos, expenses, onClose, onEdit, onAddPhoto, onDeletePhoto, onAddExpense, onDeleteExpense, onViewPhoto, uploading, deleting
+}: {
+  event: Event;
+  photos: Photo[];
+  expenses: Expense[];
+  onClose: () => void;
+  onEdit: () => void;
+  onAddPhoto: () => void;
+  onDeletePhoto: (p: Photo) => void;
+  onAddExpense: (data: { amount: number; category: string; note: string }) => void;
+  onDeleteExpense: (id: number) => void;
+  onViewPhoto: (p: Photo) => void;
+  uploading: boolean;
+  deleting: string;
+}) {
+  const [showAddExpense, setShowAddExpense] = useState(false);
+  const [expenseDraft, setExpenseDraft] = useState({ amount: '', category: 'food', note: '' });
+  const total = calcTotalExpenses(expenses);
+
+  function handleAddExpense() {
+    const amount = parseFloat(expenseDraft.amount);
+    if (!amount || amount <= 0) return;
+    onAddExpense({ amount, category: expenseDraft.category, note: expenseDraft.note });
+    setExpenseDraft({ amount: '', category: 'food', note: '' });
+    setShowAddExpense(false);
+  }
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <div
+        className="relative w-full sm:max-w-lg max-h-[85vh] bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl overflow-y-auto"
+        style={{ animation: 'slideUp 0.3s ease-out' }}
+      >
+        {/* Header */}
+        <div className="sticky top-0 bg-[#fdfbf7]/95 backdrop-blur-sm z-10 p-4 border-b border-[#efd8c3]/30">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">{getEmoji(event.icon)}</span>
+              <div>
+                <h2 className="text-base font-bold text-[#3d281c]" style={{ fontFamily: 'Noto Serif SC, serif' }}>
+                  {event.title || '未命名事件'}
+                </h2>
+                <p className="text-[11px] text-[#5c3d2a]/60">{fmt(event.date)}</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={onEdit} className="px-3 py-1.5 text-xs rounded-lg bg-[#efd8c3]/40 text-[#5c3d2a]">编辑</button>
+              <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-[#5c3d2a]/50 hover:bg-[#efd8c3]/30">✕</button>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 space-y-4">
+          {/* Info */}
+          {(event.location || event.mood || event.desc) && (
+            <div className="space-y-2">
+              {event.desc && <p className="text-sm text-[#5c3d2a]/80">{event.desc}</p>}
+              <div className="flex gap-3 text-xs text-[#5c3d2a]/50">
+                {event.location && <span>📍 {event.location}</span>}
+                {event.mood && <span>{getMoodEmoji(event.mood)} {event.mood}</span>}
+              </div>
+            </div>
+          )}
+
+          {/* Photos */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-bold text-[#3d281c]">照片</h3>
+              <button
+                onClick={onAddPhoto}
+                disabled={uploading}
+                className="px-3 py-1 text-xs rounded-lg bg-[#d48b60] text-white disabled:opacity-50"
+              >
+                {uploading ? '上传中...' : '+ 添加'}
+              </button>
+            </div>
+            {photos.length === 0 ? (
+              <p className="text-xs text-[#5c3d2a]/40 py-4 text-center">还没有照片</p>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {photos.map((p, i) => (
+                  <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-[#efd8c3]/20 group">
+                    <img
+                      src={p.thumbUrl || p.displayUrl || p.url}
+                      alt=""
+                      className="w-full h-full object-cover cursor-pointer"
+                      loading="lazy"
+                      onClick={() => onViewPhoto(p)}
+                    />
+                    <button
+                      onClick={() => onDeletePhoto(p)}
+                      disabled={deleting === p.url}
+                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/50 text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                    >
+                      {deleting === p.url ? '...' : '✕'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Expenses */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-bold text-[#3d281c]">
+                账单 {total > 0 && <span className="text-[#d48b60] font-normal">({formatCurrency(total)})</span>}
+              </h3>
+              <button
+                onClick={() => setShowAddExpense(true)}
+                className="px-3 py-1 text-xs rounded-lg bg-[#d48b60] text-white"
+              >
+                + 添加
+              </button>
+            </div>
+            {expenses.length === 0 && !showAddExpense ? (
+              <p className="text-xs text-[#5c3d2a]/40 py-4 text-center">还没有账单</p>
+            ) : (
+              <div className="space-y-2">
+                {expenses.map(e => (
+                  <ExpenseItem key={e.id} expense={e} onDelete={() => onDeleteExpense(e.id)} />
+                ))}
+              </div>
+            )}
+
+            {showAddExpense && (
+              <div className="mt-3 p-3 rounded-xl bg-white border border-[#efd8c3]/40 space-y-2">
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    placeholder="金额"
+                    value={expenseDraft.amount}
+                    onChange={e => setExpenseDraft(d => ({ ...d, amount: e.target.value }))}
+                    className="flex-1 bg-[#fdfbf7] border border-[#efd8c3]/60 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#d48b60]"
+                  />
+                  <select
+                    value={expenseDraft.category}
+                    onChange={e => setExpenseDraft(d => ({ ...d, category: e.target.value }))}
+                    className="bg-[#fdfbf7] border border-[#efd8c3]/60 rounded-lg px-2 py-2 text-sm outline-none focus:border-[#d48b60]"
+                  >
+                    {EXPENSE_CATEGORIES.map(c => (
+                      <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <input
+                  type="text"
+                  placeholder="备注（可选）"
+                  value={expenseDraft.note}
+                  onChange={e => setExpenseDraft(d => ({ ...d, note: e.target.value }))}
+                  className="w-full bg-[#fdfbf7] border border-[#efd8c3]/60 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#d48b60]"
+                />
+                <div className="flex gap-2 justify-end">
+                  <button onClick={() => setShowAddExpense(false)} className="px-3 py-1.5 text-xs text-[#5c3d2a]/60">取消</button>
+                  <button onClick={handleAddExpense} className="px-4 py-1.5 text-xs rounded-lg bg-[#3d281c] text-amber-50">保存</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

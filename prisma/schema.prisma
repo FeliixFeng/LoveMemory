@@ -10,21 +10,28 @@ datasource db {
 model Settings {
   id        Int      @id @db.TinyInt
   startDate String   @default("") @map("start_date") @db.VarChar(20)
-  heroImage String   @default("") @map("hero_image") @db.LongText
+  heroImage String   @map("hero_image") @db.LongText
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("settings")
 }
 
-model Milestone {
+model Event {
   id          String   @id @db.VarChar(64)
-  date        String   @db.VarChar(20)
   title       String   @db.VarChar(255)
+  date        String   @db.VarChar(20)
   description String   @db.Text
-  icon        String   @db.VarChar(64)
+  icon        String   @default("heart") @db.VarChar(64)
+  location    String   @default("") @db.VarChar(500)
+  mood        String   @default("") @db.VarChar(100)
+  coverPhoto  String   @default("") @map("cover_photo") @db.VarChar(500)
+  sortOrder   Int      @default(0) @map("sort_order") @db.Int
   createdAt   DateTime @default(now()) @map("created_at")
 
-  @@map("milestones")
+  photos   Photo[]
+  expenses Expense[]
+
+  @@map("events")
 }
 
 model Photo {
@@ -39,8 +46,24 @@ model Photo {
   uploadedAt String   @map("uploaded_at") @db.VarChar(40)
   createdAt  DateTime @default(now()) @map("created_at")
 
+  eventId String? @map("event_id") @db.VarChar(64)
+  event   Event?  @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
   @@unique([url], map: "photos_url_unique")
   @@map("photos")
+}
+
+model Expense {
+  id        Int      @id @default(autoincrement())
+  eventId   String   @map("event_id") @db.VarChar(64)
+  amount    Float    @db.Double
+  category  String   @default("") @db.VarChar(100)
+  note      String   @default("") @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("expenses")
 }
 
 model LoveQuote {
