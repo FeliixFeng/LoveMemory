@@ -15,8 +15,7 @@ import { FloatingAddButton } from './FloatingAddButton';
 import { Lightbox } from './Lightbox';
 import { Toast } from './Toast';
 import { SettingsModal } from './modals/SettingsModal';
-import { CoverMenu } from './modals/CoverMenu';
-import { DeleteConfirmDialog } from './modals/DeleteConfirmDialog';
+import { ConfirmDialog } from './modals/ConfirmDialog';
 import { PinModal } from './modals/PinModal';
 
 function useAnimatedNum(target: number) {
@@ -34,15 +33,14 @@ function useAnimatedNum(target: number) {
 }
 
 export function LoveMemoryClient() {
-  const [data, setData] = useState<AppData>({ startDate: '', heroImage: '', events: [], photos: [], expenses: [], loveQuotes: [] });
+  const [data, setData] = useState<AppData>({ startDate: '', heroImage: '', customCovers: [], hiddenDefaultCovers: [], events: [], photos: [], expenses: [], loveQuotes: [] });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState('');
   const [viewPhoto, setViewPhoto] = useState<Photo | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<Photo | null>(null);
+  const [confirm, setConfirm] = useState<{ title: string; message: string; danger?: boolean; onConfirm: () => void } | null>(null);
   const [settings, setSettings] = useState(false);
-  const [coverMenu, setCoverMenu] = useState(false);
   const [toast, setToast] = useState('');
   const [showPin, setShowPin] = useState(false);
   const [token, setToken] = useState(() => {
@@ -66,7 +64,7 @@ export function LoveMemoryClient() {
     fetch('/api/data', { cache: 'no-store' }).then(r => r.json()).then(d => {
       const events = (d.events || []).sort((a: Event, b: Event) => new Date(b.date).getTime() - new Date(a.date).getTime());
       const photos = (d.photos || []).map((p: Photo) => ({ ...p, displayUrl: p.displayUrl || p.url, thumbUrl: p.thumbUrl || p.displayUrl || p.url }));
-      setData({ ...d, events, photos, expenses: d.expenses || [], loveQuotes: d.loveQuotes || [] });
+      setData({ ...d, events, photos, expenses: d.expenses || [], loveQuotes: d.loveQuotes || [], customCovers: d.customCovers || [], hiddenDefaultCovers: d.hiddenDefaultCovers || [] });
       if (events.length > 0 && !selectedEventId) setSelectedEventId(String(events[0].id));
     }).catch(() => setToast('加载失败')).finally(() => setLoading(false));
   }, []);
@@ -81,7 +79,8 @@ export function LoveMemoryClient() {
     if (nx.getTime() < n.getTime()) nx.setFullYear(n.getFullYear() + 1);
     return Math.ceil((nx.getTime() - n.getTime()) / 86400000);
   }, [data.startDate]);
-  const heroImages = data.heroImage ? [data.heroImage, ...HERO_IMAGES] : HERO_IMAGES;
+  const visibleDefaults = HERO_IMAGES.filter(u => !data.hiddenDefaultCovers.includes(u));
+  const heroImages = [...data.customCovers, ...visibleDefaults];
 
   const selectedEvent = useMemo(() => data.events.find(e => String(e.id) === selectedEventId) || null, [data.events, selectedEventId]);
   const detailEvent = useMemo(() => data.events.find(e => String(e.id) === eventDetailId) || null, [data.events, eventDetailId]);
@@ -165,7 +164,11 @@ export function LoveMemoryClient() {
 
   async function onHeroUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]; if (!file) return; setUploading(true);
-    try { const u = await doUpload(file); await save({ ...data, heroImage: u.displayUrl || u.url }, '封面已更新'); } catch (err) { if ((err as Error)?.message !== 'auth') setToast('上传失败'); } finally { setUploading(false); e.target.value = ''; }
+    try {
+      const u = await doUpload(file);
+      const url = u.displayUrl || u.url;
+      await save({ ...data, customCovers: [...data.customCovers, url] }, '封面已添加');
+    } catch (err) { if ((err as Error)?.message !== 'auth') setToast('上传失败'); } finally { setUploading(false); e.target.value = ''; }
   }
 
   // Event CRUD
@@ -292,16 +295,15 @@ export function LoveMemoryClient() {
   return (
     <>
       <FallingHearts />
-      <NavBar onSettings={() => withAuth(() => setSettings(true))} />
+      <NavBar onSettings={() => withAuth(() => setSettings(true))} onPin={() => setShowPin(true)} isAuthenticated={!!token} />
 
-      <main className="max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto pt-16 pb-24 px-0 md:px-8 flex flex-col gap-4">
+      <main className="max-w-lg md:max-w-3xl lg:max-w-6xl mx-auto pt-16 pb-8 px-0 md:px-8 flex flex-col gap-4">
         {/* Hero + Timeline in one box */}
-        <div className="px-4">
+        <div className="px-4 lg:px-0">
           <HeroSection
             heroImages={heroImages} saving={saving}
             animDays={animDays} nextDays={nextDays} startDate={data.startDate}
             quotes={data.loveQuotes}
-            onCoverMenu={() => withAuth(() => setCoverMenu(true))}
             onHeroUpload={onHeroUpload}
             heroRef={heroRef}
           >
@@ -309,7 +311,6 @@ export function LoveMemoryClient() {
               events={data.events}
               selectedId={selectedEventId}
               onSelect={setSelectedEventId}
-              onAdd={() => withAuth(openEventCreate)}
             />
           </HeroSection>
         </div>
@@ -332,7 +333,19 @@ export function LoveMemoryClient() {
           days={days}
         />
 
-        <footer className="text-center py-4 opacity-20"><span className="text-xs">💕</span></footer>
+        <footer className="px-6 pt-4 pb-2 text-center space-y-2">
+          <p className="text-[11px] text-[#5c3d2a]/25" style={{ fontFamily: 'Noto Serif SC, serif' }}>
+            记录每一个值得珍藏的瞬间
+          </p>
+          <div className="flex items-center justify-center gap-4 text-[10px] text-[#5c3d2a]/20">
+            <span>💕 LoveMemory</span>
+            <span>·</span>
+            <span>用爱记录时光</span>
+          </div>
+          <p className="text-[9px] text-[#5c3d2a]/15">
+            Made with ❤️ for us
+          </p>
+        </footer>
       </main>
 
       <FloatingAddButton onClick={() => withAuth(openEventCreate)} />
@@ -341,7 +354,7 @@ export function LoveMemoryClient() {
         <EventModal
           editEvent={editEvent} draft={eventDraft} setDraft={setEventDraft}
           onSave={() => void saveEvent()}
-          onDelete={() => void deleteEvent()}
+          onDelete={() => setConfirm({ title: '确认删除事件', message: '删除事件将同时删除关联的照片和账单，确定要删除吗？', onConfirm: () => { void deleteEvent(); setConfirm(null); } })}
           onClose={() => setEventModal(false)}
         />
       )}
@@ -354,9 +367,9 @@ export function LoveMemoryClient() {
           onClose={() => setEventDetailId(null)}
           onEdit={() => withAuth(() => openEventEdit(detailEvent))}
           onAddPhoto={() => withAuth(() => fileRef.current?.click())}
-          onDeletePhoto={p => withAuth(() => onDelPhoto(p))}
+          onDeletePhoto={p => withAuth(() => setConfirm({ title: '确认删除照片', message: '删除后无法恢复，确定要删除吗？', onConfirm: () => { void onDelPhoto(p); setConfirm(null); } }))}
           onAddExpense={addExpense}
-          onDeleteExpense={id => withAuth(() => deleteExpense(id))}
+          onDeleteExpense={id => withAuth(() => setConfirm({ title: '确认删除账单', message: '确定要删除这条账单吗？', onConfirm: () => { void deleteExpense(id); setConfirm(null); } }))}
           onViewPhoto={setViewPhoto}
           uploading={uploading}
           deleting={deleting}
@@ -366,17 +379,36 @@ export function LoveMemoryClient() {
       {settings && (
         <SettingsModal
           startDate={data.startDate}
-          onSave={date => void save({ ...data, startDate: date }, '已保存')}
+          customCovers={data.customCovers}
+          defaultCovers={HERO_IMAGES}
+          hiddenDefaults={data.hiddenDefaultCovers}
+          quotes={data.loveQuotes}
+          onSaveDate={date => void save({ ...data, startDate: date }, '已保存')}
+          onAddCover={() => { heroRef.current?.click(); setSettings(false); }}
+          onRemoveCover={url => setConfirm({
+            title: '确认移除封面',
+            message: '确定要移除这张封面吗？',
+            onConfirm: () => { void save({ ...data, customCovers: data.customCovers.filter(c => c !== url) }, '已删除'); setConfirm(null); }
+          })}
+          onHideDefault={url => setConfirm({
+            title: '确认隐藏封面',
+            message: '隐藏后可通过"恢复默认"找回，确定要隐藏吗？',
+            danger: false,
+            onConfirm: () => { void save({ ...data, hiddenDefaultCovers: [...data.hiddenDefaultCovers, url] }, '已隐藏'); setConfirm(null); }
+          })}
+          onRestoreDefaults={() => {
+            void save({ ...data, hiddenDefaultCovers: [] }, '已恢复默认');
+          }}
+          onAddQuote={content => {
+            const next = { ...data, loveQuotes: [...data.loveQuotes, { id: Date.now(), content }] };
+            void save(next, '已添加');
+          }}
+          onDeleteQuote={id => setConfirm({
+            title: '确认删除语录',
+            message: '确定要删除这条语录吗？',
+            onConfirm: () => { void save({ ...data, loveQuotes: data.loveQuotes.filter(q => q.id !== id) }, '已删除'); setConfirm(null); }
+          })}
           onClose={() => setSettings(false)}
-        />
-      )}
-
-      {coverMenu && (
-        <CoverMenu
-          hasHeroImage={!!data.heroImage}
-          onChangeCover={() => { heroRef.current?.click(); setCoverMenu(false); }}
-          onResetDefault={() => { void save({ ...data, heroImage: '' }, '已恢复'); setCoverMenu(false); }}
-          onClose={() => setCoverMenu(false)}
         />
       )}
 
@@ -389,11 +421,13 @@ export function LoveMemoryClient() {
         />
       )}
 
-      {deleteConfirm && (
-        <DeleteConfirmDialog
-          photo={deleteConfirm}
-          onConfirm={() => withAuth(async () => { await onDelPhoto(deleteConfirm); setDeleteConfirm(null); })}
-          onCancel={() => setDeleteConfirm(null)}
+      {confirm && (
+        <ConfirmDialog
+          title={confirm.title}
+          message={confirm.message}
+          danger={confirm.danger}
+          onConfirm={confirm.onConfirm}
+          onCancel={() => setConfirm(null)}
         />
       )}
 

@@ -60,7 +60,7 @@ export function EventDetail({
           </div>
         </div>
 
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-5">
           {/* Info */}
           {(event.location || event.mood || event.desc) && (
             <div className="space-y-2">
@@ -74,45 +74,48 @@ export function EventDetail({
 
           {/* Photos */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-bold text-[#3d281c]">照片</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-bold text-[#3d281c]">
+                照片 {photos.length > 0 && <span className="text-[#5c3d2a]/40 font-normal">({photos.length})</span>}
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              {photos.map((p, i) => (
+                <div key={i} className="relative aspect-[4/5] rounded-xl overflow-hidden bg-[#efd8c3]/20 group">
+                  <img
+                    src={p.thumbUrl || p.displayUrl || p.url}
+                    alt=""
+                    className="w-full h-full object-cover cursor-pointer"
+                    loading="lazy"
+                    onClick={() => onViewPhoto(p)}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDeletePhoto(p); }}
+                    disabled={deleting === p.url}
+                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/30 backdrop-blur-sm text-white text-xs flex items-center justify-center opacity-40 group-hover:opacity-100 hover:!bg-red-500 transition-all disabled:opacity-50"
+                  >
+                    {deleting === p.url ? '...' : '✕'}
+                  </button>
+                </div>
+              ))}
+
+              {/* Add photo button */}
               <button
                 onClick={onAddPhoto}
                 disabled={uploading}
-                className="px-3 py-1 text-xs rounded-lg bg-[#d48b60] text-white disabled:opacity-50"
+                className="aspect-[4/5] rounded-xl border-2 border-dashed border-[#efd8c3] flex flex-col items-center justify-center gap-1 text-[#5c3d2a]/40 hover:border-[#d48b60] hover:text-[#d48b60] transition-colors disabled:opacity-50"
               >
-                {uploading ? '上传中...' : '+ 添加'}
+                <span className="text-2xl">{uploading ? '⏳' : '+'}</span>
+                <span className="text-[10px]">{uploading ? '上传中...' : '添加照片'}</span>
               </button>
             </div>
-            {photos.length === 0 ? (
-              <p className="text-xs text-[#5c3d2a]/40 py-4 text-center">还没有照片</p>
-            ) : (
-              <div className="grid grid-cols-3 gap-2">
-                {photos.map((p, i) => (
-                  <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-[#efd8c3]/20 group">
-                    <img
-                      src={p.thumbUrl || p.displayUrl || p.url}
-                      alt=""
-                      className="w-full h-full object-cover cursor-pointer"
-                      loading="lazy"
-                      onClick={() => onViewPhoto(p)}
-                    />
-                    <button
-                      onClick={() => onDeletePhoto(p)}
-                      disabled={deleting === p.url}
-                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/50 text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
-                    >
-                      {deleting === p.url ? '...' : '✕'}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Expenses */}
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-[#3d281c]">
                 账单 {total > 0 && <span className="text-[#d48b60] font-normal">({formatCurrency(total)})</span>}
               </h3>
@@ -124,7 +127,7 @@ export function EventDetail({
               </button>
             </div>
             {expenses.length === 0 && !showAddExpense ? (
-              <p className="text-xs text-[#5c3d2a]/40 py-4 text-center">还没有账单</p>
+              <p className="text-xs text-[#5c3d2a]/40 py-3 text-center">还没有账单</p>
             ) : (
               <div className="space-y-2">
                 {expenses.map(e => (

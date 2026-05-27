@@ -8,10 +8,12 @@ datasource db {
 }
 
 model Settings {
-  id        Int      @id @db.TinyInt
-  startDate String   @default("") @map("start_date") @db.VarChar(20)
-  heroImage String   @map("hero_image") @db.LongText
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  id           Int      @id @db.TinyInt
+  startDate    String   @default("") @map("start_date") @db.VarChar(20)
+  heroImage    String   @map("hero_image") @db.LongText
+  customCovers      String   @map("custom_covers") @db.LongText
+  hiddenDefaultCovers String   @map("hidden_default_covers") @db.LongText
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("settings")
 }

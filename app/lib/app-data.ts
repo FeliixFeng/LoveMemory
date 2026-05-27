@@ -13,6 +13,8 @@ export type { AppData };
 export const DEFAULT_APP_DATA: AppData = {
   startDate: '',
   heroImage: '',
+  customCovers: [],
+  hiddenDefaultCovers: [],
   events: [],
   photos: [],
   expenses: [],
@@ -89,6 +91,8 @@ export async function readAppDataWithPrisma(): Promise<AppData> {
   return {
     startDate: settings?.startDate || '',
     heroImage: settings?.heroImage || '',
+    customCovers: settings?.customCovers ? JSON.parse(settings.customCovers) : [],
+    hiddenDefaultCovers: settings?.hiddenDefaultCovers ? JSON.parse(settings.hiddenDefaultCovers) : [],
     events: events.map((item: any) => ({
       id: normalizeMilestoneId(item.id),
       title: item.title,
@@ -141,7 +145,9 @@ function migrateLegacyData(parsed: any): AppData {
     events,
     photos: Array.isArray(parsed.photos) ? parsed.photos.map((photo: Photo) => normalizePhoto(photo)) : [],
     expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
-    loveQuotes: Array.isArray(parsed.loveQuotes) ? parsed.loveQuotes : DEFAULT_APP_DATA.loveQuotes
+    loveQuotes: Array.isArray(parsed.loveQuotes) ? parsed.loveQuotes : DEFAULT_APP_DATA.loveQuotes,
+    customCovers: Array.isArray(parsed.customCovers) ? parsed.customCovers : [],
+    hiddenDefaultCovers: Array.isArray(parsed.hiddenDefaultCovers) ? parsed.hiddenDefaultCovers : []
   };
 }
 
@@ -164,7 +170,9 @@ export async function writeAppDataToJson(payload: Partial<AppData>): Promise<App
       ? payload.photos.map((photo) => normalizePhoto(photo))
       : currentData.photos,
     expenses: Array.isArray(payload.expenses) ? payload.expenses : currentData.expenses,
-    loveQuotes: Array.isArray(payload.loveQuotes) ? payload.loveQuotes : currentData.loveQuotes
+    loveQuotes: Array.isArray(payload.loveQuotes) ? payload.loveQuotes : currentData.loveQuotes,
+    customCovers: Array.isArray(payload.customCovers) ? payload.customCovers : currentData.customCovers,
+    hiddenDefaultCovers: Array.isArray(payload.hiddenDefaultCovers) ? payload.hiddenDefaultCovers : currentData.hiddenDefaultCovers
   };
 
   await fs.writeFile(dataFile, JSON.stringify(nextData, null, 2));
@@ -186,10 +194,12 @@ export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise
     expenses: Array.isArray(payload.expenses)
       ? payload.expenses
       : currentData.expenses,
-    loveQuotes: Array.isArray(payload.loveQuotes) ? payload.loveQuotes : currentData.loveQuotes
+    loveQuotes: Array.isArray(payload.loveQuotes) ? payload.loveQuotes : currentData.loveQuotes,
+    customCovers: Array.isArray(payload.customCovers) ? payload.customCovers : currentData.customCovers,
+    hiddenDefaultCovers: Array.isArray(payload.hiddenDefaultCovers) ? payload.hiddenDefaultCovers : currentData.hiddenDefaultCovers
   };
 
-  const hasSettingsChange = payload.startDate !== undefined || payload.heroImage !== undefined;
+  const hasSettingsChange = payload.startDate !== undefined || payload.heroImage !== undefined || payload.customCovers !== undefined || payload.hiddenDefaultCovers !== undefined;
   const hasEventsChange = Array.isArray(payload.events) && JSON.stringify(payload.events) !== JSON.stringify(currentData.events);
   const hasPhotosChange = Array.isArray(payload.photos) && JSON.stringify(payload.photos) !== JSON.stringify(currentData.photos);
   const hasExpensesChange = Array.isArray(payload.expenses) && JSON.stringify(payload.expenses) !== JSON.stringify(currentData.expenses);
@@ -202,11 +212,15 @@ export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise
         create: {
           id: 1,
           startDate: nextData.startDate || '',
-          heroImage: nextData.heroImage || ''
+          heroImage: nextData.heroImage || '',
+          customCovers: JSON.stringify(nextData.customCovers || []),
+          hiddenDefaultCovers: JSON.stringify(nextData.hiddenDefaultCovers || [])
         },
         update: {
           startDate: nextData.startDate || '',
-          heroImage: nextData.heroImage || ''
+          heroImage: nextData.heroImage || '',
+          customCovers: JSON.stringify(nextData.customCovers || []),
+          hiddenDefaultCovers: JSON.stringify(nextData.hiddenDefaultCovers || [])
         }
       });
     }

@@ -19,30 +19,30 @@ export function EventPreviewCard({
 
   return (
     <div className="px-4" style={{ animation: 'slideUp 0.4s ease-out' }}>
-      {/* Horizontal photo scroll */}
-      {photos.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto no-scrollbar mb-3 pb-1">
-          {photos.map((p, i) => (
-            <div
-              key={i}
-              className="shrink-0 rounded-xl overflow-hidden bg-[#efd8c3]/20 cursor-pointer hover:opacity-90 transition-opacity"
-              style={{ width: '120px', height: '150px' }}
-              onClick={() => onViewPhoto?.(p)}
-            >
-              <img
-                src={p.thumbUrl || p.displayUrl || p.url}
-                alt=""
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="flex flex-col md:flex-row gap-3">
+        {/* Photos - top on mobile, right on desktop */}
+        {photos.length > 0 && (
+          <div className="md:order-2 flex gap-2 overflow-x-auto no-scrollbar shrink-0 pb-1">
+            {photos.map((p, i) => (
+              <div
+                key={i}
+                className="shrink-0 rounded-xl overflow-hidden bg-[#efd8c3]/20 cursor-pointer hover:opacity-90 transition-opacity"
+                style={{ width: '120px', height: '150px' }}
+                onClick={() => onViewPhoto?.(p)}
+              >
+                <img
+                  src={p.thumbUrl || p.displayUrl || p.url}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
-      {/* Event info */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        {/* Event info - bottom on mobile, left on desktop */}
+        <div className="min-w-0 flex items-start gap-3 md:order-1 md:h-[150px]">
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0"
             style={{
@@ -52,37 +52,43 @@ export function EventPreviewCard({
           >
             {getEmoji(event.icon)}
           </div>
-          <div>
-            <h3 className="text-sm font-bold text-[#3d281c]" style={{ fontFamily: 'Noto Serif SC, serif' }}>
-              {event.title || '未命名事件'}
-            </h3>
-            <div className="flex items-center gap-2 mt-0.5 text-[11px] text-[#5c3d2a]/45">
-              <span>{fmt(event.date)}</span>
-              {event.location && <span>· 📍 {event.location}</span>}
-              {event.mood && <span>· {getMoodEmoji(event.mood)}</span>}
-              {total > 0 && <span>· 💰 {formatCurrency(total)}</span>}
+          <div className="flex-1 min-w-0 flex flex-col md:justify-between md:h-full py-0.5">
+            <div>
+              <div className="flex items-center gap-1.5">
+                <h3 className="text-sm font-bold text-[#3d281c] truncate" style={{ fontFamily: 'Noto Serif SC, serif' }}>
+                  {event.title || '未命名事件'}
+                </h3>
+                <button
+                  onClick={onEdit}
+                  className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] text-[#5c3d2a]/30 hover:text-[#5c3d2a]/60 hover:bg-[#efd8c3]/30 transition-all"
+                  title="编辑"
+                >
+                  ✎
+                </button>
+              </div>
+              <div className="flex items-center gap-2 mt-1 text-[11px] text-[#5c3d2a]/45">
+                <span>{fmt(event.date)}</span>
+                {event.location && <span>· 📍 {event.location}</span>}
+                {event.mood && <span>· {getMoodEmoji(event.mood)}</span>}
+              </div>
+            </div>
+
+            {event.desc && (
+              <p className="text-xs text-[#5c3d2a]/50 line-clamp-2">{event.desc}</p>
+            )}
+
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-[#5c3d2a]/40">💰 {formatCurrency(total)}</span>
+              <button
+                onClick={onExpand}
+                className="w-7 h-7 rounded-full bg-[#f0c8a8] text-white flex items-center justify-center hover:bg-[#e8b690] transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+              </button>
             </div>
           </div>
         </div>
-        <div className="flex gap-2 shrink-0">
-          <button
-            onClick={onEdit}
-            className="px-3 py-1.5 text-[11px] rounded-lg bg-[#efd8c3]/30 text-[#5c3d2a]/60 hover:bg-[#efd8c3]/50 transition-colors"
-          >
-            编辑
-          </button>
-          <button
-            onClick={onExpand}
-            className="px-3 py-1.5 text-[11px] rounded-lg bg-[#3d281c] text-amber-50 hover:bg-[#5c3d2a] transition-colors"
-          >
-            详情
-          </button>
-        </div>
       </div>
-
-      {event.desc && (
-        <p className="text-xs text-[#5c3d2a]/55 mt-2 line-clamp-2">{event.desc}</p>
-      )}
     </div>
   );
 }

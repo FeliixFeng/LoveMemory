@@ -37,6 +37,8 @@ export type LoveQuote = {
 export type AppData = {
   startDate: string;
   heroImage: string;
+  customCovers: string[];
+  hiddenDefaultCovers: string[];
   events: Event[];
   photos: Photo[];
   expenses: Expense[];

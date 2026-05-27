@@ -6,11 +6,12 @@ import { fmt } from '../lib/utils';
 
 export function HeroSection({
   heroImages, saving, animDays, nextDays, startDate, quotes,
-  onCoverMenu, onHeroUpload, heroRef, children
+  onHeroUpload, heroRef, children
 }: {
   heroImages: string[]; saving: boolean; animDays: number; nextDays: number; startDate: string;
   quotes: LoveQuote[];
-  onCoverMenu: () => void; onHeroUpload: (e: React.ChangeEvent<HTMLInputElement>) => void; heroRef: React.RefObject<any>;
+  onHeroUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  heroRef: React.RefObject<any>;
   children?: React.ReactNode;
 }) {
   const [heroIdx, setHeroIdx] = useState(0);
@@ -33,7 +34,7 @@ export function HeroSection({
   }, [quotes.length]);
 
   return (
-    <section className="relative rounded-3xl overflow-hidden shadow-lg aspect-[3/4] md:aspect-[4/3] lg:aspect-[16/9]" style={{ animation: 'slideUp 0.6s ease-out' }}>
+    <section className="relative rounded-3xl overflow-hidden shadow-lg aspect-[3/4] md:aspect-[4/3] lg:aspect-[2/1]" style={{ animation: 'slideUp 0.6s ease-out' }}>
       {/* Image layer - base */}
       {heroImages.map((img, i) => (
         <img
@@ -48,8 +49,7 @@ export function HeroSection({
       {/* Top shadow for controls */}
       <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-black/30 to-transparent z-[1]" />
 
-      {/* Top controls */}
-      <button className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 text-white text-xs flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity z-10" onClick={onCoverMenu}>✏</button>
+      {/* Top status indicator */}
       <div className="absolute top-3 left-3 z-10">
         <div className="px-2 py-0.5 rounded-full bg-black/25 text-[9px] text-emerald-400 font-medium tracking-wide" style={{ fontFamily: 'Playfair Display, serif' }}>
           {saving ? 'SYNCING' : 'LOVING'}

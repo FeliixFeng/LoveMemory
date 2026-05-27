@@ -1,19 +1,18 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { Event } from '../lib/types';
 import { getEmoji } from '../lib/utils';
 
 export function HorizontalTimeline({
-  events, selectedId, onSelect, onAdd
+  events, selectedId, onSelect
 }: {
   events: Event[];
   selectedId: string | null;
   onSelect: (id: string) => void;
-  onAdd: () => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const sorted = [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const sorted = [...events].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   useEffect(() => {
     if (!scrollRef.current || !selectedId) return;
@@ -27,72 +26,113 @@ export function HorizontalTimeline({
     return `${dt.getMonth() + 1}月${dt.getDate()}日`;
   }
 
+  function getYear(d: string) {
+    if (!d) return '';
+    return new Date(`${d}T00:00:00`).getFullYear().toString();
+  }
+
+  // Interleave year markers — placed AFTER the last event of each year
+  type TimelineItem = { kind: 'event'; event: Event } | { kind: 'year'; year: string };
+  const items: TimelineItem[] = useMemo(() => {
+    const result: TimelineItem[] = [];
+    let lastYear = '';
+    for (const ev of sorted) {
+      const y = getYear(ev.date);
+      if (y && y !== lastYear && lastYear !== '') {
+        result.push({ kind: 'year', year: lastYear });
+      }
+      lastYear = y;
+      result.push({ kind: 'event', event: ev });
+    }
+    if (lastYear) result.push({ kind: 'year', year: lastYear });
+    return result;
+  }, [sorted]);
+
+  const nodeSize = 80;
+  const nodeGap = 52;
+  const nodeMinWidth = 92;
+
+  const yearNodeSize = 36;
+
   return (
-    <div className="px-4 pt-5 pb-3">
-      <div ref={scrollRef} className="flex items-start overflow-x-auto no-scrollbar px-2 pt-2 pb-1 relative" style={{ gap: '48px' }}>
+    <div className="px-4 pt-6 pb-3">
+      <div ref={scrollRef} className="flex items-start overflow-x-auto no-scrollbar px-2 pt-6 pb-1 relative" style={{ gap: `${nodeGap}px` }}>
         {/* Connecting line */}
-        {sorted.length > 1 && (
+        {items.length > 1 && (
           <>
-            {/* Main line */}
             <div
               className="absolute rounded-full"
               style={{
-                top: '37px',
-                left: '46px',
-                right: '68px',
-                height: '2.5px',
-                background: 'linear-gradient(to right, rgba(212,139,96,0.1), #d48b60 30%, #aa6f4d 70%, rgba(170,111,77,0.15))'
+                top: '55px',
+                left: `${nodeMinWidth / 2 + 8}px`,
+                width: `${(items.length - 1) * (nodeMinWidth + nodeGap)}px`,
+                height: '1.5px',
+                background: 'linear-gradient(to right, rgba(212,139,96,0.15), rgba(212,139,96,0.5) 20%, rgba(170,111,77,0.65) 50%, rgba(212,139,96,0.5) 80%, rgba(212,139,96,0.15))'
               }}
             />
-            {/* Glow underneath */}
             <div
               className="absolute rounded-full"
               style={{
-                top: '33px',
-                left: '46px',
-                right: '68px',
-                height: '10px',
-                background: 'linear-gradient(to right, transparent, rgba(212,139,96,0.12) 30%, rgba(170,111,77,0.12) 70%, transparent)',
-                filter: 'blur(5px)'
+                top: '52px',
+                left: `${nodeMinWidth / 2 + 8}px`,
+                width: `${(items.length - 1) * (nodeMinWidth + nodeGap)}px`,
+                height: '8px',
+                background: 'linear-gradient(to right, transparent, rgba(212,139,96,0.15) 20%, rgba(170,111,77,0.2) 50%, rgba(212,139,96,0.15) 80%, transparent)',
+                filter: 'blur(4px)'
               }}
             />
-            {/* Dot at each node position */}
-            {sorted.map((_, i) => (
-              <div
-                key={i}
-                className="absolute rounded-full z-[5]"
-                style={{
-                  width: '5px',
-                  height: '5px',
-                  top: '36px',
-                  left: `calc(46px + ${i} * (48px + 88px) / ${Math.max(sorted.length - 1, 1)} * ${sorted.length > 1 ? (sorted.length - 1) / sorted.length : 0})`,
-                  background: 'rgba(255,255,255,0.3)',
-                  boxShadow: '0 0 4px rgba(212,139,96,0.3)'
-                }}
-              />
-            ))}
           </>
         )}
 
-        {sorted.map((ev) => {
+        {items.map((item, i) => {
+          if (item.kind === 'year') {
+            return (
+              <div
+                key={`year-${item.year}-${i}`}
+                className="flex flex-col items-center shrink-0 relative z-10"
+                style={{ minWidth: `${nodeMinWidth}px` }}
+              >
+                <div
+                  className="rounded-full flex items-center justify-center"
+                  style={{
+                    width: `${yearNodeSize}px`,
+                    height: `${yearNodeSize}px`,
+                    marginTop: '13px',
+                    background: 'linear-gradient(135deg, rgba(212,139,96,0.5), rgba(170,111,77,0.5))',
+                    border: '1.5px solid rgba(255,255,255,0.35)',
+                    backdropFilter: 'blur(4px)',
+                    fontFamily: 'Playfair Display, serif',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    color: '#fff',
+                    letterSpacing: '0.08em',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.2)'
+                  }}
+                >
+                  {item.year}
+                </div>
+              </div>
+            );
+          }
+
+          const ev = item.event;
           const isSelected = String(ev.id) === selectedId;
-          const size = isSelected ? 74 : 58;
+          const size = isSelected ? nodeSize : 62;
           return (
             <button
               key={ev.id}
               data-event-id={ev.id}
               onClick={() => onSelect(String(ev.id))}
               className="flex flex-col items-center shrink-0 relative z-10"
-              style={{ minWidth: '88px' }}
+              style={{ minWidth: `${nodeMinWidth}px` }}
             >
-              {/* Outer glow ring for selected */}
               {isSelected && (
                 <div
                   className="absolute rounded-full animate-pulse"
                   style={{
-                    width: `${size + 16}px`,
-                    height: `${size + 16}px`,
-                    top: '-8px',
+                    width: `${size + 18}px`,
+                    height: `${size + 18}px`,
+                    top: '-18px',
                     left: '50%',
                     transform: 'translateX(-50%)',
                     background: 'radial-gradient(circle, rgba(212,139,96,0.25) 0%, transparent 70%)',
@@ -106,7 +146,8 @@ export function HorizontalTimeline({
                   transition: 'transform 0.25s ease-out',
                   width: `${size}px`,
                   height: `${size}px`,
-                  fontSize: isSelected ? '30px' : '24px',
+                  marginTop: isSelected ? '-9px' : '0',
+                  fontSize: isSelected ? '32px' : '26px',
                   background: isSelected
                     ? 'linear-gradient(135deg, #d48b60, #aa6f4d)'
                     : 'rgba(0,0,0,0.25)',
@@ -122,7 +163,7 @@ export function HorizontalTimeline({
               <span
                 className="mt-2 truncate text-center leading-tight"
                 style={{
-                  maxWidth: '84px',
+                  maxWidth: '88px',
                   fontSize: '12px',
                   fontWeight: isSelected ? 700 : 500,
                   color: isSelected ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.5)',
@@ -145,25 +186,6 @@ export function HorizontalTimeline({
             </button>
           );
         })}
-
-        <button
-          onClick={onAdd}
-          className="flex flex-col items-center shrink-0 relative z-10 hover:opacity-70 transition-opacity"
-          style={{ minWidth: '88px' }}
-        >
-          <div
-            className="w-16 h-16 rounded-full flex items-center justify-center text-2xl"
-            style={{
-              border: '2.5px dashed rgba(255,255,255,0.25)',
-              background: 'rgba(0,0,0,0.15)',
-              color: 'rgba(255,255,255,0.4)',
-              backdropFilter: 'blur(4px)'
-            }}
-          >
-            +
-          </div>
-          <span className="mt-2 text-[11px] text-white/25" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>添加</span>
-        </button>
       </div>
     </div>
   );
