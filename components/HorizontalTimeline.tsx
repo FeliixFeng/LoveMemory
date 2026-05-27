@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useMemo } from 'react';
+import { useRef, useEffect, useMemo, useState } from 'react';
 import { Event } from '../lib/types';
 import { getEmoji } from '../lib/utils';
 
@@ -12,13 +12,24 @@ export function HorizontalTimeline({
   onSelect: (id: string) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const outerRef = useRef<HTMLDivElement>(null);
+  const [padX, setPadX] = useState(0);
   const sorted = [...events].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   useEffect(() => {
-    if (!scrollRef.current || !selectedId) return;
+    if (!outerRef.current) return;
+    const ro = new ResizeObserver(([entry]) => {
+      setPadX(Math.floor(entry.contentRect.width / 2));
+    });
+    ro.observe(outerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!scrollRef.current || !selectedId || !padX) return;
     const el = scrollRef.current.querySelector(`[data-event-id="${selectedId}"]`);
     if (el) el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  }, [selectedId]);
+  }, [selectedId, padX]);
 
   function shortDate(d: string) {
     if (!d) return '';
@@ -55,8 +66,8 @@ export function HorizontalTimeline({
   const yearNodeSize = 36;
 
   return (
-    <div className="px-4 pt-6 pb-3">
-      <div ref={scrollRef} className="flex items-start overflow-x-auto no-scrollbar px-2 pt-6 pb-1 relative" style={{ gap: `${nodeGap}px` }}>
+    <div ref={outerRef} className="px-4 pt-6 pb-3">
+      <div ref={scrollRef} className="flex items-start overflow-x-auto no-scrollbar pt-6 pb-1 relative" style={{ gap: `${nodeGap}px`, paddingLeft: `${padX}px`, paddingRight: `${padX}px` }}>
         {/* Connecting line */}
         {items.length > 1 && (
           <>
@@ -64,7 +75,7 @@ export function HorizontalTimeline({
               className="absolute rounded-full"
               style={{
                 top: '55px',
-                left: `${nodeMinWidth / 2 + 8}px`,
+                left: `${padX + nodeMinWidth / 2}px`,
                 width: `${(items.length - 1) * (nodeMinWidth + nodeGap)}px`,
                 height: '1.5px',
                 background: 'linear-gradient(to right, rgba(212,139,96,0.15), rgba(212,139,96,0.5) 20%, rgba(170,111,77,0.65) 50%, rgba(212,139,96,0.5) 80%, rgba(212,139,96,0.15))'
@@ -74,7 +85,7 @@ export function HorizontalTimeline({
               className="absolute rounded-full"
               style={{
                 top: '52px',
-                left: `${nodeMinWidth / 2 + 8}px`,
+                left: `${padX + nodeMinWidth / 2}px`,
                 width: `${(items.length - 1) * (nodeMinWidth + nodeGap)}px`,
                 height: '8px',
                 background: 'linear-gradient(to right, transparent, rgba(212,139,96,0.15) 20%, rgba(170,111,77,0.2) 50%, rgba(212,139,96,0.15) 80%, transparent)',
@@ -83,6 +94,28 @@ export function HorizontalTimeline({
             />
           </>
         )}
+
+        {/* Decorative start node */}
+        <div
+          className="flex flex-col items-center shrink-0 relative z-10"
+          style={{ minWidth: `${nodeMinWidth}px` }}
+        >
+          <div
+            className="rounded-full flex items-center justify-center"
+            style={{
+              width: '62px',
+              height: '62px',
+              background: 'rgba(0,0,0,0.15)',
+              border: '2px solid rgba(255,255,255,0.1)',
+              backdropFilter: 'blur(4px)',
+              fontSize: '22px',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
+              opacity: 0.6
+            }}
+          >
+            ✨
+          </div>
+        </div>
 
         {items.map((item, i) => {
           if (item.kind === 'year') {
