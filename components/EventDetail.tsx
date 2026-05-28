@@ -7,7 +7,7 @@ import { EXPENSE_CATEGORIES } from '../lib/constants';
 import { ExpenseItem } from './ExpenseItem';
 
 export function EventDetail({
-  event, photos, expenses, onClose, onEdit, onAddPhoto, onDeletePhoto, onAddExpense, onDeleteExpense, onViewPhoto, uploading, deleting
+  event, photos, expenses, onClose, onEdit, onAddPhoto, onDeletePhoto, onReorderPhotos, onAddExpense, onDeleteExpense, onViewPhoto, uploading, deleting
 }: {
   event: Event;
   photos: Photo[];
@@ -16,9 +16,10 @@ export function EventDetail({
   onEdit: () => void;
   onAddPhoto: () => void;
   onDeletePhoto: (p: Photo) => void;
+  onReorderPhotos: (fromIndex: number, toIndex: number) => void;
   onAddExpense: (data: { amount: number; category: string; note: string }) => void;
   onDeleteExpense: (id: number) => void;
-  onViewPhoto: (p: Photo) => void;
+  onViewPhoto: (photos: Photo[], index: number) => void;
   uploading: boolean;
   deleting: string;
 }) {
@@ -82,15 +83,34 @@ export function EventDetail({
 
             <div className="grid grid-cols-3 gap-2">
               {photos.map((p, i) => (
-                <div key={i} className="relative aspect-[4/5] rounded-xl overflow-hidden bg-[#efd8c3]/20 group">
+                <div key={p.url} className="relative aspect-[4/5] rounded-xl overflow-hidden bg-[#efd8c3]/20 group">
                   <img
                     src={p.thumbUrl || p.displayUrl || p.url}
                     alt=""
                     className="w-full h-full object-cover cursor-pointer"
                     loading="lazy"
-                    onClick={() => onViewPhoto(p)}
+                    onClick={() => onViewPhoto(photos, i)}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  {/* Move left */}
+                  {i > 0 && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onReorderPhotos(i, i - 1); }}
+                      className="absolute bottom-2 left-2 w-6 h-6 rounded-full bg-black/40 backdrop-blur-sm text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-[#aa6f4d] transition-all"
+                    >
+                      ‹
+                    </button>
+                  )}
+                  {/* Move right */}
+                  {i < photos.length - 1 && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onReorderPhotos(i, i + 1); }}
+                      className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-black/40 backdrop-blur-sm text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-[#aa6f4d] transition-all"
+                    >
+                      ›
+                    </button>
+                  )}
+                  {/* Delete */}
                   <button
                     onClick={(e) => { e.stopPropagation(); onDeletePhoto(p); }}
                     disabled={deleting === p.url}

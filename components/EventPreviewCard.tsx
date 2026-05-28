@@ -1,24 +1,49 @@
 'use client';
 
+import { useRef } from 'react';
 import { Event, Photo, Expense } from '../lib/types';
 import { getEmoji, fmt, formatCurrency, calcTotalExpenses, getMoodEmoji } from '../lib/utils';
 
 export function EventPreviewCard({
-  event, photos, expenses, onExpand, onEdit, onViewPhoto
+  event, photos, expenses, onExpand, onEdit, onViewPhoto, onSwipeLeft, onSwipeRight
 }: {
   event: Event | null;
   photos: Photo[];
   expenses: Expense[];
   onExpand: () => void;
   onEdit: () => void;
-  onViewPhoto?: (p: Photo) => void;
+  onViewPhoto?: (photos: Photo[], index: number) => void;
+  onSwipeLeft?: () => void;
+  onSwipeRight?: () => void;
 }) {
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+
   if (!event) return null;
 
   const total = calcTotalExpenses(expenses);
 
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (!touchStart.current) return;
+    const dx = touchStart.current.x - e.changedTouches[0].clientX;
+    const dy = touchStart.current.y - e.changedTouches[0].clientY;
+    // Only trigger if horizontal swipe is dominant
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      dx > 0 ? onSwipeLeft?.() : onSwipeRight?.();
+    }
+    touchStart.current = null;
+  }
+
   return (
-    <div className="px-4" style={{ animation: 'slideUp 0.4s ease-out' }}>
+    <div
+      className="px-4"
+      style={{ animation: 'slideUp 0.4s ease-out' }}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className="flex flex-col md:flex-row gap-3">
         {/* Photos - top on mobile, right on desktop */}
         {photos.length > 0 && (
@@ -28,7 +53,7 @@ export function EventPreviewCard({
                 key={i}
                 className="shrink-0 rounded-xl overflow-hidden bg-[#efd8c3]/20 cursor-pointer hover:opacity-90 transition-opacity"
                 style={{ width: '120px', height: '150px' }}
-                onClick={() => onViewPhoto?.(p)}
+                onClick={() => onViewPhoto?.(photos, i)}
               >
                 <img
                   src={p.thumbUrl || p.displayUrl || p.url}
@@ -42,7 +67,7 @@ export function EventPreviewCard({
         )}
 
         {/* Event info - bottom on mobile, left on desktop */}
-        <div className="min-w-0 flex items-start gap-3 md:order-1 md:h-[150px]">
+        <div className="min-w-0 flex items-start gap-3 md:order-1 md:h-[150px] pt-2 md:pt-0">
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0"
             style={{

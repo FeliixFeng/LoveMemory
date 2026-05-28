@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { Photo } from '../lib/types';
 
 export function Lightbox({
@@ -8,8 +9,38 @@ export function Lightbox({
   photo: Photo; hasMultiple: boolean;
   onClose: () => void; onPrev: () => void; onNext: () => void;
 }) {
+  const touchStart = useRef<number | null>(null);
+
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowLeft') onPrev();
+      if (e.key === 'ArrowRight') onNext();
+    }
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [onClose, onPrev, onNext]);
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStart.current = e.touches[0].clientX;
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (touchStart.current === null) return;
+    const diff = touchStart.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      diff > 0 ? onNext() : onPrev();
+    }
+    touchStart.current = null;
+  }
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+      onClick={onClose}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <button className="absolute top-4 right-4 text-white text-xl z-10" onClick={onClose}>✕</button>
       {hasMultiple && (
         <>

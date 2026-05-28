@@ -7,6 +7,7 @@ import { FallingHearts } from './FallingHearts';
 import { NavBar } from './NavBar';
 import { HeroSection } from './HeroSection';
 import { HorizontalTimeline } from './HorizontalTimeline';
+import { EmptyState } from './EmptyState';
 import { EventPreviewCard } from './EventPreviewCard';
 import { EventDetail } from './EventDetail';
 import { EventModal, EventDraft } from './EventModal';
@@ -38,7 +39,7 @@ export function LoveMemoryClient() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState('');
-  const [viewPhoto, setViewPhoto] = useState<Photo | null>(null);
+  const [viewPhoto, setViewPhoto] = useState<{ photos: Photo[]; index: number } | null>(null);
   const [confirm, setConfirm] = useState<{ title: string; message: string; danger?: boolean; onConfirm: () => void } | null>(null);
   const [settings, setSettings] = useState(false);
   const [toast, setToast] = useState('');
@@ -158,7 +159,7 @@ export function LoveMemoryClient() {
         return;
       }
       await save({ ...data, photos: data.photos.filter(x => x.url !== p.url) }, '已删除');
-      if (viewPhoto?.url === p.url) setViewPhoto(null);
+      if (viewPhoto && viewPhoto.photos[viewPhoto.index]?.url === p.url) setViewPhoto(null);
     } catch { setToast('删除失败'); } finally { setDeleting(''); }
   }
 
@@ -315,15 +316,27 @@ export function LoveMemoryClient() {
           </HeroSection>
         </div>
 
-        {/* Event preview */}
-        <EventPreviewCard
-          event={selectedEvent}
-          photos={selectedPhotos}
-          expenses={selectedExpenses}
-          onExpand={() => setEventDetailId(selectedEventId)}
-          onEdit={() => withAuth(() => { if (selectedEvent) openEventEdit(selectedEvent); })}
-          onViewPhoto={setViewPhoto}
-        />
+        {/* Event preview or empty state */}
+        {data.events.length > 0 ? (
+          <EventPreviewCard
+            event={selectedEvent}
+            photos={selectedPhotos}
+            expenses={selectedExpenses}
+            onExpand={() => setEventDetailId(selectedEventId)}
+            onEdit={() => withAuth(() => { if (selectedEvent) openEventEdit(selectedEvent); })}
+            onViewPhoto={(photos, index) => setViewPhoto({ photos, index })}
+            onSwipeLeft={() => {
+              const idx = data.events.findIndex(e => String(e.id) === selectedEventId);
+              if (idx < data.events.length - 1) setSelectedEventId(String(data.events[idx + 1].id));
+            }}
+            onSwipeRight={() => {
+              const idx = data.events.findIndex(e => String(e.id) === selectedEventId);
+              if (idx > 0) setSelectedEventId(String(data.events[idx - 1].id));
+            }}
+          />
+        ) : (
+          <EmptyState onAdd={() => withAuth(openEventCreate)} />
+        )}
 
         {/* Stats */}
         <StatsSection
@@ -368,9 +381,16 @@ export function LoveMemoryClient() {
           onEdit={() => withAuth(() => openEventEdit(detailEvent))}
           onAddPhoto={() => withAuth(() => fileRef.current?.click())}
           onDeletePhoto={p => withAuth(() => setConfirm({ title: '确认删除照片', message: '删除后无法恢复，确定要删除吗？', onConfirm: () => { void onDelPhoto(p); setConfirm(null); } }))}
+          onReorderPhotos={(from, to) => {
+            const eventPhotos = data.photos.filter(p => p.eventId === eventDetailId);
+            const otherPhotos = data.photos.filter(p => p.eventId !== eventDetailId);
+            const swapped = [...eventPhotos];
+            [swapped[from], swapped[to]] = [swapped[to], swapped[from]];
+            void save({ ...data, photos: [...otherPhotos, ...swapped] });
+          }}
           onAddExpense={addExpense}
           onDeleteExpense={id => withAuth(() => setConfirm({ title: '确认删除账单', message: '确定要删除这条账单吗？', onConfirm: () => { void deleteExpense(id); setConfirm(null); } }))}
-          onViewPhoto={setViewPhoto}
+          onViewPhoto={(photos, index) => setViewPhoto({ photos, index })}
           uploading={uploading}
           deleting={deleting}
         />
@@ -414,10 +434,11 @@ export function LoveMemoryClient() {
 
       {viewPhoto && (
         <Lightbox
-          photo={viewPhoto} hasMultiple={false}
+          photo={viewPhoto.photos[viewPhoto.index]}
+          hasMultiple={viewPhoto.photos.length > 1}
           onClose={() => setViewPhoto(null)}
-          onPrev={() => {}}
-          onNext={() => {}}
+          onPrev={() => setViewPhoto(v => v && { ...v, index: (v.index - 1 + v.photos.length) % v.photos.length })}
+          onNext={() => setViewPhoto(v => v && { ...v, index: (v.index + 1) % v.photos.length })}
         />
       )}
 
