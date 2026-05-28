@@ -91,12 +91,12 @@ export function EventDetail({
                     loading="lazy"
                     onClick={() => onViewPhoto(photos, i)}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent md:opacity-0 md:group-hover:opacity-100 transition-opacity" />
                   {/* Move left */}
                   {i > 0 && (
                     <button
                       onClick={(e) => { e.stopPropagation(); onReorderPhotos(i, i - 1); }}
-                      className="absolute bottom-2 left-2 w-6 h-6 rounded-full bg-black/40 backdrop-blur-sm text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-[#aa6f4d] transition-all"
+                      className="absolute bottom-2 left-2 w-6 h-6 rounded-full bg-black/40 backdrop-blur-sm text-white text-xs flex items-center justify-center opacity-60 md:opacity-0 md:group-hover:opacity-100 hover:bg-[#aa6f4d] transition-all"
                     >
                       ‹
                     </button>
@@ -105,7 +105,7 @@ export function EventDetail({
                   {i < photos.length - 1 && (
                     <button
                       onClick={(e) => { e.stopPropagation(); onReorderPhotos(i, i + 1); }}
-                      className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-black/40 backdrop-blur-sm text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-[#aa6f4d] transition-all"
+                      className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-black/40 backdrop-blur-sm text-white text-xs flex items-center justify-center opacity-60 md:opacity-0 md:group-hover:opacity-100 hover:bg-[#aa6f4d] transition-all"
                     >
                       ›
                     </button>
@@ -114,7 +114,7 @@ export function EventDetail({
                   <button
                     onClick={(e) => { e.stopPropagation(); onDeletePhoto(p); }}
                     disabled={deleting === p.url}
-                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/30 backdrop-blur-sm text-white text-xs flex items-center justify-center opacity-40 group-hover:opacity-100 hover:!bg-red-500 transition-all disabled:opacity-50"
+                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/30 backdrop-blur-sm text-white text-xs flex items-center justify-center opacity-70 md:opacity-40 md:group-hover:opacity-100 hover:!bg-red-500 transition-all disabled:opacity-50"
                   >
                     {deleting === p.url ? '...' : '✕'}
                   </button>

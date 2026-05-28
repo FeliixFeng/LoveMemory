@@ -88,7 +88,7 @@ export function SettingsModal({
                         <img src={url} alt="" className="w-full h-full object-cover" />
                         <button
                           onClick={() => onRemoveCover(url)}
-                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all"
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px] flex items-center justify-center opacity-70 md:opacity-0 md:group-hover:opacity-100 hover:bg-red-500 transition-all"
                         >
                           ×
                         </button>
@@ -125,7 +125,7 @@ export function SettingsModal({
                         <img src={url} alt="" className="w-full h-full object-cover" />
                         <button
                           onClick={() => onHideDefault(url)}
-                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all"
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px] flex items-center justify-center opacity-70 md:opacity-0 md:group-hover:opacity-100 hover:bg-red-500 transition-all"
                         >
                           ×
                         </button>
@@ -158,7 +158,7 @@ export function SettingsModal({
                 ) : quotes.map(q => (
                   <div key={q.id} className="flex items-center gap-2 bg-white rounded-xl px-3 py-2 border border-[#efd8c3]/30">
                     <span className="flex-1 text-sm text-[#3d281c]">{q.content}</span>
-                    <button onClick={() => onDeleteQuote(q.id)} className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs text-[#5c3d2a]/30 hover:text-red-400 hover:bg-red-50 transition-colors">×</button>
+                    <button onClick={() => onDeleteQuote(q.id)} className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs text-[#5c3d2a]/50 md:text-[#5c3d2a]/30 hover:text-red-400 hover:bg-red-50 transition-colors">×</button>
                   </div>
                 ))}
               </div>
