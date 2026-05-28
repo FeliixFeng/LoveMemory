@@ -57,7 +57,7 @@ export function HeroSection({
       </div>
 
       {/* Info overlay - upper center */}
-      <div className="absolute inset-0 flex flex-col items-center text-white text-center z-[4] px-6 pointer-events-none" style={{ paddingTop: '15%' }}>
+      <div className="absolute inset-0 flex flex-col items-center text-white text-center z-[4] px-6 pointer-events-none pt-[35%] md:pt-[15%]">
         <span className="text-sm font-medium text-white/90 tracking-[0.3em] uppercase" style={{ fontFamily: 'Playfair Display, serif' }}>TOGETHER FOR</span>
         <div className="flex items-baseline mt-1">
           <span className="text-6xl md:text-7xl font-bold leading-none" style={{ fontFamily: 'Noto Serif SC, serif', textShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>{animDays}</span>

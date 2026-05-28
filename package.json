@@ -4,6 +4,7 @@
   "description": "💕 情侣纪念网站 - A romantic memory website for couples",
   "type": "module",
   "scripts": {
+    "predev": "rm -rf .next",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
