@@ -30,3 +30,4 @@ build/
 # Runtime data
 data/*.json
 !data/.gitkeep
+tsconfig.tsbuildinfo
