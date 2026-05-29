@@ -34,7 +34,7 @@ function useAnimatedNum(target: number) {
 }
 
 export function LoveMemoryClient() {
-  const [data, setData] = useState<AppData>({ startDate: '', heroImage: '', customCovers: [], hiddenDefaultCovers: [], events: [], photos: [], expenses: [], loveQuotes: [] });
+  const [data, setData] = useState<AppData>({ startDate: '', heroImage: '', customCovers: [], hiddenDefaultCovers: [], events: [], photos: [], expenses: [], loveQuotes: [], countdowns: [] });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -65,7 +65,7 @@ export function LoveMemoryClient() {
     fetch('/api/data', { cache: 'no-store' }).then(r => r.json()).then(d => {
       const events = (d.events || []).sort((a: Event, b: Event) => new Date(b.date).getTime() - new Date(a.date).getTime());
       const photos = (d.photos || []).map((p: Photo) => ({ ...p, displayUrl: p.displayUrl || p.url, thumbUrl: p.thumbUrl || p.displayUrl || p.url }));
-      setData({ ...d, events, photos, expenses: d.expenses || [], loveQuotes: d.loveQuotes || [], customCovers: d.customCovers || [], hiddenDefaultCovers: d.hiddenDefaultCovers || [] });
+      setData({ ...d, events, photos, expenses: d.expenses || [], loveQuotes: d.loveQuotes || [], customCovers: d.customCovers || [], hiddenDefaultCovers: d.hiddenDefaultCovers || [], countdowns: d.countdowns || [] });
       if (events.length > 0 && !selectedEventId) setSelectedEventId(String(events[0].id));
     }).catch(() => setToast('加载失败')).finally(() => setLoading(false));
   }, []);
@@ -305,6 +305,7 @@ export function LoveMemoryClient() {
             heroImages={heroImages} saving={saving}
             animDays={animDays} nextDays={nextDays} startDate={data.startDate}
             quotes={data.loveQuotes}
+            countdowns={data.countdowns}
             onHeroUpload={onHeroUpload}
             heroRef={heroRef}
           >
@@ -403,6 +404,7 @@ export function LoveMemoryClient() {
           defaultCovers={HERO_IMAGES}
           hiddenDefaults={data.hiddenDefaultCovers}
           quotes={data.loveQuotes}
+          countdowns={data.countdowns}
           onSaveDate={date => void save({ ...data, startDate: date }, '已保存')}
           onAddCover={() => { heroRef.current?.click(); setSettings(false); }}
           onRemoveCover={url => setConfirm({
@@ -427,6 +429,15 @@ export function LoveMemoryClient() {
             title: '确认删除语录',
             message: '确定要删除这条语录吗？',
             onConfirm: () => { void save({ ...data, loveQuotes: data.loveQuotes.filter(q => q.id !== id) }, '已删除'); setConfirm(null); }
+          })}
+          onAddCountdown={cd => {
+            const next = { ...data, countdowns: [...data.countdowns, { ...cd, id: Date.now() }] };
+            void save(next, '已添加');
+          }}
+          onDeleteCountdown={id => setConfirm({
+            title: '确认删除倒计时',
+            message: '确定要删除这个倒计时吗？',
+            onConfirm: () => { void save({ ...data, countdowns: data.countdowns.filter(c => c.id !== id) }, '已删除'); setConfirm(null); }
           })}
           onClose={() => setSettings(false)}
         />

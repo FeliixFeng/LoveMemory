@@ -34,6 +34,13 @@ export type LoveQuote = {
   content: string;
 };
 
+export type Countdown = {
+  id: number;
+  label: string;
+  date: string;
+  emoji: string;
+};
+
 export type AppData = {
   startDate: string;
   heroImage: string;
@@ -43,6 +50,7 @@ export type AppData = {
   photos: Photo[];
   expenses: Expense[];
   loveQuotes: LoveQuote[];
+  countdowns: Countdown[];
 };
 
 export type Milestone = Event;

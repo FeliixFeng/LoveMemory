@@ -1,13 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { LoveQuote } from '../../lib/types';
+import { LoveQuote, Countdown } from '../../lib/types';
 import { fmt } from '../../lib/utils';
 
 export function SettingsModal({
-  startDate, customCovers, defaultCovers, hiddenDefaults, quotes,
+  startDate, customCovers, defaultCovers, hiddenDefaults, quotes, countdowns,
   onSaveDate, onAddCover, onRemoveCover, onHideDefault, onRestoreDefaults,
-  onAddQuote, onDeleteQuote,
+  onAddQuote, onDeleteQuote, onAddCountdown, onDeleteCountdown,
   onClose
 }: {
   startDate: string;
@@ -15,6 +15,7 @@ export function SettingsModal({
   defaultCovers: string[];
   hiddenDefaults: string[];
   quotes: LoveQuote[];
+  countdowns: Countdown[];
   onSaveDate: (date: string) => void;
   onAddCover: () => void;
   onRemoveCover: (url: string) => void;
@@ -22,10 +23,13 @@ export function SettingsModal({
   onRestoreDefaults: () => void;
   onAddQuote: (content: string) => void;
   onDeleteQuote: (id: number) => void;
+  onAddCountdown: (data: { label: string; date: string; emoji: string }) => void;
+  onDeleteCountdown: (id: number) => void;
   onClose: () => void;
 }) {
-  const [tab, setTab] = useState<'date' | 'cover' | 'quotes'>('date');
+  const [tab, setTab] = useState<'date' | 'cover' | 'quotes' | 'countdowns'>('date');
   const [newQuote, setNewQuote] = useState('');
+  const [newCountdown, setNewCountdown] = useState({ label: '', date: '', emoji: '🎂' });
 
   const visibleDefaults = defaultCovers.filter(u => !hiddenDefaults.includes(u));
   const hasHidden = hiddenDefaults.length > 0;
@@ -49,6 +53,7 @@ export function SettingsModal({
             { key: 'date' as const, label: '纪念日', icon: '📅' },
             { key: 'cover' as const, label: '封面', icon: '🖼' },
             { key: 'quotes' as const, label: '语录', icon: '💬' },
+            { key: 'countdowns' as const, label: '倒计时', icon: '⏰' },
           ]).map(t => (
             <button
               key={t.key}
@@ -159,6 +164,63 @@ export function SettingsModal({
                   <div key={q.id} className="flex items-center gap-2 bg-white rounded-xl px-3 py-2 border border-[#efd8c3]/30">
                     <span className="flex-1 text-sm text-[#3d281c]">{q.content}</span>
                     <button onClick={() => onDeleteQuote(q.id)} className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs text-[#5c3d2a]/50 md:text-[#5c3d2a]/30 hover:text-red-400 hover:bg-red-50 transition-colors">×</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Countdowns tab */}
+          {tab === 'countdowns' && (
+            <div>
+              <p className="text-xs text-[#5c3d2a]/40 mb-3">管理倒计时，轮播显示在首页</p>
+              <div className="space-y-2 mb-3">
+                <div className="flex gap-2">
+                  <select
+                    value={newCountdown.emoji}
+                    onChange={e => setNewCountdown(d => ({ ...d, emoji: e.target.value }))}
+                    className="bg-white border border-[#efd8c3]/60 rounded-xl px-2 py-2 text-sm outline-none focus:border-[#d48b60]"
+                  >
+                    <option value="🎂">🎂 生日</option>
+                    <option value="💝">💝 纪念日</option>
+                    <option value="🎄">🎄 节日</option>
+                    <option value="✈️">✈️ 旅行</option>
+                    <option value="🎉">🎉 其他</option>
+                  </select>
+                  <input
+                    type="text"
+                    value={newCountdown.label}
+                    onChange={e => setNewCountdown(d => ({ ...d, label: e.target.value }))}
+                    placeholder="名称"
+                    className="flex-1 bg-white border border-[#efd8c3]/60 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#d48b60]"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="date"
+                    value={newCountdown.date}
+                    onChange={e => setNewCountdown(d => ({ ...d, date: e.target.value }))}
+                    className="flex-1 bg-white border border-[#efd8c3]/60 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#d48b60]"
+                  />
+                  <button
+                    onClick={() => {
+                      if (!newCountdown.label || !newCountdown.date) return;
+                      onAddCountdown(newCountdown);
+                      setNewCountdown({ label: '', date: '', emoji: '🎂' });
+                    }}
+                    className="px-4 py-2 bg-[#aa6f4d] text-white rounded-xl text-sm font-medium shrink-0"
+                  >添加</button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {countdowns.length === 0 ? (
+                  <p className="text-center text-xs text-[#5c3d2a]/30 py-4">暂无倒计时</p>
+                ) : countdowns.map(c => (
+                  <div key={c.id} className="flex items-center gap-2 bg-white rounded-xl px-3 py-2 border border-[#efd8c3]/30">
+                    <span className="text-sm">{c.emoji}</span>
+                    <span className="flex-1 text-sm text-[#3d281c]">{c.label}</span>
+                    <span className="text-xs text-[#5c3d2a]/40">{c.date}</span>
+                    <button onClick={() => onDeleteCountdown(c.id)} className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs text-[#5c3d2a]/50 md:text-[#5c3d2a]/30 hover:text-red-400 hover:bg-red-50 transition-colors">×</button>
                   </div>
                 ))}
               </div>

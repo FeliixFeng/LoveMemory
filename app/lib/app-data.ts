@@ -2,7 +2,7 @@ import { prisma } from './prisma.ts';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { getDataFilePath } from './env.ts';
-import type { Event, Photo, Expense, LoveQuote, AppData } from '../../lib/types.ts';
+import type { Event, Photo, Expense, LoveQuote, Countdown, AppData } from '../../lib/types.ts';
 
 export type AppEvent = Event;
 export type AppPhoto = Photo;
@@ -24,7 +24,8 @@ export const DEFAULT_APP_DATA: AppData = {
     { id: 3, content: '每天都是情人节' },
     { id: 4, content: '和你在一起，每天都很特别' },
     { id: 5, content: '你是我最好的选择' }
-  ]
+  ],
+  countdowns: []
 };
 
 const dataFile = getDataFilePath();
@@ -93,6 +94,7 @@ export async function readAppDataWithPrisma(): Promise<AppData> {
     heroImage: settings?.heroImage || '',
     customCovers: settings?.customCovers ? JSON.parse(settings.customCovers) : [],
     hiddenDefaultCovers: settings?.hiddenDefaultCovers ? JSON.parse(settings.hiddenDefaultCovers) : [],
+    countdowns: settings?.countdowns ? JSON.parse(settings.countdowns) : [],
     events: events.map((item: any) => ({
       id: normalizeMilestoneId(item.id),
       title: item.title,
@@ -147,7 +149,8 @@ function migrateLegacyData(parsed: any): AppData {
     expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
     loveQuotes: Array.isArray(parsed.loveQuotes) ? parsed.loveQuotes : DEFAULT_APP_DATA.loveQuotes,
     customCovers: Array.isArray(parsed.customCovers) ? parsed.customCovers : [],
-    hiddenDefaultCovers: Array.isArray(parsed.hiddenDefaultCovers) ? parsed.hiddenDefaultCovers : []
+    hiddenDefaultCovers: Array.isArray(parsed.hiddenDefaultCovers) ? parsed.hiddenDefaultCovers : [],
+    countdowns: Array.isArray(parsed.countdowns) ? parsed.countdowns : []
   };
 }
 
@@ -172,7 +175,8 @@ export async function writeAppDataToJson(payload: Partial<AppData>): Promise<App
     expenses: Array.isArray(payload.expenses) ? payload.expenses : currentData.expenses,
     loveQuotes: Array.isArray(payload.loveQuotes) ? payload.loveQuotes : currentData.loveQuotes,
     customCovers: Array.isArray(payload.customCovers) ? payload.customCovers : currentData.customCovers,
-    hiddenDefaultCovers: Array.isArray(payload.hiddenDefaultCovers) ? payload.hiddenDefaultCovers : currentData.hiddenDefaultCovers
+    hiddenDefaultCovers: Array.isArray(payload.hiddenDefaultCovers) ? payload.hiddenDefaultCovers : currentData.hiddenDefaultCovers,
+    countdowns: Array.isArray(payload.countdowns) ? payload.countdowns : currentData.countdowns
   };
 
   await fs.writeFile(dataFile, JSON.stringify(nextData, null, 2));
@@ -196,10 +200,11 @@ export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise
       : currentData.expenses,
     loveQuotes: Array.isArray(payload.loveQuotes) ? payload.loveQuotes : currentData.loveQuotes,
     customCovers: Array.isArray(payload.customCovers) ? payload.customCovers : currentData.customCovers,
-    hiddenDefaultCovers: Array.isArray(payload.hiddenDefaultCovers) ? payload.hiddenDefaultCovers : currentData.hiddenDefaultCovers
+    hiddenDefaultCovers: Array.isArray(payload.hiddenDefaultCovers) ? payload.hiddenDefaultCovers : currentData.hiddenDefaultCovers,
+    countdowns: Array.isArray(payload.countdowns) ? payload.countdowns : currentData.countdowns
   };
 
-  const hasSettingsChange = payload.startDate !== undefined || payload.heroImage !== undefined || payload.customCovers !== undefined || payload.hiddenDefaultCovers !== undefined;
+  const hasSettingsChange = payload.startDate !== undefined || payload.heroImage !== undefined || payload.customCovers !== undefined || payload.hiddenDefaultCovers !== undefined || payload.countdowns !== undefined;
   const hasEventsChange = Array.isArray(payload.events) && JSON.stringify(payload.events) !== JSON.stringify(currentData.events);
   const hasPhotosChange = Array.isArray(payload.photos) && JSON.stringify(payload.photos) !== JSON.stringify(currentData.photos);
   const hasExpensesChange = Array.isArray(payload.expenses) && JSON.stringify(payload.expenses) !== JSON.stringify(currentData.expenses);
@@ -214,13 +219,15 @@ export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise
           startDate: nextData.startDate || '',
           heroImage: nextData.heroImage || '',
           customCovers: JSON.stringify(nextData.customCovers || []),
-          hiddenDefaultCovers: JSON.stringify(nextData.hiddenDefaultCovers || [])
+          hiddenDefaultCovers: JSON.stringify(nextData.hiddenDefaultCovers || []),
+          countdowns: JSON.stringify(nextData.countdowns || [])
         },
         update: {
           startDate: nextData.startDate || '',
           heroImage: nextData.heroImage || '',
           customCovers: JSON.stringify(nextData.customCovers || []),
-          hiddenDefaultCovers: JSON.stringify(nextData.hiddenDefaultCovers || [])
+          hiddenDefaultCovers: JSON.stringify(nextData.hiddenDefaultCovers || []),
+          countdowns: JSON.stringify(nextData.countdowns || [])
         }
       });
     }

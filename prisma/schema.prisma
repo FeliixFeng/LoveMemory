@@ -13,6 +13,7 @@ model Settings {
   heroImage    String   @map("hero_image") @db.LongText
   customCovers      String   @map("custom_covers") @db.LongText
   hiddenDefaultCovers String   @map("hidden_default_covers") @db.LongText
+  countdowns        String   @db.LongText
   updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("settings")

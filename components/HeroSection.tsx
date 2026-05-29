@@ -1,21 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { LoveQuote } from '../lib/types';
+import { useEffect, useState, useMemo } from 'react';
+import { LoveQuote, Countdown } from '../lib/types';
 import { fmt } from '../lib/utils';
 
 export function HeroSection({
-  heroImages, saving, animDays, nextDays, startDate, quotes,
+  heroImages, saving, animDays, nextDays, startDate, quotes, countdowns,
   onHeroUpload, heroRef, children
 }: {
   heroImages: string[]; saving: boolean; animDays: number; nextDays: number; startDate: string;
   quotes: LoveQuote[];
+  countdowns: Countdown[];
   onHeroUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   heroRef: React.RefObject<any>;
   children?: React.ReactNode;
 }) {
   const [heroIdx, setHeroIdx] = useState(0);
   const [quoteIdx, setQuoteIdx] = useState(0);
+  const [countdownIdx, setCountdownIdx] = useState(0);
 
   useEffect(() => {
     if (heroImages.length <= 1) return;
@@ -32,6 +34,25 @@ export function HeroSection({
     const t = setInterval(() => setQuoteIdx(i => (i + 1) % quotes.length), 4500);
     return () => clearInterval(t);
   }, [quotes.length]);
+
+  useEffect(() => {
+    if (countdowns.length <= 1) return;
+    const t = setInterval(() => setCountdownIdx(i => (i + 1) % countdowns.length), 3500);
+    return () => clearInterval(t);
+  }, [countdowns.length]);
+
+  // Calculate days remaining for each countdown
+  const countdownDays = useMemo(() => {
+    return countdowns.map(c => {
+      if (!c.date) return Infinity;
+      const now = new Date();
+      const target = new Date(`${c.date}T00:00:00`);
+      // Find next occurrence (this year or next)
+      let next = new Date(now.getFullYear(), target.getMonth(), target.getDate());
+      if (next.getTime() < now.getTime()) next.setFullYear(next.getFullYear() + 1);
+      return Math.ceil((next.getTime() - now.getTime()) / 86400000);
+    });
+  }, [countdowns]);
 
   return (
     <section className="relative rounded-3xl overflow-hidden shadow-lg aspect-[3/4] md:aspect-[4/3] lg:aspect-[2/1]" style={{ animation: 'slideUp 0.6s ease-out' }}>
@@ -55,6 +76,31 @@ export function HeroSection({
           {saving ? 'SYNCING' : 'LOVING'}
         </div>
       </div>
+
+      {/* Countdown card - top right */}
+      {nextDays > 0 && (
+        <div className="absolute top-3 right-3 z-10">
+          <div className="px-3 py-2 rounded-2xl bg-black/20 backdrop-blur-sm border border-white/10 text-center" style={{ minWidth: '72px' }}>
+            {countdowns.length > 0 ? (
+              <>
+                <div className="text-[10px] mb-0.5">{countdowns[countdownIdx]?.emoji || '💝'} <span className="text-white/50">{countdowns[countdownIdx]?.label || ''}</span></div>
+                <div className="text-lg font-bold text-white leading-none" style={{ fontFamily: 'Playfair Display, serif', textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
+                  {countdownDays[countdownIdx] === Infinity ? '--' : countdownDays[countdownIdx]}
+                </div>
+                <div className="text-[9px] text-white/40 mt-0.5">天后</div>
+              </>
+            ) : (
+              <>
+                <div className="text-[10px] text-white/50 mb-0.5">💝 纪念日</div>
+                <div className="text-lg font-bold text-white leading-none" style={{ fontFamily: 'Playfair Display, serif', textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
+                  {nextDays}
+                </div>
+                <div className="text-[9px] text-white/40 mt-0.5">天后</div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Info overlay - upper center */}
       <div className="absolute inset-0 flex flex-col items-center text-white text-center z-[4] px-6 pointer-events-none pt-[35%] md:pt-[15%]">
