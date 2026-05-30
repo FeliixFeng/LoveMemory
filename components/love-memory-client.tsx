@@ -32,7 +32,7 @@ function useAnimatedNum(target: number) {
 
 export function LoveMemoryClient() {
   const { token, tokenRef, setShowPin, pendingOp, withAuth } = useAuth();
-  const [data, setData] = useState<AppData>({ startDate: '', heroImage: '', customCovers: [], hiddenDefaultCovers: [], events: [], photos: [], expenses: [], loveQuotes: [], countdowns: [] });
+  const [data, setData] = useState<AppData>({ startDate: '', heroImage: '', customCovers: [], hiddenDefaultCovers: [], events: [], photos: [], expenses: [], loveQuotes: [], countdowns: [], wishes: [], capsules: [] });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -55,7 +55,7 @@ export function LoveMemoryClient() {
     fetch('/api/data', { cache: 'no-store' }).then(r => r.json()).then(d => {
       const events = (d.events || []).sort((a: Event, b: Event) => new Date(b.date).getTime() - new Date(a.date).getTime());
       const photos = (d.photos || []).map((p: Photo) => ({ ...p, displayUrl: p.displayUrl || p.url, thumbUrl: p.thumbUrl || p.displayUrl || p.url }));
-      setData({ ...d, events, photos, expenses: d.expenses || [], loveQuotes: d.loveQuotes || [], customCovers: d.customCovers || [], hiddenDefaultCovers: d.hiddenDefaultCovers || [], countdowns: d.countdowns || [] });
+      setData({ ...d, events, photos, expenses: d.expenses || [], loveQuotes: d.loveQuotes || [], customCovers: d.customCovers || [], hiddenDefaultCovers: d.hiddenDefaultCovers || [], countdowns: d.countdowns || [], wishes: d.wishes || [], capsules: d.capsules || [] });
       if (events.length > 0 && !selectedEventId) setSelectedEventId(String(events[0].id));
     }).catch(() => setToast('加载失败')).finally(() => setLoading(false));
   }, []);

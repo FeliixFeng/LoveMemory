@@ -62,7 +62,15 @@ export function SiteLayoutClient({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{ token, tokenRef, showPin, setShowPin, pendingOp, withAuth, onPinVerified }}>
       <FallingHearts />
-      <NavBar isAuthenticated={!!token} />
+      <NavBar isAuthenticated={!!token} onPin={() => {
+        if (token) {
+          setToken('');
+          tokenRef.current = '';
+          try { localStorage.removeItem('lm_token'); } catch {}
+        } else {
+          setShowPin(true);
+        }
+      }} />
       {children}
       <BottomTabBar />
       {showPin && (

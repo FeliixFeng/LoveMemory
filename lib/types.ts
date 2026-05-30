@@ -41,6 +41,25 @@ export type Countdown = {
   emoji: string;
 };
 
+export type Wish = {
+  id: number;
+  title: string;
+  description: string;
+  emoji: string;
+  isCompleted: boolean;
+  completedAt: string | null;
+  sortOrder: number;
+};
+
+export type Capsule = {
+  id: number;
+  title: string;
+  content: string;
+  emoji: string;
+  unlockDate: string;
+  isOpened: boolean;
+};
+
 export type AppData = {
   startDate: string;
   heroImage: string;
@@ -51,6 +70,8 @@ export type AppData = {
   expenses: Expense[];
   loveQuotes: LoveQuote[];
   countdowns: Countdown[];
+  wishes: Wish[];
+  capsules: Capsule[];
 };
 
 export type Milestone = Event;

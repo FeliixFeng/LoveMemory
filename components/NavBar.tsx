@@ -4,14 +4,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const NAV_LINKS = [
-  { href: '/', label: '首页' },
-  { href: '/album', label: '相册' },
-  { href: '/wishes', label: '愿望' },
-  { href: '/capsule', label: '胶囊' },
-  { href: '/more', label: '更多' },
+  { href: '/', label: '首页', icon: '🏠' },
+  { href: '/album', label: '相册', icon: '📷' },
+  { href: '/wishes', label: '愿望', icon: '💝' },
+  { href: '/capsule', label: '胶囊', icon: '⏰' },
+  { href: '/more', label: '更多', icon: '⋯' },
 ];
 
-export function NavBar({ isAuthenticated, onSettings }: { isAuthenticated: boolean; onSettings?: () => void }) {
+export function NavBar({ isAuthenticated, onSettings, onPin }: { isAuthenticated: boolean; onSettings?: () => void; onPin?: () => void }) {
   const pathname = usePathname();
 
   return (
@@ -29,15 +29,16 @@ export function NavBar({ isAuthenticated, onSettings }: { isAuthenticated: boole
             <span className="text-lg font-bold text-gradient" style={{ fontFamily: 'Noto Serif SC, serif' }}>珍藏回忆</span>
           </Link>
           <span className="text-[8px] text-[#aa6f4d] tracking-[0.3em] uppercase md:hidden" style={{ fontFamily: 'Playfair Display, serif' }}>OUR STORY</span>
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden md:flex items-center gap-2">
             {NAV_LINKS.map(link => {
               const active = pathname === link.href;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${active ? 'bg-[#aa6f4d]/10 text-[#aa6f4d] font-semibold' : 'text-[#5c3d2a]/40 hover:text-[#5c3d2a]/60'}`}
+                  className={`px-4 py-1.5 text-xs rounded-lg transition-colors flex items-center gap-1.5 ${active ? 'bg-[#aa6f4d]/10 text-[#aa6f4d] font-semibold' : 'text-[#5c3d2a]/40 hover:text-[#5c3d2a]/60 hover:bg-[#efd8c3]/20'}`}
                 >
+                  <span className="text-sm">{link.icon}</span>
                   {link.label}
                 </Link>
               );
@@ -47,9 +48,9 @@ export function NavBar({ isAuthenticated, onSettings }: { isAuthenticated: boole
 
         {/* Right: Auth + Settings */}
         <div className="flex gap-2">
-          <div suppressHydrationWarning className={`w-8 h-8 rounded-full border flex items-center justify-center text-sm transition-colors ${isAuthenticated ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-white border-[#efd8c3] text-[#5c3d2a]/50'}`}>
-            {isAuthenticated ? '✓' : '🔒'}
-          </div>
+          <button suppressHydrationWarning onClick={onPin} className={`w-8 h-8 rounded-full border flex items-center justify-center text-sm transition-colors ${isAuthenticated ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-white border-[#efd8c3] text-[#5c3d2a]/50 hover:bg-amber-50'}`}>
+            {isAuthenticated ? '🔓' : '🔒'}
+          </button>
           {onSettings && (
             <button onClick={onSettings} className="w-8 h-8 rounded-full bg-white border border-[#efd8c3] flex items-center justify-center text-sm hover:bg-amber-50">⚙</button>
           )}

@@ -77,3 +77,28 @@ model LoveQuote {
 
   @@map("love_quotes")
 }
+
+model Wish {
+  id          Int      @id @default(autoincrement())
+  title       String   @db.VarChar(255)
+  description String   @default("") @db.VarChar(1000)
+  emoji       String   @default("💝") @db.VarChar(10)
+  isCompleted Boolean  @default(false) @map("is_completed")
+  completedAt String?  @map("completed_at") @db.VarChar(40)
+  sortOrder   Int      @default(0) @map("sort_order") @db.Int
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("wishes")
+}
+
+model Capsule {
+  id         Int      @id @default(autoincrement())
+  title      String   @db.VarChar(255)
+  content    String   @db.Text
+  emoji      String   @default("💌") @db.VarChar(10)
+  unlockDate String   @map("unlock_date") @db.VarChar(20)
+  isOpened   Boolean  @default(false) @map("is_opened")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("capsules")
+}

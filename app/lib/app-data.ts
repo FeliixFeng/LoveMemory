@@ -25,7 +25,9 @@ export const DEFAULT_APP_DATA: AppData = {
     { id: 4, content: '和你在一起，每天都很特别' },
     { id: 5, content: '你是我最好的选择' }
   ],
-  countdowns: []
+  countdowns: [],
+  wishes: [],
+  capsules: []
 };
 
 const dataFile = getDataFilePath();
@@ -52,7 +54,7 @@ function normalizePhoto(photo: Partial<AppPhoto> & { url?: string }) {
 }
 
 export async function readAppDataWithPrisma(): Promise<AppData> {
-  const [settings, events, standalonePhotos, loveQuotes] = await Promise.all([
+  const [settings, events, standalonePhotos, loveQuotes, wishes, capsules] = await Promise.all([
     prisma.settings.findUnique({ where: { id: 1 } }),
     prisma.event.findMany({
       include: { photos: true, expenses: true },
@@ -62,7 +64,9 @@ export async function readAppDataWithPrisma(): Promise<AppData> {
       where: { eventId: null },
       orderBy: [{ sortOrder: 'asc' }, { id: 'desc' }]
     }),
-    prisma.loveQuote.findMany({ orderBy: { sortOrder: 'asc' } })
+    prisma.loveQuote.findMany({ orderBy: { sortOrder: 'asc' } }),
+    prisma.wish.findMany({ orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }] }),
+    prisma.capsule.findMany({ orderBy: { createdAt: 'desc' } })
   ]);
 
   const eventPhotos = events.flatMap((e: any) => e.photos);
@@ -110,6 +114,23 @@ export async function readAppDataWithPrisma(): Promise<AppData> {
     loveQuotes: loveQuotes.map((item: any) => ({
       id: item.id,
       content: item.content
+    })),
+    wishes: wishes.map((item: any) => ({
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      emoji: item.emoji,
+      isCompleted: item.isCompleted,
+      completedAt: item.completedAt,
+      sortOrder: item.sortOrder
+    })),
+    capsules: capsules.map((item: any) => ({
+      id: item.id,
+      title: item.title,
+      content: item.content,
+      emoji: item.emoji,
+      unlockDate: item.unlockDate,
+      isOpened: item.isOpened
     }))
   };
 }

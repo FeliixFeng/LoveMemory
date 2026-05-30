@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { getPin } from './env.ts';
 
-const TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+const TOKEN_TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 days
 const HMAC_ALGO = 'sha256';
 const HMAC_KEY_PREFIX = 'lovememory-pin:';
 
