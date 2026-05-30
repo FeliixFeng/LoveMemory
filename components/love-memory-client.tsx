@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Event, Photo, Expense, AppData } from '../lib/types';
 import { HERO_IMAGES } from '../lib/constants';
-import { FallingHearts } from './FallingHearts';
-import { NavBar } from './NavBar';
+import { useAuth } from './SiteLayoutClient';
 import { HeroSection } from './HeroSection';
 import { HorizontalTimeline } from './HorizontalTimeline';
 import { EmptyState } from './EmptyState';
@@ -15,9 +14,7 @@ import { StatsSection } from './StatsSection';
 import { FloatingAddButton } from './FloatingAddButton';
 import { Lightbox } from './Lightbox';
 import { Toast } from './Toast';
-import { SettingsModal } from './modals/SettingsModal';
 import { ConfirmDialog } from './modals/ConfirmDialog';
-import { PinModal } from './modals/PinModal';
 
 function useAnimatedNum(target: number) {
   const [val, setVal] = useState(0);
@@ -34,6 +31,7 @@ function useAnimatedNum(target: number) {
 }
 
 export function LoveMemoryClient() {
+  const { token, tokenRef, setShowPin, pendingOp, withAuth } = useAuth();
   const [data, setData] = useState<AppData>({ startDate: '', heroImage: '', customCovers: [], hiddenDefaultCovers: [], events: [], photos: [], expenses: [], loveQuotes: [], countdowns: [] });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -41,15 +39,7 @@ export function LoveMemoryClient() {
   const [deleting, setDeleting] = useState('');
   const [viewPhoto, setViewPhoto] = useState<{ photos: Photo[]; index: number } | null>(null);
   const [confirm, setConfirm] = useState<{ title: string; message: string; danger?: boolean; onConfirm: () => void } | null>(null);
-  const [settings, setSettings] = useState(false);
   const [toast, setToast] = useState('');
-  const [showPin, setShowPin] = useState(false);
-  const [token, setToken] = useState(() => {
-    if (typeof window === 'undefined') return '';
-    try { return localStorage.getItem('lm_token') || ''; } catch { return ''; }
-  });
-  const tokenRef = useRef(token);
-  const pendingOp = useRef<(() => void | Promise<void>) | null>(null);
 
   // Event state
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
@@ -272,33 +262,11 @@ export function LoveMemoryClient() {
     } catch { setToast('删除失败'); }
   }
 
-  function onPinVerified(newToken: string) {
-    setToken(newToken);
-    tokenRef.current = newToken;
-    try { localStorage.setItem('lm_token', newToken); } catch {}
-    setShowPin(false);
-    const op = pendingOp.current;
-    pendingOp.current = null;
-    if (op) void op();
-  }
-
-  function withAuth(action: () => void | Promise<void>) {
-    if (!tokenRef.current) {
-      pendingOp.current = () => { void action(); };
-      setShowPin(true);
-      return;
-    }
-    void action();
-  }
-
-  if (loading) return <main className="flex min-h-screen items-center justify-center"><div className="lm-card rounded-full px-6 py-3 text-sm font-medium text-[#5c3d2a]"><span className="mr-2">💕</span>加载中...</div></main>;
+  if (loading) return <main className="flex min-h-[60vh] items-center justify-center"><div className="lm-card rounded-full px-6 py-3 text-sm font-medium text-[#5c3d2a]"><span className="mr-2">💕</span>加载中...</div></main>;
 
   return (
     <>
-      <FallingHearts />
-      <NavBar onSettings={() => withAuth(() => setSettings(true))} onPin={() => setShowPin(true)} isAuthenticated={!!token} />
-
-      <main className="max-w-lg md:max-w-3xl lg:max-w-6xl mx-auto pt-16 pb-8 px-0 md:px-8 flex flex-col gap-4">
+      <main className="max-w-lg md:max-w-3xl lg:max-w-6xl mx-auto pt-16 pb-20 md:pb-8 px-0 md:px-8 flex flex-col gap-4">
         {/* Hero + Timeline in one box */}
         <div className="px-4 lg:px-0">
           <HeroSection
@@ -397,52 +365,6 @@ export function LoveMemoryClient() {
         />
       )}
 
-      {settings && (
-        <SettingsModal
-          startDate={data.startDate}
-          customCovers={data.customCovers}
-          defaultCovers={HERO_IMAGES}
-          hiddenDefaults={data.hiddenDefaultCovers}
-          quotes={data.loveQuotes}
-          countdowns={data.countdowns}
-          onSaveDate={date => void save({ ...data, startDate: date }, '已保存')}
-          onAddCover={() => { heroRef.current?.click(); setSettings(false); }}
-          onRemoveCover={url => setConfirm({
-            title: '确认移除封面',
-            message: '确定要移除这张封面吗？',
-            onConfirm: () => { void save({ ...data, customCovers: data.customCovers.filter(c => c !== url) }, '已删除'); setConfirm(null); }
-          })}
-          onHideDefault={url => setConfirm({
-            title: '确认隐藏封面',
-            message: '隐藏后可通过"恢复默认"找回，确定要隐藏吗？',
-            danger: false,
-            onConfirm: () => { void save({ ...data, hiddenDefaultCovers: [...data.hiddenDefaultCovers, url] }, '已隐藏'); setConfirm(null); }
-          })}
-          onRestoreDefaults={() => {
-            void save({ ...data, hiddenDefaultCovers: [] }, '已恢复默认');
-          }}
-          onAddQuote={content => {
-            const next = { ...data, loveQuotes: [...data.loveQuotes, { id: Date.now(), content }] };
-            void save(next, '已添加');
-          }}
-          onDeleteQuote={id => setConfirm({
-            title: '确认删除语录',
-            message: '确定要删除这条语录吗？',
-            onConfirm: () => { void save({ ...data, loveQuotes: data.loveQuotes.filter(q => q.id !== id) }, '已删除'); setConfirm(null); }
-          })}
-          onAddCountdown={cd => {
-            const next = { ...data, countdowns: [...data.countdowns, { ...cd, id: Date.now() }] };
-            void save(next, '已添加');
-          }}
-          onDeleteCountdown={id => setConfirm({
-            title: '确认删除倒计时',
-            message: '确定要删除这个倒计时吗？',
-            onConfirm: () => { void save({ ...data, countdowns: data.countdowns.filter(c => c.id !== id) }, '已删除'); setConfirm(null); }
-          })}
-          onClose={() => setSettings(false)}
-        />
-      )}
-
       {viewPhoto && (
         <Lightbox
           photo={viewPhoto.photos[viewPhoto.index]}
@@ -464,13 +386,6 @@ export function LoveMemoryClient() {
       )}
 
       <Toast message={toast} />
-
-      {showPin && (
-        <PinModal
-          onVerify={onPinVerified}
-          onClose={() => { setShowPin(false); pendingOp.current = null; }}
-        />
-      )}
 
       <input ref={fileRef} type="file" multiple accept="image/*" className="hidden" onChange={onPhotoUpload} />
     </>
