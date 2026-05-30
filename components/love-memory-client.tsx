@@ -31,7 +31,7 @@ function useAnimatedNum(target: number) {
 }
 
 export function LoveMemoryClient() {
-  const { token, tokenRef, setShowPin, pendingOp, withAuth } = useAuth();
+  const { token, tokenRef, setShowPin, pendingOp, withAuth, setFloatingButton } = useAuth();
   const [data, setData] = useState<AppData>({ startDate: '', heroImage: '', customCovers: [], hiddenDefaultCovers: [], events: [], photos: [], expenses: [], loveQuotes: [], countdowns: [], wishes: [], capsules: [] });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -61,6 +61,11 @@ export function LoveMemoryClient() {
   }, []);
 
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 2000); return () => clearTimeout(t); }, [toast]);
+
+  useEffect(() => {
+    setFloatingButton(<FloatingAddButton onClick={() => withAuth(openEventCreate)} />);
+    return () => setFloatingButton(null);
+  }, [withAuth]);
 
   const days = useMemo(() => data.startDate ? Math.max(0, Math.floor((Date.now() - new Date(`${data.startDate}T00:00:00`).getTime()) / 86400000)) : 0, [data.startDate]);
   const animDays = useAnimatedNum(days);
@@ -329,8 +334,6 @@ export function LoveMemoryClient() {
           </p>
         </footer>
       </main>
-
-      <FloatingAddButton onClick={() => withAuth(openEventCreate)} />
 
       {eventModal && (
         <EventModal

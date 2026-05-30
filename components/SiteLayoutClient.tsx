@@ -15,6 +15,8 @@ type AuthCtx = {
   pendingOp: React.MutableRefObject<(() => void | Promise<void>) | null>;
   withAuth: (action: () => void | Promise<void>) => void;
   onPinVerified: (token: string) => void;
+  floatingButton: ReactNode;
+  setFloatingButton: (node: ReactNode) => void;
 };
 
 const AuthContext = createContext<AuthCtx>({
@@ -25,6 +27,8 @@ const AuthContext = createContext<AuthCtx>({
   pendingOp: { current: null },
   withAuth: (a) => { void a(); },
   onPinVerified: () => {},
+  floatingButton: null,
+  setFloatingButton: () => {},
 });
 
 export function useAuth() {
@@ -32,6 +36,7 @@ export function useAuth() {
 }
 
 export function SiteLayoutClient({ children }: { children: ReactNode }) {
+  const [floatingButton, setFloatingButton] = useState<ReactNode>(null);
   const [token, setToken] = useState(() => {
     if (typeof window === 'undefined') return '';
     try { return localStorage.getItem('lm_token') || ''; } catch { return ''; }
@@ -60,7 +65,7 @@ export function SiteLayoutClient({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ token, tokenRef, showPin, setShowPin, pendingOp, withAuth, onPinVerified }}>
+    <AuthContext.Provider value={{ token, tokenRef, showPin, setShowPin, pendingOp, withAuth, onPinVerified, floatingButton, setFloatingButton }}>
       <FallingHearts />
       <NavBar isAuthenticated={!!token} onPin={() => {
         if (token) {
@@ -73,6 +78,7 @@ export function SiteLayoutClient({ children }: { children: ReactNode }) {
       }} />
       {children}
       <BottomTabBar />
+      {floatingButton}
       {showPin && (
         <PinModal
           onVerify={onPinVerified}
