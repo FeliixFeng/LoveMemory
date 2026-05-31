@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Capsule } from '../lib/types';
 import { useAuth } from './SiteLayoutClient';
+import { SkeletonCard } from './SkeletonCard';
 
 const EMOJI_OPTIONS = ['💌', '💝', '🎁', '🌸', '💌', '💕', '🌹', '✨'];
 
@@ -63,7 +64,7 @@ export function CapsulePage() {
     return Math.ceil((target.getTime() - now.getTime()) / 86400000);
   }
 
-  if (loading) return <div className="flex items-center justify-center py-12"><span className="text-sm text-[#5c3d2a]/50">加载中...</span></div>;
+  if (loading) return <div className="grid grid-cols-2 gap-3"><SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard /></div>;
 
   return (
     <div className="space-y-4">

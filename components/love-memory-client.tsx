@@ -36,6 +36,7 @@ export function LoveMemoryClient() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [deleting, setDeleting] = useState('');
   const [viewPhoto, setViewPhoto] = useState<{ photos: Photo[]; index: number } | null>(null);
   const [confirm, setConfirm] = useState<{ title: string; message: string; danger?: boolean; onConfirm: () => void } | null>(null);
@@ -112,31 +113,52 @@ export function LoveMemoryClient() {
     const fd = new FormData();
     fd.append('image', file);
     if (eventId) fd.append('eventId', eventId);
-    const headers: Record<string, string> = {};
     const t = authToken || tokenRef.current;
-    if (t) headers['Authorization'] = `Bearer ${t}`;
-    const r = await fetch('/api/upload', { method: 'POST', headers, body: fd });
-    if (r.status === 401) {
-      pendingOp.current = () => doUpload(file).then(() => {});
-      setShowPin(true);
-      throw new Error('auth');
-    }
-    if (!r.ok) throw new Error();
-    const d = await r.json(); return { ...d, displayUrl: d.displayUrl || d.url, thumbUrl: d.thumbUrl || d.displayUrl || d.url } as Photo;
+
+    return new Promise<Photo>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/upload');
+      if (t) xhr.setRequestHeader('Authorization', `Bearer ${t}`);
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
+      };
+
+      xhr.onload = () => {
+        if (xhr.status === 401) {
+          pendingOp.current = () => doUpload(file).then(() => {});
+          setShowPin(true);
+          reject(new Error('auth'));
+          return;
+        }
+        if (xhr.status !== 200) { reject(new Error()); return; }
+        const d = JSON.parse(xhr.responseText);
+        resolve({ ...d, displayUrl: d.displayUrl || d.url, thumbUrl: d.thumbUrl || d.displayUrl || d.url } as Photo);
+      };
+
+      xhr.onerror = () => reject(new Error());
+      xhr.send(fd);
+    });
   }
 
   async function onPhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
     setUploading(true);
+    setUploadProgress(0);
     try {
       const up: Photo[] = [];
-      for (const f of files) up.push(await doUpload(f, undefined, selectedEventId || undefined));
+      for (let i = 0; i < files.length; i++) {
+        setUploadProgress(Math.round((i / files.length) * 100));
+        up.push(await doUpload(files[i], undefined, selectedEventId || undefined));
+      }
+      setUploadProgress(100);
       await save({ ...data, photos: [...up.reverse(), ...data.photos] }, '已上传');
     } catch (err) {
       if ((err as Error)?.message !== 'auth') setToast('上传失败');
     } finally {
       setUploading(false);
+      setUploadProgress(0);
       e.target.value = '';
     }
   }
@@ -364,6 +386,7 @@ export function LoveMemoryClient() {
           onDeleteExpense={id => withAuth(() => setConfirm({ title: '确认删除账单', message: '确定要删除这条账单吗？', onConfirm: () => { void deleteExpense(id); setConfirm(null); } }))}
           onViewPhoto={(photos, index) => setViewPhoto({ photos, index })}
           uploading={uploading}
+          uploadProgress={uploadProgress}
           deleting={deleting}
         />
       )}

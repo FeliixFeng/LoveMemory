@@ -41,7 +41,7 @@ export function SettingsPage() {
     }
   }
 
-  if (!data) return <div className="flex items-center justify-center py-12"><span className="text-sm text-[#5c3d2a]/50">加载中...</span></div>;
+  if (!data) return <div className="space-y-4"><div className="h-10 bg-[#efd8c3]/20 rounded-xl animate-pulse" /><div className="h-40 bg-[#efd8c3]/20 rounded-2xl animate-pulse" /></div>;
 
   const visibleDefaults = HERO_IMAGES.filter(u => !(data.hiddenDefaultCovers || []).includes(u));
   const hasHidden = (data.hiddenDefaultCovers || []).length > 0;

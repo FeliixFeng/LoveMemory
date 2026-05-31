@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Event, Photo, AppData } from '../lib/types';
 import { getEmoji, fmt } from '../lib/utils';
 import { Lightbox } from './Lightbox';
+import { SkeletonPage } from './SkeletonCard';
 
 export function AlbumPage() {
   const [data, setData] = useState<AppData | null>(null);
@@ -18,7 +19,7 @@ export function AlbumPage() {
     });
   }, []);
 
-  if (!data) return <div className="flex items-center justify-center py-12"><span className="text-sm text-[#5c3d2a]/50">加载中...</span></div>;
+  if (!data) return <SkeletonPage />;
 
   const eventsWithPhotos = data.events.filter(e => data.photos.some(p => p.eventId === String(e.id)));
   const standalonePhotos = data.photos.filter(p => !p.eventId);

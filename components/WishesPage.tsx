@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Wish } from '../lib/types';
 import { useAuth } from './SiteLayoutClient';
 import { FallingHearts } from './FallingHearts';
+import { SkeletonCard } from './SkeletonCard';
 
 const EMOJI_OPTIONS = ['💝', '🌸', '✈️', '🎬', '🍽️', '🏔️', '🎵', '📚', '🎁', '💍'];
 
@@ -61,7 +62,7 @@ export function WishesPage() {
     }
   }
 
-  if (loading) return <div className="flex items-center justify-center py-12"><span className="text-sm text-[#5c3d2a]/50">加载中...</span></div>;
+  if (loading) return <div className="space-y-3"><SkeletonCard /><SkeletonCard /><SkeletonCard /></div>;
 
   const pending = wishes.filter(w => !w.isCompleted);
   const completed = wishes.filter(w => w.isCompleted);

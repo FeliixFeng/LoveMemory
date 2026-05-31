@@ -7,7 +7,7 @@ import { EXPENSE_CATEGORIES } from '../lib/constants';
 import { ExpenseItem } from './ExpenseItem';
 
 export function EventDetail({
-  event, photos, expenses, onClose, onEdit, onAddPhoto, onDeletePhoto, onReorderPhotos, onAddExpense, onDeleteExpense, onViewPhoto, uploading, deleting
+  event, photos, expenses, onClose, onEdit, onAddPhoto, onDeletePhoto, onReorderPhotos, onAddExpense, onDeleteExpense, onViewPhoto, uploading, uploadProgress, deleting
 }: {
   event: Event;
   photos: Photo[];
@@ -21,6 +21,7 @@ export function EventDetail({
   onDeleteExpense: (id: number) => void;
   onViewPhoto: (photos: Photo[], index: number) => void;
   uploading: boolean;
+  uploadProgress: number;
   deleting: string;
 }) {
   const [showAddExpense, setShowAddExpense] = useState(false);
@@ -125,10 +126,15 @@ export function EventDetail({
               <button
                 onClick={onAddPhoto}
                 disabled={uploading}
-                className="aspect-[4/5] rounded-xl border-2 border-dashed border-[#efd8c3] flex flex-col items-center justify-center gap-1 text-[#5c3d2a]/40 hover:border-[#d48b60] hover:text-[#d48b60] transition-colors disabled:opacity-50"
+                className="aspect-[4/5] rounded-xl border-2 border-dashed border-[#efd8c3] flex flex-col items-center justify-center gap-1 text-[#5c3d2a]/40 hover:border-[#d48b60] hover:text-[#d48b60] transition-colors disabled:opacity-50 relative overflow-hidden"
               >
+                {uploading && (
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#efd8c3]">
+                    <div className="h-full bg-[#d48b60] transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+                  </div>
+                )}
                 <span className="text-2xl">{uploading ? '⏳' : '+'}</span>
-                <span className="text-[10px]">{uploading ? '上传中...' : '添加照片'}</span>
+                <span className="text-[10px]">{uploading ? `${uploadProgress}%` : '添加照片'}</span>
               </button>
             </div>
           </div>
@@ -146,6 +152,31 @@ export function EventDetail({
                 + 添加
               </button>
             </div>
+
+            {/* Category summary bars */}
+            {expenses.length > 0 && (() => {
+              const byCategory: Record<string, number> = {};
+              expenses.forEach(e => { byCategory[e.category] = (byCategory[e.category] || 0) + e.amount; });
+              const entries = Object.entries(byCategory).sort((a, b) => b[1] - a[1]);
+              return (
+                <div className="mb-3 p-3 rounded-xl bg-white/40 border border-[#efd8c3]/20 space-y-2">
+                  {entries.map(([catId, amount]) => {
+                    const cat = EXPENSE_CATEGORIES.find(c => c.id === catId);
+                    const pct = total > 0 ? (amount / total) * 100 : 0;
+                    return (
+                      <div key={catId} className="flex items-center gap-2">
+                        <span className="text-xs w-12 text-[#5c3d2a]/60">{cat?.emoji} {cat?.label}</span>
+                        <div className="flex-1 h-2 bg-[#efd8c3]/20 rounded-full overflow-hidden">
+                          <div className="h-full bg-[#d48b60]/60 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="text-[10px] text-[#5c3d2a]/40 w-12 text-right">{formatCurrency(amount)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
             {expenses.length === 0 && !showAddExpense ? (
               <p className="text-xs text-[#5c3d2a]/40 py-3 text-center">还没有账单</p>
             ) : (
