@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Capsule } from '../lib/types';
 import { useAuth } from './SiteLayoutClient';
 import { SkeletonCard } from './SkeletonCard';
+import { ConfirmDialog } from './modals/ConfirmDialog';
 
 const EMOJI_OPTIONS = ['💌', '💝', '🎁', '🌸', '💌', '💕', '🌹', '✨'];
 
@@ -70,17 +71,12 @@ export function CapsulePage() {
     <div className="space-y-4">
       {/* Confirm dialog */}
       {confirm && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setConfirm(null)} />
-          <div className="relative w-full sm:max-w-sm bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl p-5" style={{ animation: 'slideUp 0.3s ease-out' }}>
-            <h3 className="text-base font-bold text-[#3d281c] mb-2 text-center" style={{ fontFamily: 'Noto Serif SC, serif' }}>{confirm.title}</h3>
-            <p className="text-sm text-[#aa6f4d] text-center mb-5">{confirm.message}</p>
-            <div className="flex gap-3">
-              <button onClick={() => setConfirm(null)} className="flex-1 py-3 bg-white border border-[#efd8c3] text-[#3d281c] rounded-xl font-medium">取消</button>
-              <button onClick={() => { confirm.onConfirm(); setConfirm(null); }} className="flex-1 py-3 bg-red-500 text-white rounded-xl font-medium">确认</button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title={confirm.title}
+          message={confirm.message}
+          onConfirm={confirm.onConfirm}
+          onCancel={() => setConfirm(null)}
+        />
       )}
 
       {/* View capsule content */}
