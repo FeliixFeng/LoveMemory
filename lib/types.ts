@@ -73,5 +73,3 @@ export type AppData = {
   wishes: Wish[];
   capsules: Capsule[];
 };
-
-export type Milestone = Event;

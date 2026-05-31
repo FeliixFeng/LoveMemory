@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AppData, LoveQuote, Countdown } from '../lib/types';
+import { AppData } from '../lib/types';
 import { HERO_IMAGES } from '../lib/constants';
 import { useAuth } from './SiteLayoutClient';
 import { fmt } from '../lib/utils';
+import { Toast } from './Toast';
+import { ConfirmDialog } from './modals/ConfirmDialog';
 
 export function SettingsPage() {
   const { token, withAuth } = useAuth();
@@ -46,24 +48,15 @@ export function SettingsPage() {
 
   return (
     <div className="space-y-4">
-      {/* Toast */}
-      {toast && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-[#3d281c] text-amber-50 text-sm shadow-lg" style={{ animation: 'slideUp 0.3s ease-out' }}>{toast}</div>
-      )}
+      <Toast message={toast} />
 
-      {/* Confirm dialog */}
       {confirm && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setConfirm(null)} />
-          <div className="relative w-full sm:max-w-sm bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl p-5" style={{ animation: 'slideUp 0.3s ease-out' }}>
-            <h3 className="text-base font-bold text-[#3d281c] mb-2 text-center" style={{ fontFamily: 'Noto Serif SC, serif' }}>{confirm.title}</h3>
-            <p className="text-sm text-[#aa6f4d] text-center mb-5">{confirm.message}</p>
-            <div className="flex gap-3">
-              <button onClick={() => setConfirm(null)} className="flex-1 py-3 bg-white border border-[#efd8c3] text-[#3d281c] rounded-xl font-medium">取消</button>
-              <button onClick={() => { confirm.onConfirm(); setConfirm(null); }} className="flex-1 py-3 bg-red-500 text-white rounded-xl font-medium">确认</button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title={confirm.title}
+          message={confirm.message}
+          onConfirm={confirm.onConfirm}
+          onCancel={() => setConfirm(null)}
+        />
       )}
 
       {/* Tabs */}

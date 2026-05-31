@@ -5,7 +5,6 @@ import { NavBar } from './NavBar';
 import { BottomTabBar } from './BottomTabBar';
 import { FallingHearts } from './FallingHearts';
 import { PinModal } from './modals/PinModal';
-import { SettingsModal } from './modals/SettingsModal';
 
 type AuthCtx = {
   token: string;
