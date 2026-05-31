@@ -63,22 +63,8 @@ body {
   100% { transform: translateX(12px); }
 }
 
-.animate-fall { animation: fall linear infinite; }
-.animate-sway { animation: sway ease-in-out infinite alternate; }
-
-@keyframes drift {
-  0%, 100% { transform: translate(0, 0); }
-  25% { transform: translate(20px, -15px); }
-  50% { transform: translate(-10px, 20px); }
-  75% { transform: translate(15px, 10px); }
-}
-.animate-drift { animation: drift ease-in-out infinite; }
-
-@keyframes sparkle {
-  0%, 100% { opacity: 0; transform: scale(0.5); }
-  50% { opacity: 0.8; transform: scale(1.2); }
-}
-.animate-sparkle { animation: sparkle ease-in-out infinite; }
+.animate-fall { animation: fall linear infinite; will-change: transform, opacity; }
+.animate-sway { animation: sway ease-in-out infinite alternate; will-change: transform; }
 
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
@@ -106,9 +92,10 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  .animate-fall, .animate-sway, .animate-shake {
+    animation: none !important;
+  }
+  [style*="animation"] {
+    animation: none !important;
   }
 }

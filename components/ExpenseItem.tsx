@@ -35,7 +35,7 @@ export function ExpenseItem({
       <span className="text-sm font-semibold text-[#d48b60]">{formatCurrency(expense.amount)}</span>
       <button
         onClick={onDelete}
-        className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] text-[#5c3d2a]/20 hover:text-red-400 hover:bg-red-50 transition-colors"
+        className="w-8 h-8 -mr-1 rounded-full flex items-center justify-center text-[10px] text-[#5c3d2a]/20 hover:text-red-400 hover:bg-red-50 transition-colors"
       >
         ✕
       </button>

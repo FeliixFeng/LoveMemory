@@ -85,7 +85,7 @@ export function EventPreviewCard({
                   </h3>
                   <button
                     onClick={onEdit}
-                    className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] text-[#5c3d2a]/50 md:text-[#5c3d2a]/30 hover:text-[#5c3d2a]/60 hover:bg-[#efd8c3]/30 transition-all"
+                    className="shrink-0 w-8 h-8 -mr-1.5 rounded-full flex items-center justify-center text-[10px] text-[#5c3d2a]/50 md:text-[#5c3d2a]/30 hover:text-[#5c3d2a]/60 hover:bg-[#efd8c3]/30 transition-all"
                     title="编辑"
                   >
                     ✎

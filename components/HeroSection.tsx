@@ -26,7 +26,7 @@ export function HeroSection({
   }, [heroImages.length]);
 
   useEffect(() => {
-    heroImages.forEach(src => { const img = new Image(); img.src = src; });
+    heroImages.slice(0, 3).forEach(src => { const img = new Image(); img.src = src; });
   }, [heroImages]);
 
   useEffect(() => {

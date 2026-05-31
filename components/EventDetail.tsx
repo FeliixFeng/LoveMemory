@@ -69,7 +69,7 @@ export function EventDetail({
             </div>
             <div className="flex gap-2">
               <button onClick={onEdit} className="px-3 py-1.5 text-xs rounded-lg bg-[#efd8c3]/40 text-[#5c3d2a] hover:bg-[#efd8c3]/60 transition-colors">编辑</button>
-              <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-[#5c3d2a]/50 hover:bg-[#efd8c3]/30 transition-colors">✕</button>
+              <button onClick={onClose} className="w-10 h-10 -mr-2 rounded-full flex items-center justify-center text-[#5c3d2a]/50 hover:bg-[#efd8c3]/30 transition-colors">✕</button>
             </div>
           </div>
         </div>
@@ -103,7 +103,7 @@ export function EventDetail({
                   {i > 0 && (
                     <button
                       onClick={(e) => { e.stopPropagation(); onReorderPhotos(i, i - 1); }}
-                      className="absolute bottom-2 left-2 w-6 h-6 rounded-full bg-black/40 backdrop-blur-sm text-white text-xs flex items-center justify-center opacity-60 md:opacity-0 md:group-hover:opacity-100 hover:bg-[#aa6f4d] transition-all"
+                      className="absolute bottom-1.5 left-1.5 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm text-white text-sm flex items-center justify-center opacity-60 md:opacity-0 md:group-hover:opacity-100 hover:bg-[#aa6f4d] transition-all"
                     >
                       ‹
                     </button>
@@ -112,7 +112,7 @@ export function EventDetail({
                   {i < photos.length - 1 && (
                     <button
                       onClick={(e) => { e.stopPropagation(); onReorderPhotos(i, i + 1); }}
-                      className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-black/40 backdrop-blur-sm text-white text-xs flex items-center justify-center opacity-60 md:opacity-0 md:group-hover:opacity-100 hover:bg-[#aa6f4d] transition-all"
+                      className="absolute bottom-1.5 right-1.5 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm text-white text-sm flex items-center justify-center opacity-60 md:opacity-0 md:group-hover:opacity-100 hover:bg-[#aa6f4d] transition-all"
                     >
                       ›
                     </button>
@@ -121,7 +121,7 @@ export function EventDetail({
                   <button
                     onClick={(e) => { e.stopPropagation(); onDeletePhoto(p); }}
                     disabled={deleting === p.url}
-                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/30 backdrop-blur-sm text-white text-xs flex items-center justify-center opacity-70 md:opacity-40 md:group-hover:opacity-100 hover:!bg-red-500 transition-all disabled:opacity-50"
+                    className="absolute top-1.5 right-1.5 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm text-white text-xs flex items-center justify-center opacity-70 md:opacity-40 md:group-hover:opacity-100 hover:!bg-red-500 transition-all disabled:opacity-50"
                   >
                     {deleting === p.url ? '...' : '✕'}
                   </button>
@@ -136,7 +136,7 @@ export function EventDetail({
               >
                 {uploading && (
                   <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#efd8c3]">
-                    <div className="h-full bg-[#d48b60] transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+                    <div className="h-full bg-[#d48b60] transition-[width] duration-300" style={{ width: `${uploadProgress}%` }} />
                   </div>
                 )}
                 <span className="text-2xl">{uploading ? '⏳' : '+'}</span>
@@ -173,7 +173,7 @@ export function EventDetail({
                       <div key={catId} className="flex items-center gap-2">
                         <span className="text-xs w-12 text-[#5c3d2a]/60">{cat?.emoji} {cat?.label}</span>
                         <div className="flex-1 h-2 bg-[#efd8c3]/20 rounded-full overflow-hidden">
-                          <div className="h-full bg-[#d48b60]/60 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                          <div className="h-full bg-[#d48b60]/60 rounded-full transition-[width]" style={{ width: `${pct}%` }} />
                         </div>
                         <span className="text-[10px] text-[#5c3d2a]/40 w-12 text-right">{formatCurrency(amount)}</span>
                       </div>
