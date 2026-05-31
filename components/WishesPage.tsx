@@ -125,20 +125,20 @@ export function WishesPage() {
       {/* Pending wishes */}
       {pending.length > 0 && (
         <div className="space-y-2">
-          <h2 className="text-xs text-[#5c3d2a]/40 font-medium">想一起做的事</h2>
+          <h2 className="text-xs text-[#5c3d2a]/40 font-medium px-1">想一起做的事</h2>
           {pending.map(wish => (
-            <div key={wish.id} className="lm-card rounded-2xl p-4 flex items-start gap-3">
+            <div key={wish.id} className="lm-card rounded-2xl p-4 flex items-center gap-3">
               <button
                 onClick={() => withAuth(() => toggleWish(wish))}
-                className="w-8 h-8 rounded-full border-2 border-[#efd8c3] flex items-center justify-center text-lg shrink-0 hover:border-[#d48b60] transition-colors"
+                className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#f0c8a8] to-[#d48b60] flex items-center justify-center text-lg shrink-0 shadow-sm active:scale-95 transition-transform"
               >{wish.emoji}</button>
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-bold text-[#3d281c]">{wish.title}</h3>
-                {wish.description && <p className="text-xs text-[#5c3d2a]/50 mt-0.5">{wish.description}</p>}
+                {wish.description && <p className="text-[11px] text-[#5c3d2a]/50 mt-0.5 truncate">{wish.description}</p>}
               </div>
               <button
                 onClick={() => withAuth(() => setConfirm({ title: '确认删除', message: '确定要删除这个愿望吗？', onConfirm: () => deleteWish(wish.id) }))}
-                className="w-6 h-6 rounded-full flex items-center justify-center text-xs text-[#5c3d2a]/30 hover:text-red-400 hover:bg-red-50 transition-colors shrink-0"
+                className="w-7 h-7 rounded-full flex items-center justify-center text-xs text-[#5c3d2a]/20 hover:text-red-400 hover:bg-red-50 transition-colors shrink-0"
               >×</button>
             </div>
           ))}
@@ -148,20 +148,20 @@ export function WishesPage() {
       {/* Completed wishes */}
       {completed.length > 0 && (
         <div className="space-y-2">
-          <h2 className="text-xs text-[#5c3d2a]/40 font-medium">已完成 ✓</h2>
+          <h2 className="text-xs text-[#5c3d2a]/40 font-medium px-1">已完成 ✓</h2>
           {completed.map(wish => (
-            <div key={wish.id} className="lm-card rounded-2xl p-4 flex items-start gap-3 opacity-60">
+            <div key={wish.id} className="lm-card rounded-2xl p-4 flex items-center gap-3 opacity-60">
               <button
                 onClick={() => withAuth(() => toggleWish(wish))}
-                className="w-8 h-8 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center text-lg shrink-0"
+                className="w-10 h-10 rounded-xl bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center text-lg shrink-0 active:scale-95 transition-transform"
               >✓</button>
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-bold text-[#3d281c] line-through">{wish.title}</h3>
-                {wish.description && <p className="text-xs text-[#5c3d2a]/50 mt-0.5">{wish.description}</p>}
+                {wish.description && <p className="text-[11px] text-[#5c3d2a]/50 mt-0.5 truncate">{wish.description}</p>}
               </div>
               <button
                 onClick={() => withAuth(() => setConfirm({ title: '确认删除', message: '确定要删除这个愿望吗？', onConfirm: () => deleteWish(wish.id) }))}
-                className="w-6 h-6 rounded-full flex items-center justify-center text-xs text-[#5c3d2a]/30 hover:text-red-400 hover:bg-red-50 transition-colors shrink-0"
+                className="w-7 h-7 rounded-full flex items-center justify-center text-xs text-[#5c3d2a]/20 hover:text-red-400 hover:bg-red-50 transition-colors shrink-0"
               >×</button>
             </div>
           ))}
