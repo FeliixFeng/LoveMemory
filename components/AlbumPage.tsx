@@ -66,11 +66,11 @@ export function AlbumPage() {
 
                 {/* Photos grid */}
                 {isExpanded && (
-                  <div className="px-4 pb-4 grid grid-cols-3 gap-2">
+                  <div className="px-4 pb-4 grid grid-cols-5 md:grid-cols-6 gap-1">
                     {eventPhotos.map((p, i) => (
                       <div
                         key={p.url}
-                        className="aspect-[4/5] rounded-xl overflow-hidden bg-[#efd8c3]/20 cursor-pointer hover:opacity-90 transition-opacity"
+                        className="aspect-[4/5] rounded-lg overflow-hidden bg-[#efd8c3]/20 cursor-pointer hover:opacity-90 transition-opacity"
                         onClick={() => setViewPhoto({ photos: eventPhotos, index: i })}
                       >
                         <img src={p.thumbUrl || p.displayUrl || p.url} alt="" className="w-full h-full object-cover" loading="lazy" />
@@ -86,11 +86,11 @@ export function AlbumPage() {
           {standalonePhotos.length > 0 && (
             <div className="lm-card rounded-2xl p-4">
               <h3 className="text-sm font-bold text-[#3d281c] mb-3">其他照片 ({standalonePhotos.length})</h3>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-5 md:grid-cols-6 gap-1">
                 {standalonePhotos.map((p, i) => (
                   <div
                     key={p.url}
-                    className="aspect-[4/5] rounded-xl overflow-hidden bg-[#efd8c3]/20 cursor-pointer hover:opacity-90 transition-opacity"
+                    className="aspect-[4/5] rounded-lg overflow-hidden bg-[#efd8c3]/20 cursor-pointer hover:opacity-90 transition-opacity"
                     onClick={() => setViewPhoto({ photos: standalonePhotos, index: i })}
                   >
                     <img src={p.thumbUrl || p.displayUrl || p.url} alt="" className="w-full h-full object-cover" loading="lazy" />
