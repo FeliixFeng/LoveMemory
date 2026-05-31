@@ -44,34 +44,40 @@ export function EventDetail({
         style={{ animation: 'slideUp 0.3s ease-out' }}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-[#fdfbf7]/95 backdrop-blur-sm z-10 p-4 border-b border-[#efd8c3]/30">
+        <div className="sticky top-0 bg-[#fdfbf7]/95 backdrop-blur-sm z-10 px-5 py-4 border-b border-[#efd8c3]/30">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">{getEmoji(event.icon)}</span>
+            <div className="flex items-center gap-3">
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 shadow-sm"
+                style={{
+                  background: 'linear-gradient(135deg, #d48b60, #aa6f4d)',
+                  boxShadow: '0 2px 8px rgba(170,111,77,0.25)'
+                }}
+              >
+                {getEmoji(event.icon)}
+              </div>
               <div>
                 <h2 className="text-base font-bold text-[#3d281c]" style={{ fontFamily: 'Noto Serif SC, serif' }}>
                   {event.title || '未命名事件'}
                 </h2>
-                <p className="text-[11px] text-[#5c3d2a]/60">{fmt(event.date)}</p>
+                <div className="flex items-center gap-2 text-[11px] text-[#5c3d2a]/50">
+                  <span>{fmt(event.date)}</span>
+                  {event.location && <span>· 📍 {event.location}</span>}
+                  {event.mood && <span>· {getMoodEmoji(event.mood)}</span>}
+                </div>
               </div>
             </div>
             <div className="flex gap-2">
-              <button onClick={onEdit} className="px-3 py-1.5 text-xs rounded-lg bg-[#efd8c3]/40 text-[#5c3d2a]">编辑</button>
-              <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-[#5c3d2a]/50 hover:bg-[#efd8c3]/30">✕</button>
+              <button onClick={onEdit} className="px-3 py-1.5 text-xs rounded-lg bg-[#efd8c3]/40 text-[#5c3d2a] hover:bg-[#efd8c3]/60 transition-colors">编辑</button>
+              <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-[#5c3d2a]/50 hover:bg-[#efd8c3]/30 transition-colors">✕</button>
             </div>
           </div>
         </div>
 
         <div className="p-4 space-y-5">
-          {/* Info */}
-          {(event.location || event.mood || event.desc) && (
-            <div className="space-y-2">
-              {event.desc && <p className="text-sm text-[#5c3d2a]/80">{event.desc}</p>}
-              <div className="flex gap-3 text-xs text-[#5c3d2a]/50">
-                {event.location && <span>📍 {event.location}</span>}
-                {event.mood && <span>{getMoodEmoji(event.mood)} {event.mood}</span>}
-              </div>
-            </div>
+          {/* Description */}
+          {event.desc && (
+            <p className="text-sm text-[#5c3d2a]/80 leading-relaxed">{event.desc}</p>
           )}
 
           {/* Photos */}
@@ -178,7 +184,10 @@ export function EventDetail({
             })()}
 
             {expenses.length === 0 && !showAddExpense ? (
-              <p className="text-xs text-[#5c3d2a]/40 py-3 text-center">还没有账单</p>
+              <div className="py-6 text-center">
+                <span className="text-2xl mb-2 block">💰</span>
+                <p className="text-xs text-[#5c3d2a]/30">还没有账单</p>
+              </div>
             ) : (
               <div className="space-y-2">
                 {expenses.map(e => (
@@ -188,19 +197,19 @@ export function EventDetail({
             )}
 
             {showAddExpense && (
-              <div className="mt-3 p-3 rounded-xl bg-white border border-[#efd8c3]/40 space-y-2">
+              <div className="mt-3 p-4 rounded-xl bg-gradient-to-b from-white to-[#fdfbf7] border border-[#efd8c3]/40 space-y-3">
                 <div className="flex gap-2">
                   <input
                     type="number"
                     placeholder="金额"
                     value={expenseDraft.amount}
                     onChange={e => setExpenseDraft(d => ({ ...d, amount: e.target.value }))}
-                    className="flex-1 bg-[#fdfbf7] border border-[#efd8c3]/60 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#d48b60]"
+                    className="flex-1 bg-white border border-[#efd8c3]/60 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#d48b60] transition-colors"
                   />
                   <select
                     value={expenseDraft.category}
                     onChange={e => setExpenseDraft(d => ({ ...d, category: e.target.value }))}
-                    className="bg-[#fdfbf7] border border-[#efd8c3]/60 rounded-lg px-2 py-2 text-sm outline-none focus:border-[#d48b60]"
+                    className="bg-white border border-[#efd8c3]/60 rounded-xl px-2 py-2.5 text-sm outline-none focus:border-[#d48b60] transition-colors"
                   >
                     {EXPENSE_CATEGORIES.map(c => (
                       <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>
@@ -212,11 +221,11 @@ export function EventDetail({
                   placeholder="备注（可选）"
                   value={expenseDraft.note}
                   onChange={e => setExpenseDraft(d => ({ ...d, note: e.target.value }))}
-                  className="w-full bg-[#fdfbf7] border border-[#efd8c3]/60 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#d48b60]"
+                  className="w-full bg-white border border-[#efd8c3]/60 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#d48b60] transition-colors"
                 />
                 <div className="flex gap-2 justify-end">
-                  <button onClick={() => setShowAddExpense(false)} className="px-3 py-1.5 text-xs text-[#5c3d2a]/60">取消</button>
-                  <button onClick={handleAddExpense} className="px-4 py-1.5 text-xs rounded-lg bg-[#3d281c] text-amber-50">保存</button>
+                  <button onClick={() => setShowAddExpense(false)} className="px-4 py-2 text-xs text-[#5c3d2a]/60 hover:text-[#5c3d2a] transition-colors">取消</button>
+                  <button onClick={handleAddExpense} className="px-5 py-2 text-xs rounded-xl bg-[#3d281c] text-amber-50 font-medium active:scale-95 transition-transform">保存</button>
                 </div>
               </div>
             )}
