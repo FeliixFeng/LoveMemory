@@ -105,8 +105,8 @@ export function AlbumPage() {
       {/* Lightbox */}
       {viewPhoto && (
         <Lightbox
-          photo={viewPhoto.photos[viewPhoto.index]}
-          hasMultiple={viewPhoto.photos.length > 1}
+          photos={viewPhoto.photos}
+          index={viewPhoto.index}
           onClose={() => setViewPhoto(null)}
           onPrev={() => setViewPhoto(v => v && { ...v, index: (v.index - 1 + v.photos.length) % v.photos.length })}
           onNext={() => setViewPhoto(v => v && { ...v, index: (v.index + 1) % v.photos.length })}
