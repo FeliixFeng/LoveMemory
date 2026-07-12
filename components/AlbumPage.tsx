@@ -67,7 +67,7 @@ export function AlbumPage() {
 
                 {/* Photos grid */}
                 {isExpanded && (
-                  <div className="px-4 pb-4 grid grid-cols-5 md:grid-cols-6 gap-1">
+                  <div className="px-4 pb-4 grid grid-cols-5 md:grid-cols-6 gap-1 stagger">
                     {eventPhotos.map((p, i) => (
                       <div
                         key={p.url}
@@ -87,7 +87,7 @@ export function AlbumPage() {
           {standalonePhotos.length > 0 && (
             <div className="lm-card rounded-2xl p-4">
               <h3 className="text-sm font-bold text-[#3d281c] mb-3">其他照片 ({standalonePhotos.length})</h3>
-              <div className="grid grid-cols-5 md:grid-cols-6 gap-1">
+              <div className="grid grid-cols-5 md:grid-cols-6 gap-1 stagger">
                 {standalonePhotos.map((p, i) => (
                   <div
                     key={p.url}

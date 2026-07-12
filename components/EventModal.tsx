@@ -24,8 +24,8 @@ export function EventModal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative w-full sm:max-w-sm bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl max-h-[85vh] overflow-y-auto" style={{ animation: 'slideUp 0.3s ease-out' }}>
+      <div className="absolute inset-0 bg-black/30 modal-backdrop" onClick={onClose} />
+      <div className="relative w-full sm:max-w-sm bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl max-h-[85vh] overflow-y-auto modal-content">
         <div className="w-10 h-1 bg-amber-200 rounded-full mx-auto mt-4 mb-3 sm:hidden" />
 
         {/* Header */}

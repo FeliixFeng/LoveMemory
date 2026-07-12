@@ -39,10 +39,9 @@ export function EventDetail({
 
   return (
     <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/30 modal-backdrop" onClick={onClose} />
       <div
-        className="relative w-full sm:max-w-lg max-h-[85vh] bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl overflow-y-auto"
-        style={{ animation: 'slideUp 0.3s ease-out' }}
+        className="relative w-full sm:max-w-lg max-h-[85vh] bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl overflow-y-auto modal-content"
       >
         {/* Header */}
         <div className="sticky top-0 bg-[#fdfbf7]/95 backdrop-blur-sm z-10 px-5 py-4 border-b border-[#efd8c3]/30">

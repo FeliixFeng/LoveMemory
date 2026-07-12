@@ -126,6 +126,7 @@ export function WishesPage() {
       {pending.length > 0 && (
         <div className="space-y-2">
           <h2 className="text-xs text-[#5c3d2a]/40 font-medium px-1">想一起做的事</h2>
+          <div className="stagger space-y-2">
           {pending.map(wish => (
             <div key={wish.id} className="lm-card rounded-2xl p-4 flex items-center gap-3">
               <button
@@ -142,6 +143,7 @@ export function WishesPage() {
               >×</button>
             </div>
           ))}
+          </div>
         </div>
       )}
 

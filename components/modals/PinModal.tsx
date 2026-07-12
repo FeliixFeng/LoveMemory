@@ -81,10 +81,9 @@ export function PinModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-black/20" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/20 modal-backdrop" onClick={onClose} />
       <div
-        className={`relative w-full sm:max-w-sm bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl p-5 ${error ? 'animate-shake' : ''}`}
-        style={{ animation: error ? undefined : 'slideUp 0.3s ease-out' }}
+        className={`relative w-full sm:max-w-sm bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl p-5 modal-content ${error ? 'animate-shake' : ''}`}
       >
         <div className="w-10 h-1 bg-amber-200 rounded-full mx-auto mb-4" />
         <h3

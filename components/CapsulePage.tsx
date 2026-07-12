@@ -82,8 +82,8 @@ export function CapsulePage() {
       {/* View capsule content */}
       {openId && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setOpenId(null)} />
-          <div className="relative w-full sm:max-w-md bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl p-6" style={{ animation: 'slideUp 0.3s ease-out' }}>
+          <div className="absolute inset-0 bg-black/30 modal-backdrop" onClick={() => setOpenId(null)} />
+          <div className="relative w-full sm:max-w-md bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl p-6 modal-content">
             {(() => {
               const c = capsules.find(x => x.id === openId);
               if (!c) return null;
@@ -158,7 +158,7 @@ export function CapsulePage() {
           <p className="text-xs text-[#5c3d2a]/30 mt-1">点击"写信"给未来的ta写一封信</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 stagger">
           {capsules.map(capsule => {
             const daysLeft = getDaysLeft(capsule.unlockDate);
             const canOpen = daysLeft <= 0 || capsule.isOpened;
