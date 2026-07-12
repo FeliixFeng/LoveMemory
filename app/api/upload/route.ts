@@ -3,22 +3,12 @@ import fs from 'fs/promises';
 import path from 'node:path';
 import sharp from 'sharp';
 import { NextResponse } from 'next/server.js';
-import { createPhotoWithPrisma, deletePhotoWithPrisma } from '../../lib/app-data.ts';
-import { getStorageDriver, getUploadDir, getPin } from '../../lib/env.ts';
-import { verifyToken } from '../../lib/auth.ts';
-import { uploadToOss, deleteFromOss, getOssUrl, getOssClient } from '../../lib/oss.ts';
+import { createPhoto, deletePhoto } from '../../lib/app-data.ts';
+import { getUploadDir } from '../../lib/env.ts';
+import { checkRequestAuth } from '../../lib/auth.ts';
+import { uploadToOss, deleteFromOss, getOssClient } from '../../lib/oss.ts';
 
 const uploadDir = getUploadDir();
-
-function checkAuth(request: Request): NextResponse | null {
-  if (!getPin()) return null;
-  const authHeader = request.headers.get('authorization') || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-  if (!token || !verifyToken(token)) {
-    return NextResponse.json({ error: '需要验证 PIN 码' }, { status: 401 });
-  }
-  return null;
-}
 
 function buildFilename(originalName: string) {
   const extension = path.extname(originalName) || '.jpg';
@@ -34,7 +24,7 @@ async function ensureUploadDir() {
 }
 
 export async function POST(request: Request) {
-  const authErr = checkAuth(request);
+  const authErr = checkRequestAuth(request);
   if (authErr) return authErr;
 
   try {
@@ -78,30 +68,18 @@ export async function POST(request: Request) {
     const displayUrl = url;
     let uploadedPhoto;
 
-    if (getStorageDriver() === 'mysql') {
-      try {
-        uploadedPhoto = await createPhotoWithPrisma({
-          url,
-          displayUrl,
-          thumbUrl,
-          filename,
-          mimeType: file.type,
-          size: file.size,
-          eventId
-        });
-      } catch (dbError) {
-        console.error('Database save error:', dbError);
-        // Still return success since OSS upload succeeded
-        uploadedPhoto = {
-          url,
-          displayUrl,
-          thumbUrl,
-          filename,
-          mimeType: file.type,
-          size: file.size
-        };
-      }
-    } else {
+    try {
+      uploadedPhoto = await createPhoto({
+        url,
+        displayUrl,
+        thumbUrl,
+        filename,
+        mimeType: file.type,
+        size: file.size,
+        eventId
+      });
+    } catch (dbError) {
+      console.error('Database save error:', dbError);
       uploadedPhoto = {
         url,
         displayUrl,
@@ -123,7 +101,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const authErr = checkAuth(request);
+  const authErr = checkRequestAuth(request);
   if (authErr) return authErr;
 
   try {
@@ -136,9 +114,7 @@ export async function DELETE(request: Request) {
     const filename = path.basename(url);
     const thumbFilename = buildThumbFilename(filename);
 
-    if (getStorageDriver() === 'mysql') {
-      await deletePhotoWithPrisma(url);
-    }
+    await deletePhoto(url);
 
     if (getOssClient()) {
       await deleteFromOss(filename);

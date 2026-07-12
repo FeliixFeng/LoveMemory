@@ -1,13 +1,6 @@
 import { prisma } from './prisma.ts';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { getDataFilePath } from './env.ts';
-import type { Event, Photo, Expense, LoveQuote, Countdown, AppData } from '../../lib/types.ts';
+import type { Event, Photo, Expense, LoveQuote, Wish, Capsule, AppData } from '../../lib/types.ts';
 
-export type AppEvent = Event;
-export type AppPhoto = Photo;
-export type AppExpense = Expense;
-export type AppLoveQuote = LoveQuote;
 export type { AppData };
 
 export const DEFAULT_APP_DATA: AppData = {
@@ -30,13 +23,65 @@ export const DEFAULT_APP_DATA: AppData = {
   capsules: []
 };
 
-const dataFile = getDataFilePath();
+// --- Prisma result types ---
 
-function normalizeMilestoneId(id: string) {
-  return /^\d+$/.test(id) ? Number(id) : id;
+interface PrismaPhoto {
+  id: bigint;
+  url: string;
+  displayUrl: string;
+  thumbUrl: string;
+  filename: string;
+  mimeType: string;
+  fileSize: number;
+  sortOrder: number;
+  uploadedAt: string;
+  eventId: string | null;
 }
 
-function normalizePhoto(photo: Partial<AppPhoto> & { url?: string }) {
+interface PrismaEventWithRelations {
+  id: string;
+  title: string;
+  date: string;
+  description: string;
+  icon: string;
+  location: string;
+  mood: string;
+  coverPhoto: string;
+  sortOrder: number;
+  photos: PrismaPhoto[];
+  expenses: PrismaExpense[];
+}
+
+interface PrismaExpense {
+  id: number;
+  eventId: string;
+  amount: number;
+  category: string;
+  note: string;
+}
+
+interface PrismaSettings {
+  startDate: string;
+  heroImage: string;
+  customCovers: string;
+  hiddenDefaultCovers: string;
+  countdowns: string;
+}
+
+// --- Helpers ---
+
+interface NormalizedPhoto {
+  url: string;
+  displayUrl: string;
+  thumbUrl: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  uploadedAt: string;
+  eventId: string | null;
+}
+
+function normalizePhoto(photo: Partial<Photo> & { url?: string }): NormalizedPhoto {
   const url = photo.url || '';
   const displayUrl = photo.displayUrl || url;
   const thumbUrl = photo.thumbUrl || displayUrl;
@@ -53,7 +98,73 @@ function normalizePhoto(photo: Partial<AppPhoto> & { url?: string }) {
   };
 }
 
-export async function readAppDataWithPrisma(): Promise<AppData> {
+function toEvent(item: PrismaEventWithRelations): Event {
+  return {
+    id: item.id,
+    title: item.title,
+    date: item.date,
+    desc: item.description,
+    icon: item.icon,
+    location: item.location || '',
+    mood: item.mood || '',
+    coverPhoto: item.coverPhoto || ''
+  };
+}
+
+function toPhoto(item: PrismaPhoto, eventId?: string | null): NormalizedPhoto {
+  return normalizePhoto({
+    url: item.url,
+    displayUrl: item.displayUrl,
+    thumbUrl: item.thumbUrl,
+    filename: item.filename,
+    mimeType: item.mimeType,
+    size: item.fileSize,
+    uploadedAt: item.uploadedAt,
+    eventId: eventId ?? item.eventId
+  });
+}
+
+function toExpense(item: PrismaExpense): Expense {
+  return {
+    id: item.id,
+    eventId: item.eventId,
+    amount: item.amount,
+    category: item.category,
+    note: item.note
+  };
+}
+
+function toWish(item: { id: number; title: string; description: string; emoji: string; isCompleted: boolean; completedAt: string | null; sortOrder: number }): Wish {
+  return {
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    emoji: item.emoji,
+    isCompleted: item.isCompleted,
+    completedAt: item.completedAt,
+    sortOrder: item.sortOrder
+  };
+}
+
+function toCapsule(item: { id: number; title: string; content: string; emoji: string; unlockDate: string; isOpened: boolean }): Capsule {
+  return {
+    id: item.id,
+    title: item.title,
+    content: item.content,
+    emoji: item.emoji,
+    unlockDate: item.unlockDate,
+    isOpened: item.isOpened
+  };
+}
+
+function parseJsonArray<T>(json: string | null | undefined, fallback: T[]): T[] {
+  if (!json) return fallback;
+  try { return JSON.parse(json); } catch { return fallback; }
+}
+
+// --- Read ---
+
+export async function readAppData(): Promise<AppData> {
   const [settings, events, standalonePhotos, loveQuotes, wishes, capsules] = await Promise.all([
     prisma.settings.findUnique({ where: { id: 1 } }),
     prisma.event.findMany({
@@ -69,404 +180,175 @@ export async function readAppDataWithPrisma(): Promise<AppData> {
     prisma.capsule.findMany({ orderBy: { createdAt: 'desc' } })
   ]);
 
-  const eventPhotos = events.flatMap((e: any) => e.photos);
-  const allPhotos = [...eventPhotos, ...standalonePhotos].map((item: any) =>
-    normalizePhoto({
-      url: item.url,
-      displayUrl: item.displayUrl,
-      thumbUrl: item.thumbUrl,
-      filename: item.filename,
-      mimeType: item.mimeType,
-      size: item.fileSize,
-      uploadedAt: item.uploadedAt,
-      eventId: item.eventId
-    })
-  );
+  const typedEvents = events as unknown as PrismaEventWithRelations[];
+  const typedStandalone = standalonePhotos as unknown as PrismaPhoto[];
+  const typedSettings = settings as PrismaSettings | null;
 
-  const allExpenses: Expense[] = events.flatMap((e: any) =>
-    e.expenses.map((exp: any) => ({
-      id: exp.id,
-      eventId: exp.eventId,
-      amount: exp.amount,
-      category: exp.category,
-      note: exp.note
-    }))
-  );
+  const eventPhotos = typedEvents.flatMap(e => e.photos.map(p => toPhoto(p, e.id)));
+  const standalone = typedStandalone.map(p => toPhoto(p));
+  const allPhotos = [...eventPhotos, ...standalone];
+
+  const allExpenses = typedEvents.flatMap(e => e.expenses.map(toExpense));
 
   return {
-    startDate: settings?.startDate || '',
-    heroImage: settings?.heroImage || '',
-    customCovers: settings?.customCovers ? JSON.parse(settings.customCovers) : [],
-    hiddenDefaultCovers: settings?.hiddenDefaultCovers ? JSON.parse(settings.hiddenDefaultCovers) : [],
-    countdowns: settings?.countdowns ? JSON.parse(settings.countdowns) : [],
-    events: events.map((item: any) => ({
-      id: normalizeMilestoneId(item.id),
-      title: item.title,
-      date: item.date,
-      desc: item.description,
-      icon: item.icon,
-      location: item.location || '',
-      mood: item.mood || '',
-      coverPhoto: item.coverPhoto || ''
-    })),
+    startDate: typedSettings?.startDate || '',
+    heroImage: typedSettings?.heroImage || '',
+    customCovers: parseJsonArray(typedSettings?.customCovers, []),
+    hiddenDefaultCovers: parseJsonArray(typedSettings?.hiddenDefaultCovers, []),
+    countdowns: parseJsonArray(typedSettings?.countdowns, []),
+    events: typedEvents.map(toEvent),
     photos: allPhotos,
     expenses: allExpenses,
-    loveQuotes: loveQuotes.map((item: any) => ({
-      id: item.id,
-      content: item.content
-    })),
-    wishes: wishes.map((item: any) => ({
-      id: item.id,
-      title: item.title,
-      description: item.description,
-      emoji: item.emoji,
-      isCompleted: item.isCompleted,
-      completedAt: item.completedAt,
-      sortOrder: item.sortOrder
-    })),
-    capsules: capsules.map((item: any) => ({
-      id: item.id,
-      title: item.title,
-      content: item.content,
-      emoji: item.emoji,
-      unlockDate: item.unlockDate,
-      isOpened: item.isOpened
-    }))
+    loveQuotes: loveQuotes.map(item => ({ id: item.id, content: item.content })),
+    wishes: wishes.map(toWish),
+    capsules: capsules.map(toCapsule)
   };
 }
 
-async function ensureJsonDataFile() {
-  await fs.mkdir(path.dirname(dataFile), { recursive: true });
+// --- Write ---
 
-  try {
-    await fs.access(dataFile);
-    const content = await fs.readFile(dataFile, 'utf-8');
-    if (!content.trim()) {
-      throw new Error('Empty file');
-    }
-    JSON.parse(content);
-  } catch {
-    await fs.writeFile(dataFile, JSON.stringify(DEFAULT_APP_DATA, null, 2));
-  }
-}
-
-function migrateLegacyData(parsed: any): AppData {
-  const events = Array.isArray(parsed.events)
-    ? parsed.events
-    : Array.isArray(parsed.milestones)
-      ? parsed.milestones.map((m: any) => ({
-          ...m,
-          location: m.location || '',
-          mood: m.mood || '',
-          coverPhoto: m.coverPhoto || ''
-        }))
-      : [];
-
-  return {
-    ...DEFAULT_APP_DATA,
-    ...parsed,
-    events,
-    photos: Array.isArray(parsed.photos) ? parsed.photos.map((photo: Photo) => normalizePhoto(photo)) : [],
-    expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
-    loveQuotes: Array.isArray(parsed.loveQuotes) ? parsed.loveQuotes : DEFAULT_APP_DATA.loveQuotes,
-    customCovers: Array.isArray(parsed.customCovers) ? parsed.customCovers : [],
-    hiddenDefaultCovers: Array.isArray(parsed.hiddenDefaultCovers) ? parsed.hiddenDefaultCovers : [],
-    countdowns: Array.isArray(parsed.countdowns) ? parsed.countdowns : []
-  };
-}
-
-export async function readAppDataFromJson(): Promise<AppData> {
-  await ensureJsonDataFile();
-  const content = await fs.readFile(dataFile, 'utf-8');
-  const parsed = JSON.parse(content);
-
-  return migrateLegacyData(parsed);
-}
-
-export async function writeAppDataToJson(payload: Partial<AppData>): Promise<AppData> {
-  const currentData = await readAppDataFromJson();
+export async function writeAppData(payload: Partial<AppData>): Promise<AppData> {
+  const currentData = await readAppData();
   const nextData: AppData = {
     ...DEFAULT_APP_DATA,
     ...currentData,
     ...payload,
+    photos: Array.isArray(payload.photos) ? payload.photos.map(normalizePhoto) : currentData.photos,
     events: Array.isArray(payload.events) ? payload.events : currentData.events,
-    photos: Array.isArray(payload.photos)
-      ? payload.photos.map((photo) => normalizePhoto(photo))
-      : currentData.photos,
     expenses: Array.isArray(payload.expenses) ? payload.expenses : currentData.expenses,
     loveQuotes: Array.isArray(payload.loveQuotes) ? payload.loveQuotes : currentData.loveQuotes,
     customCovers: Array.isArray(payload.customCovers) ? payload.customCovers : currentData.customCovers,
     hiddenDefaultCovers: Array.isArray(payload.hiddenDefaultCovers) ? payload.hiddenDefaultCovers : currentData.hiddenDefaultCovers,
-    countdowns: Array.isArray(payload.countdowns) ? payload.countdowns : currentData.countdowns
+    countdowns: Array.isArray(payload.countdowns) ? payload.countdowns : currentData.countdowns,
+    wishes: Array.isArray(payload.wishes) ? payload.wishes : currentData.wishes,
+    capsules: Array.isArray(payload.capsules) ? payload.capsules : currentData.capsules
   };
 
-  await fs.writeFile(dataFile, JSON.stringify(nextData, null, 2));
-  return nextData;
-}
-
-export async function writeAppDataWithPrisma(payload: Partial<AppData>): Promise<AppData> {
-  const currentData = await readAppDataWithPrisma();
-  const nextData: AppData = {
-    ...DEFAULT_APP_DATA,
-    ...currentData,
-    ...payload,
-    photos: Array.isArray(payload.photos)
-      ? payload.photos.map((photo) => normalizePhoto(photo))
-      : currentData.photos,
-    events: Array.isArray(payload.events)
-      ? payload.events
-      : currentData.events,
-    expenses: Array.isArray(payload.expenses)
-      ? payload.expenses
-      : currentData.expenses,
-    loveQuotes: Array.isArray(payload.loveQuotes) ? payload.loveQuotes : currentData.loveQuotes,
-    customCovers: Array.isArray(payload.customCovers) ? payload.customCovers : currentData.customCovers,
-    hiddenDefaultCovers: Array.isArray(payload.hiddenDefaultCovers) ? payload.hiddenDefaultCovers : currentData.hiddenDefaultCovers,
-    countdowns: Array.isArray(payload.countdowns) ? payload.countdowns : currentData.countdowns
+  const has = {
+    settings: payload.startDate !== undefined || payload.heroImage !== undefined || payload.customCovers !== undefined || payload.hiddenDefaultCovers !== undefined || payload.countdowns !== undefined,
+    events: Array.isArray(payload.events) && JSON.stringify(payload.events) !== JSON.stringify(currentData.events),
+    photos: Array.isArray(payload.photos) && JSON.stringify(payload.photos) !== JSON.stringify(currentData.photos),
+    expenses: Array.isArray(payload.expenses) && JSON.stringify(payload.expenses) !== JSON.stringify(currentData.expenses),
+    loveQuotes: Array.isArray(payload.loveQuotes) && JSON.stringify(payload.loveQuotes) !== JSON.stringify(currentData.loveQuotes),
+    wishes: Array.isArray(payload.wishes) && JSON.stringify(payload.wishes) !== JSON.stringify(currentData.wishes),
+    capsules: Array.isArray(payload.capsules) && JSON.stringify(payload.capsules) !== JSON.stringify(currentData.capsules)
   };
 
-  const hasSettingsChange = payload.startDate !== undefined || payload.heroImage !== undefined || payload.customCovers !== undefined || payload.hiddenDefaultCovers !== undefined || payload.countdowns !== undefined;
-  const hasEventsChange = Array.isArray(payload.events) && JSON.stringify(payload.events) !== JSON.stringify(currentData.events);
-  const hasPhotosChange = Array.isArray(payload.photos) && JSON.stringify(payload.photos) !== JSON.stringify(currentData.photos);
-  const hasExpensesChange = Array.isArray(payload.expenses) && JSON.stringify(payload.expenses) !== JSON.stringify(currentData.expenses);
-  const hasLoveQuotesChange = Array.isArray(payload.loveQuotes) && JSON.stringify(payload.loveQuotes) !== JSON.stringify(currentData.loveQuotes);
-
-  await prisma.$transaction(async (tx: any) => {
-    if (hasSettingsChange) {
+  await prisma.$transaction(async (tx) => {
+    if (has.settings) {
       await tx.settings.upsert({
         where: { id: 1 },
-        create: {
-          id: 1,
-          startDate: nextData.startDate || '',
-          heroImage: nextData.heroImage || '',
-          customCovers: JSON.stringify(nextData.customCovers || []),
-          hiddenDefaultCovers: JSON.stringify(nextData.hiddenDefaultCovers || []),
-          countdowns: JSON.stringify(nextData.countdowns || [])
-        },
-        update: {
-          startDate: nextData.startDate || '',
-          heroImage: nextData.heroImage || '',
-          customCovers: JSON.stringify(nextData.customCovers || []),
-          hiddenDefaultCovers: JSON.stringify(nextData.hiddenDefaultCovers || []),
-          countdowns: JSON.stringify(nextData.countdowns || [])
-        }
+        create: { id: 1, startDate: nextData.startDate, heroImage: nextData.heroImage, customCovers: JSON.stringify(nextData.customCovers), hiddenDefaultCovers: JSON.stringify(nextData.hiddenDefaultCovers), countdowns: JSON.stringify(nextData.countdowns) },
+        update: { startDate: nextData.startDate, heroImage: nextData.heroImage, customCovers: JSON.stringify(nextData.customCovers), hiddenDefaultCovers: JSON.stringify(nextData.hiddenDefaultCovers), countdowns: JSON.stringify(nextData.countdowns) }
       });
     }
 
-    if (hasLoveQuotesChange) {
-      const ids = nextData.loveQuotes.map((item) => item.id);
-
-      if (ids.length > 0) {
-        await tx.loveQuote.deleteMany({
-          where: { id: { notIn: ids } }
-        });
-      } else {
-        await tx.loveQuote.deleteMany();
-      }
-
+    if (has.loveQuotes) {
+      const ids = nextData.loveQuotes.map(q => q.id);
+      await tx.loveQuote.deleteMany(ids.length > 0 ? { where: { id: { notIn: ids } } } : undefined);
       for (let i = 0; i < nextData.loveQuotes.length; i++) {
-        const quote = nextData.loveQuotes[i];
-        await tx.loveQuote.upsert({
-          where: { id: quote.id },
-          create: {
-            id: quote.id,
-            content: quote.content,
-            sortOrder: i
-          },
-          update: {
-            content: quote.content,
-            sortOrder: i
-          }
-        });
+        const q = nextData.loveQuotes[i];
+        await tx.loveQuote.upsert({ where: { id: q.id }, create: { id: q.id, content: q.content, sortOrder: i }, update: { content: q.content, sortOrder: i } });
       }
     }
 
-    if (hasEventsChange) {
-      const ids = nextData.events.map((item) => String(item.id));
-
-      if (ids.length > 0) {
-        await tx.event.deleteMany({
-          where: { id: { notIn: ids } }
-        });
-      } else {
-        await tx.event.deleteMany();
-      }
-
+    if (has.events) {
+      const ids = nextData.events.map(e => String(e.id));
+      await tx.event.deleteMany(ids.length > 0 ? { where: { id: { notIn: ids } } } : undefined);
       for (let i = 0; i < nextData.events.length; i++) {
-        const event = nextData.events[i];
+        const e = nextData.events[i];
         await tx.event.upsert({
-          where: { id: String(event.id) },
-          create: {
-            id: String(event.id),
-            title: event.title,
-            date: event.date,
-            description: event.desc,
-            icon: event.icon || 'heart',
-            location: event.location || '',
-            mood: event.mood || '',
-            coverPhoto: event.coverPhoto || '',
-            sortOrder: i
-          },
-          update: {
-            title: event.title,
-            date: event.date,
-            description: event.desc,
-            icon: event.icon || 'heart',
-            location: event.location || '',
-            mood: event.mood || '',
-            coverPhoto: event.coverPhoto || '',
-            sortOrder: i
-          }
+          where: { id: String(e.id) },
+          create: { id: String(e.id), title: e.title, date: e.date, description: e.desc, icon: e.icon || 'heart', location: e.location || '', mood: e.mood || '', coverPhoto: e.coverPhoto || '', sortOrder: i },
+          update: { title: e.title, date: e.date, description: e.desc, icon: e.icon || 'heart', location: e.location || '', mood: e.mood || '', coverPhoto: e.coverPhoto || '', sortOrder: i }
         });
       }
     }
 
-    if (hasExpensesChange) {
-      const ids = nextData.expenses.map((item) => item.id);
-
-      if (ids.length > 0) {
-        await tx.expense.deleteMany({
-          where: { id: { notIn: ids } }
-        });
-      } else {
-        await tx.expense.deleteMany();
-      }
-
-      for (const expense of nextData.expenses) {
-        await tx.expense.upsert({
-          where: { id: expense.id },
-          create: {
-            id: expense.id,
-            eventId: expense.eventId,
-            amount: expense.amount,
-            category: expense.category,
-            note: expense.note
-          },
-          update: {
-            eventId: expense.eventId,
-            amount: expense.amount,
-            category: expense.category,
-            note: expense.note
-          }
-        });
+    if (has.expenses) {
+      const ids = nextData.expenses.map(e => e.id);
+      await tx.expense.deleteMany(ids.length > 0 ? { where: { id: { notIn: ids } } } : undefined);
+      for (const exp of nextData.expenses) {
+        await tx.expense.upsert({ where: { id: exp.id }, create: { id: exp.id, eventId: exp.eventId, amount: exp.amount, category: exp.category, note: exp.note }, update: { eventId: exp.eventId, amount: exp.amount, category: exp.category, note: exp.note } });
       }
     }
 
-    if (hasPhotosChange) {
-      const urls = nextData.photos.map((photo) => photo.url);
-
-      if (urls.length > 0) {
-        await tx.photo.deleteMany({
-          where: { url: { notIn: urls } }
-        });
-      } else {
-        await tx.photo.deleteMany();
-      }
-
+    if (has.photos) {
+      const urls = nextData.photos.map(p => p.url);
+      await tx.photo.deleteMany(urls.length > 0 ? { where: { url: { notIn: urls } } } : undefined);
       for (let i = 0; i < nextData.photos.length; i++) {
-        const photo = nextData.photos[i];
-        const existing = await tx.photo.findFirst({
-          where: { url: photo.url },
-          select: { id: true }
-        });
-
+        const photo = normalizePhoto(nextData.photos[i]);
+        const existing = await tx.photo.findFirst({ where: { url: photo.url }, select: { id: true } });
         if (existing) {
-          await tx.photo.update({
-            where: { id: existing.id },
-            data: {
-              displayUrl: photo.displayUrl,
-              thumbUrl: photo.thumbUrl,
-              filename: photo.filename,
-              mimeType: photo.mimeType,
-              fileSize: photo.size,
-              sortOrder: i,
-              uploadedAt: photo.uploadedAt,
-              eventId: photo.eventId || null
-            }
-          });
-          continue;
+          await tx.photo.update({ where: { id: existing.id }, data: { displayUrl: photo.displayUrl, thumbUrl: photo.thumbUrl, filename: photo.filename, mimeType: photo.mimeType, fileSize: photo.size, sortOrder: i, uploadedAt: photo.uploadedAt, eventId: photo.eventId || null } });
+        } else {
+          await tx.photo.create({ data: { url: photo.url, displayUrl: photo.displayUrl, thumbUrl: photo.thumbUrl, filename: photo.filename, mimeType: photo.mimeType, fileSize: photo.size, sortOrder: i, uploadedAt: photo.uploadedAt, eventId: photo.eventId || null } });
         }
-
-        await tx.photo.create({
-          data: {
-            url: photo.url,
-            displayUrl: photo.displayUrl,
-            thumbUrl: photo.thumbUrl,
-            filename: photo.filename,
-            mimeType: photo.mimeType,
-            fileSize: photo.size,
-            sortOrder: i,
-            uploadedAt: photo.uploadedAt,
-            eventId: photo.eventId || null
-          }
-        });
       }
     }
-  }, {
-    maxWait: 10000,
-    timeout: 10000
-  });
+
+    if (has.wishes) {
+      const ids = nextData.wishes.map(w => w.id);
+      await tx.wish.deleteMany(ids.length > 0 ? { where: { id: { notIn: ids } } } : undefined);
+      for (let i = 0; i < nextData.wishes.length; i++) {
+        const w = nextData.wishes[i];
+        await tx.wish.upsert({ where: { id: w.id }, create: { id: w.id, title: w.title, description: w.description || '', emoji: w.emoji || '💝', isCompleted: w.isCompleted || false, completedAt: w.completedAt || null, sortOrder: i }, update: { title: w.title, description: w.description || '', emoji: w.emoji || '💝', isCompleted: w.isCompleted || false, completedAt: w.completedAt || null, sortOrder: i } });
+      }
+    }
+
+    if (has.capsules) {
+      const ids = nextData.capsules.map(c => c.id);
+      await tx.capsule.deleteMany(ids.length > 0 ? { where: { id: { notIn: ids } } } : undefined);
+      for (const c of nextData.capsules) {
+        await tx.capsule.upsert({ where: { id: c.id }, create: { id: c.id, title: c.title, content: c.content || '', emoji: c.emoji || '💌', unlockDate: c.unlockDate || '', isOpened: c.isOpened || false }, update: { title: c.title, content: c.content || '', emoji: c.emoji || '💌', unlockDate: c.unlockDate || '', isOpened: c.isOpened || false } });
+      }
+    }
+  }, { maxWait: 10000, timeout: 10000 });
 
   return nextData;
 }
 
-export async function createPhotoWithPrisma(photo: Partial<AppPhoto> & { url: string }): Promise<AppPhoto> {
+// --- Photo CRUD ---
+
+export async function createPhoto(photo: Partial<Photo> & { url: string }): Promise<Photo> {
   const normalized = normalizePhoto(photo);
   const count = await prisma.photo.count();
 
   await prisma.photo.create({
     data: {
-      url: normalized.url,
-      displayUrl: normalized.displayUrl,
-      thumbUrl: normalized.thumbUrl,
-      filename: normalized.filename,
-      mimeType: normalized.mimeType,
-      fileSize: normalized.size,
-      sortOrder: count,
-      uploadedAt: normalized.uploadedAt,
-      eventId: normalized.eventId || null
+      url: normalized.url, displayUrl: normalized.displayUrl, thumbUrl: normalized.thumbUrl,
+      filename: normalized.filename, mimeType: normalized.mimeType, fileSize: normalized.size,
+      sortOrder: count, uploadedAt: normalized.uploadedAt, eventId: normalized.eventId || null
     }
   });
 
   return normalized;
 }
 
-export async function deletePhotoWithPrisma(url: string): Promise<void> {
-  await prisma.photo.deleteMany({
-    where: { url }
-  });
+export async function deletePhoto(url: string): Promise<void> {
+  await prisma.photo.deleteMany({ where: { url } });
 }
 
-export async function createEventWithPrisma(event: Partial<Event> & { id: string }): Promise<Event> {
+// --- Event CRUD ---
+
+export async function createEvent(event: Partial<Event> & { id: string }): Promise<Event> {
   const count = await prisma.event.count();
 
   await prisma.event.create({
     data: {
-      id: event.id,
-      title: event.title || '',
-      date: event.date || '',
-      description: event.desc || '',
-      icon: event.icon || 'heart',
-      location: event.location || '',
-      mood: event.mood || '',
-      coverPhoto: event.coverPhoto || '',
-      sortOrder: event.sortOrder ?? count
+      id: event.id, title: event.title || '', date: event.date || '', description: event.desc || '',
+      icon: event.icon || 'heart', location: event.location || '', mood: event.mood || '',
+      coverPhoto: event.coverPhoto || '', sortOrder: event.sortOrder ?? count
     }
   });
 
   return {
-    id: event.id,
-    title: event.title || '',
-    date: event.date || '',
-    desc: event.desc || '',
-    icon: event.icon || 'heart',
-    location: event.location || '',
-    mood: event.mood || '',
-    coverPhoto: event.coverPhoto || ''
+    id: event.id, title: event.title || '', date: event.date || '', desc: event.desc || '',
+    icon: event.icon || 'heart', location: event.location || '', mood: event.mood || '', coverPhoto: event.coverPhoto || ''
   };
 }
 
-export async function updateEventWithPrisma(id: string, data: Partial<Event>): Promise<void> {
+export async function updateEvent(id: string, data: Partial<Event>): Promise<void> {
   await prisma.event.update({
     where: { id },
     data: {
@@ -481,33 +363,74 @@ export async function updateEventWithPrisma(id: string, data: Partial<Event>): P
   });
 }
 
-export async function deleteEventWithPrisma(id: string): Promise<void> {
-  await prisma.event.delete({
-    where: { id }
-  });
+export async function deleteEvent(id: string): Promise<void> {
+  await prisma.event.delete({ where: { id } });
 }
 
-export async function addExpenseWithPrisma(expense: Omit<Expense, 'id'>): Promise<Expense> {
+// --- Expense CRUD ---
+
+export async function addExpense(expense: Omit<Expense, 'id'>): Promise<Expense> {
   const created = await prisma.expense.create({
+    data: { eventId: expense.eventId, amount: expense.amount, category: expense.category, note: expense.note }
+  });
+  return { id: created.id, eventId: created.eventId, amount: created.amount, category: created.category, note: created.note };
+}
+
+export async function deleteExpense(id: number): Promise<void> {
+  await prisma.expense.delete({ where: { id } });
+}
+
+// --- Wish CRUD ---
+
+export async function createWish(data: { title: string; description?: string; emoji?: string }): Promise<Wish> {
+  const count = await prisma.wish.count();
+  const created = await prisma.wish.create({
+    data: { title: data.title, description: data.description || '', emoji: data.emoji || '💝', sortOrder: count }
+  });
+  return toWish(created);
+}
+
+export async function updateWish(id: number, data: Partial<Wish>): Promise<Wish> {
+  const updated = await prisma.wish.update({
+    where: { id },
     data: {
-      eventId: expense.eventId,
-      amount: expense.amount,
-      category: expense.category,
-      note: expense.note
+      ...(data.title !== undefined && { title: data.title }),
+      ...(data.description !== undefined && { description: data.description }),
+      ...(data.emoji !== undefined && { emoji: data.emoji }),
+      ...(data.isCompleted !== undefined && { isCompleted: data.isCompleted }),
+      ...(data.completedAt !== undefined && { completedAt: data.completedAt })
     }
   });
-
-  return {
-    id: created.id,
-    eventId: created.eventId,
-    amount: created.amount,
-    category: created.category,
-    note: created.note
-  };
+  return toWish(updated);
 }
 
-export async function deleteExpenseWithPrisma(id: number): Promise<void> {
-  await prisma.expense.delete({
-    where: { id }
+export async function deleteWish(id: number): Promise<void> {
+  await prisma.wish.delete({ where: { id } });
+}
+
+// --- Capsule CRUD ---
+
+export async function createCapsule(data: { title: string; content?: string; emoji?: string; unlockDate?: string }): Promise<Capsule> {
+  const created = await prisma.capsule.create({
+    data: { title: data.title, content: data.content || '', emoji: data.emoji || '💌', unlockDate: data.unlockDate || '' }
   });
+  return toCapsule(created);
+}
+
+export async function updateCapsule(id: number, data: Partial<Capsule>): Promise<Capsule> {
+  const updated = await prisma.capsule.update({
+    where: { id },
+    data: {
+      ...(data.title !== undefined && { title: data.title }),
+      ...(data.content !== undefined && { content: data.content }),
+      ...(data.emoji !== undefined && { emoji: data.emoji }),
+      ...(data.unlockDate !== undefined && { unlockDate: data.unlockDate }),
+      ...(data.isOpened !== undefined && { isOpened: data.isOpened })
+    }
+  });
+  return toCapsule(updated);
+}
+
+export async function deleteCapsule(id: number): Promise<void> {
+  await prisma.capsule.delete({ where: { id } });
 }

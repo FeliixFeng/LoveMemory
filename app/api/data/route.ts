@@ -1,19 +1,14 @@
 import { NextResponse } from 'next/server.js';
 import {
   DEFAULT_APP_DATA,
-  readAppDataFromJson,
-  readAppDataWithPrisma,
-  writeAppDataToJson,
-  writeAppDataWithPrisma
+  readAppData,
+  writeAppData
 } from '../../lib/app-data.ts';
-import { getStorageDriver, getPin } from '../../lib/env.ts';
-import { verifyToken } from '../../lib/auth.ts';
+import { checkRequestAuth } from '../../lib/auth.ts';
 
 export async function GET() {
   try {
-    const data = getStorageDriver() === 'mysql'
-      ? await readAppDataWithPrisma()
-      : await readAppDataFromJson();
+    const data = await readAppData();
     return NextResponse.json(data);
   } catch (error) {
     console.error('Read data error:', error);
@@ -23,13 +18,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    if (getPin()) {
-      const authHeader = request.headers.get('authorization') || '';
-      const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-      if (!token || !verifyToken(token)) {
-        return NextResponse.json({ error: '需要验证 PIN 码' }, { status: 401 });
-      }
-    }
+    const authErr = checkRequestAuth(request);
+    if (authErr) return authErr;
 
     const payload = await request.json();
     const normalizedPayload = payload && typeof payload === 'object' ? payload : {};
@@ -40,9 +30,7 @@ export async function POST(request: Request) {
     }
     delete normalizedPayload.milestones;
 
-    const nextData = getStorageDriver() === 'mysql'
-      ? await writeAppDataWithPrisma(normalizedPayload)
-      : await writeAppDataToJson(normalizedPayload);
+    const nextData = await writeAppData(normalizedPayload);
     return NextResponse.json({ success: true, data: nextData });
   } catch (error) {
     console.error('Save data error:', error);
