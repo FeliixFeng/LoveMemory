@@ -126,6 +126,7 @@ export function LoveMemoryClient() {
             onExpand={() => events.setEventDetailId(events.selectedEventId)}
             onEdit={() => withAuth(() => { if (events.selectedEvent) events.openEventEdit(events.selectedEvent); })}
             onViewPhoto={(p, i) => photos.setViewPhoto({ photos: p, index: i })}
+            onAddPhoto={() => withAuth(() => photos.fileRef.current?.click())}
             onSwipeLeft={() => {
               const idx = data.events.findIndex(e => String(e.id) === events.selectedEventId);
               if (idx < data.events.length - 1) events.setSelectedEventId(String(data.events[idx + 1].id));
