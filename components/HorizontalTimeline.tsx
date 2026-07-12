@@ -5,11 +5,12 @@ import { Event } from '../lib/types';
 import { getEmoji } from '../lib/utils';
 
 export function HorizontalTimeline({
-  events, selectedId, onSelect
+  events, selectedId, onSelect, scrollRef: externalScrollRef
 }: {
   events: Event[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  scrollRef?: React.RefObject<HTMLDivElement | null>;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const outerRef = useRef<HTMLDivElement>(null);
@@ -65,9 +66,15 @@ export function HorizontalTimeline({
 
   const yearNodeSize = 36;
 
+  // Use external ref if provided, otherwise internal
+  const setScrollRef = (el: HTMLDivElement | null) => {
+    (scrollRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+    if (externalScrollRef) (externalScrollRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+  };
+
   return (
     <div ref={outerRef} className="px-4 pt-6 pb-3">
-      <div ref={scrollRef} className="flex items-start overflow-x-auto no-scrollbar pt-6 pb-1 relative" style={{ gap: `${nodeGap}px`, paddingLeft: `${padX}px`, paddingRight: `${padX}px` }}>
+      <div ref={setScrollRef} className="flex items-start overflow-x-auto no-scrollbar pt-6 pb-1 relative" style={{ gap: `${nodeGap}px`, paddingLeft: `${padX}px`, paddingRight: `${padX}px` }}>
         {/* Connecting line */}
         {items.length > 1 && (
           <>

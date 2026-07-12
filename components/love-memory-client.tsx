@@ -50,6 +50,34 @@ export function LoveMemoryClient() {
   const expenses = useExpenseCRUD(data, save, setToast, onAuthRequired);
 
   const heroRef = useRef<HTMLInputElement>(null);
+  const timelineScrollRef = useRef<HTMLDivElement>(null);
+  const heroContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = heroContainerRef.current;
+    if (!container) return;
+
+    function handleWheel(e: WheelEvent) {
+      const el = timelineScrollRef.current;
+      // 没有时间线或时间线不需要滚动时，不拦截
+      if (!el || el.scrollWidth <= el.clientWidth) return;
+      // 只在垂直滚动时拦截
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.preventDefault();
+        el.scrollLeft += e.deltaY;
+      }
+    }
+
+    // 延迟绑定，确保 timelineScrollRef 已经被设置
+    const timer = setTimeout(() => {
+      container.addEventListener('wheel', handleWheel, { passive: false });
+    }, 500);
+
+    return () => {
+      clearTimeout(timer);
+      container.removeEventListener('wheel', handleWheel);
+    };
+  }, [data.events]);
 
   // Set initial selected event
   useEffect(() => {
@@ -79,14 +107,14 @@ export function LoveMemoryClient() {
   return (
     <>
       <main className="max-w-lg md:max-w-3xl lg:max-w-6xl mx-auto pt-16 pb-20 md:pb-8 px-0 md:px-8 flex flex-col gap-4">
-        <div className="px-4 lg:px-0">
+        <div ref={heroContainerRef} className="px-4 lg:px-0">
           <HeroSection
             heroImages={heroImages} saving={saving}
             animDays={animDays} nextDays={nextDays} startDate={data.startDate}
             quotes={data.loveQuotes} countdowns={data.countdowns}
             onHeroUpload={photos.onHeroUpload} heroRef={heroRef}
           >
-            <HorizontalTimeline events={data.events} selectedId={events.selectedEventId} onSelect={events.setSelectedEventId} />
+            <HorizontalTimeline events={data.events} selectedId={events.selectedEventId} onSelect={events.setSelectedEventId} scrollRef={timelineScrollRef} />
           </HeroSection>
         </div>
 
