@@ -3,39 +3,66 @@ import assert from 'node:assert/strict';
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
+import { execSync } from 'node:child_process';
 
 const PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a9WQAAAAASUVORK5CYII=';
 const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'lovememory-next-test-'));
-const dataFile = path.join(rootDir, 'db.json');
+const dbFile = path.join(rootDir, 'db.sqlite');
 const uploadDir = path.join(rootDir, 'uploads');
+const projectRoot = path.resolve(import.meta.dirname, '..');
 
 await fs.mkdir(uploadDir, { recursive: true });
 await fs.mkdir(path.join(uploadDir, 'thumbs'), { recursive: true });
 
 process.env.NODE_ENV = 'test';
-process.env.STORAGE_DRIVER = 'json';
-process.env.DATA_FILE = dataFile;
+process.env.DATABASE_URL = `file:${dbFile}`;
 process.env.UPLOAD_DIR = uploadDir;
+
+// Create SQLite database with schema tables
+execSync(`npx prisma db push --force-reset --skip-generate`, {
+  env: {
+    ...process.env,
+    DATABASE_URL: `file:${dbFile}`,
+    PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION: 'yes'
+  },
+  cwd: projectRoot,
+  stdio: 'pipe'
+});
 
 const salt = `${Date.now()}-${Math.random()}`;
 const dataRoute = await import(new URL(`../app/api/data/route.ts?${salt}`, import.meta.url).href);
 const uploadRoute = await import(new URL(`../app/api/upload/route.ts?${salt}`, import.meta.url).href);
 const healthRoute = await import(new URL(`../app/api/health/route.ts?${salt}`, import.meta.url).href);
 
+// Get the shared prisma client to clean up between tests
+const prismaModule = await import(new URL(`../app/lib/prisma.ts?${salt}`, import.meta.url).href);
+const prisma = prismaModule.prisma;
+
+async function resetDb() {
+  // Delete all data from tables (order matters for foreign keys)
+  await prisma.$executeRawUnsafe('DELETE FROM expenses');
+  await prisma.$executeRawUnsafe('DELETE FROM photos');
+  await prisma.$executeRawUnsafe('DELETE FROM events');
+  await prisma.$executeRawUnsafe('DELETE FROM settings');
+  await prisma.$executeRawUnsafe('DELETE FROM love_quotes');
+  await prisma.$executeRawUnsafe('DELETE FROM wishes');
+  await prisma.$executeRawUnsafe('DELETE FROM capsules');
+}
+
 async function createTestContext() {
-  await fs.rm(dataFile, { force: true });
+  await resetDb();
   await fs.rm(uploadDir, { recursive: true, force: true });
   await fs.mkdir(uploadDir, { recursive: true });
   await fs.mkdir(path.join(uploadDir, 'thumbs'), { recursive: true });
 
   return {
-    dataFile,
+    dbFile,
     uploadDir,
     dataRoute,
     uploadRoute,
     healthRoute,
     async cleanup() {
-      await fs.rm(dataFile, { force: true });
+      await resetDb();
       await fs.rm(uploadDir, { recursive: true, force: true });
     }
   };
@@ -51,13 +78,13 @@ test('GET /api/health returns ok payload', async () => {
     assert.equal(response.status, 200);
     assert.equal(body.success, true);
     assert.equal(body.status, 'ok');
-    assert.equal(body.storageDriver, 'json');
+    assert.equal(body.storageDriver, 'sqlite');
   } finally {
     await ctx.cleanup();
   }
 });
 
-test('GET /api/data returns default payload for a fresh data file', async () => {
+test('GET /api/data returns default payload for a fresh database', async () => {
   const ctx = await createTestContext();
 
   try {
@@ -83,7 +110,7 @@ test('POST /api/data merges updates without losing untouched fields', async () =
     const initialPayload = {
       startDate: '2020-01-01',
       heroImage: '/hero.jpg',
-      events: [{ id: 1, date: '2020-01-02', title: 'First Date', desc: 'Cafe', icon: 'heart', location: '', mood: '', coverPhoto: '' }],
+      events: [{ id: '1', date: '2020-01-02', title: 'First Date', desc: 'Cafe', icon: 'heart', location: '', mood: '', coverPhoto: '' }],
       photos: [{ url: '/uploads/test.jpg', displayUrl: '/uploads/test.jpg', thumbUrl: '/uploads/test.jpg', uploadedAt: '2026-03-19T00:00:00.000Z' }],
       expenses: [{ id: 1, eventId: '1', amount: 100, category: 'food', note: 'dinner' }]
     };
