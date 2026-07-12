@@ -6,8 +6,8 @@ import { usePathname } from 'next/navigation';
 const NAV_LINKS = [
   { href: '/', label: '首页', icon: '🏠' },
   { href: '/album', label: '相册', icon: '📷' },
-  { href: '/wishes', label: '愿望', icon: '💝' },
-  { href: '/capsule', label: '胶囊', icon: '⏰' },
+  { href: '/footprint', label: '足迹', icon: '🗺️' },
+  { href: '/wishes', label: '心愿', icon: '💝' },
   { href: '/more', label: '更多', icon: '⋯' },
 ];
 

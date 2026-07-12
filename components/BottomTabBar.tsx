@@ -6,8 +6,8 @@ import { usePathname } from 'next/navigation';
 const TABS = [
   { href: '/', icon: '🏠', label: '首页' },
   { href: '/album', icon: '📷', label: '相册' },
-  { href: '/wishes', icon: '💝', label: '愿望' },
-  { href: '/capsule', icon: '⏰', label: '胶囊' },
+  { href: '/footprint', icon: '🗺️', label: '足迹' },
+  { href: '/wishes', icon: '💝', label: '心愿' },
   { href: '/more', icon: '⋯', label: '更多' },
 ];
 
