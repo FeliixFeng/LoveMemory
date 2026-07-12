@@ -3,6 +3,7 @@
 import { useRef } from 'react';
 import { Event, Photo, Expense } from '../lib/types';
 import { getEmoji, fmt, formatCurrency, calcTotalExpenses, getMoodEmoji } from '../lib/utils';
+import { SafeImage } from './SafeImage';
 
 export function EventPreviewCard({
   event, photos, expenses, onExpand, onEdit, onViewPhoto, onSwipeLeft, onSwipeRight
@@ -51,15 +52,16 @@ export function EventPreviewCard({
               {photos.map((p, i) => (
                 <div
                   key={i}
-                  className="shrink-0 rounded-xl overflow-hidden bg-[#efd8c3]/20 cursor-pointer hover:opacity-90 transition-opacity shadow-sm"
+                  className="shrink-0 rounded-xl overflow-hidden bg-[#efd8c3]/20 cursor-pointer hover:opacity-90 transition-opacity shadow-sm relative"
                   style={{ width: '120px', height: '150px' }}
                   onClick={() => onViewPhoto?.(photos, i)}
                 >
-                  <img
+                  <SafeImage
                     src={p.thumbUrl || p.displayUrl || p.url}
                     alt=""
-                    className="w-full h-full object-cover"
-                    loading="lazy"
+                    fill
+                    sizes="120px"
+                    className="object-cover"
                   />
                 </div>
               ))}

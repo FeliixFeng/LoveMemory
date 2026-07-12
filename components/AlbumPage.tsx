@@ -5,6 +5,7 @@ import { Event, Photo, AppData } from '../lib/types';
 import { getEmoji, fmt } from '../lib/utils';
 import { Lightbox } from './Lightbox';
 import { SkeletonPage } from './SkeletonCard';
+import { SafeImage } from './SafeImage';
 
 export function AlbumPage() {
   const [data, setData] = useState<AppData | null>(null);
@@ -46,9 +47,9 @@ export function AlbumPage() {
                   className="w-full flex items-center gap-3 p-4 text-left hover:bg-[#efd8c3]/10 transition-colors"
                 >
                   {/* Cover photo */}
-                  <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-[#efd8c3]/20">
+                  <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-[#efd8c3]/20 relative">
                     {eventPhotos[0] && (
-                      <img src={eventPhotos[0].thumbUrl || eventPhotos[0].displayUrl || eventPhotos[0].url} alt="" className="w-full h-full object-cover" />
+                      <SafeImage src={eventPhotos[0].thumbUrl || eventPhotos[0].displayUrl || eventPhotos[0].url} alt="" fill sizes="56px" className="object-cover" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -70,10 +71,10 @@ export function AlbumPage() {
                     {eventPhotos.map((p, i) => (
                       <div
                         key={p.url}
-                        className="aspect-[4/5] rounded-lg overflow-hidden bg-[#efd8c3]/20 cursor-pointer hover:opacity-90 transition-opacity"
+                        className="aspect-[4/5] rounded-lg overflow-hidden bg-[#efd8c3]/20 cursor-pointer hover:opacity-90 transition-opacity relative"
                         onClick={() => setViewPhoto({ photos: eventPhotos, index: i })}
                       >
-                        <img src={p.thumbUrl || p.displayUrl || p.url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                        <SafeImage src={p.thumbUrl || p.displayUrl || p.url} alt="" fill sizes="(max-width: 640px) 20vw, 150px" className="object-cover" />
                       </div>
                     ))}
                   </div>
@@ -90,10 +91,10 @@ export function AlbumPage() {
                 {standalonePhotos.map((p, i) => (
                   <div
                     key={p.url}
-                    className="aspect-[4/5] rounded-lg overflow-hidden bg-[#efd8c3]/20 cursor-pointer hover:opacity-90 transition-opacity"
+                    className="aspect-[4/5] rounded-lg overflow-hidden bg-[#efd8c3]/20 cursor-pointer hover:opacity-90 transition-opacity relative"
                     onClick={() => setViewPhoto({ photos: standalonePhotos, index: i })}
                   >
-                    <img src={p.thumbUrl || p.displayUrl || p.url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                    <SafeImage src={p.thumbUrl || p.displayUrl || p.url} alt="" fill sizes="(max-width: 640px) 20vw, 150px" className="object-cover" />
                   </div>
                 ))}
               </div>

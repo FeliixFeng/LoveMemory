@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { LoveQuote, Countdown } from '../lib/types';
 import { fmt } from '../lib/utils';
+import { SafeImage } from './SafeImage';
 
 export function HeroSection({
   heroImages, saving, animDays, nextDays, startDate, quotes, countdowns,
@@ -58,11 +59,12 @@ export function HeroSection({
     <section className="relative rounded-3xl overflow-hidden shadow-lg aspect-[3/4] md:aspect-[4/3] lg:aspect-[2/1]" style={{ animation: 'slideUp 0.6s ease-out' }}>
       {/* Image layer - base */}
       {heroImages.map((img, i) => (
-        <img
+        <SafeImage
           key={i} src={img} alt=""
-          loading={i === 0 ? "eager" : "lazy"}
-          fetchPriority={i === 0 ? "high" : "auto"}
-          className="absolute inset-0 w-full h-full object-cover"
+          fill
+          sizes="100vw"
+          priority={i === 0}
+          className="object-cover"
           style={{ opacity: heroIdx === i ? 1 : 0, transition: 'opacity 1.5s' }}
         />
       ))}

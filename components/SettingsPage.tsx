@@ -7,6 +7,7 @@ import { useAuth } from './SiteLayoutClient';
 import { fmt } from '../lib/utils';
 import { Toast } from './Toast';
 import { ConfirmDialog } from './modals/ConfirmDialog';
+import { SafeImage } from './SafeImage';
 
 const TABS = [
   { key: 'date' as const, label: '纪念日', icon: '📅' },
@@ -120,7 +121,7 @@ export function SettingsPage() {
               <div className="grid grid-cols-3 gap-2">
                 {data.customCovers.map((url, i) => (
                   <div key={i} className="relative rounded-xl overflow-hidden aspect-[4/3] group shadow-sm">
-                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    <SafeImage src={url} alt="" fill sizes="(max-width: 640px) 33vw, 200px" className="object-cover" />
                     <button
                       onClick={() => withAuth(() => setConfirm({ title: '确认移除封面', message: '确定要移除这张封面吗？', onConfirm: () => void save({ ...data, customCovers: data.customCovers.filter(c => c !== url) }, '已删除') }))}
                       className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 backdrop-blur-sm text-white text-[10px] flex items-center justify-center opacity-70 md:opacity-0 md:group-hover:opacity-100 hover:bg-red-500 transition-all"
@@ -174,7 +175,7 @@ export function SettingsPage() {
               <div className="grid grid-cols-3 gap-2">
                 {visibleDefaults.map((url, i) => (
                   <div key={i} className="relative rounded-xl overflow-hidden aspect-[4/3] group shadow-sm">
-                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    <SafeImage src={url} alt="" fill sizes="(max-width: 640px) 33vw, 200px" className="object-cover" />
                     <button
                       onClick={() => withAuth(() => void save({ ...data, hiddenDefaultCovers: [...(data.hiddenDefaultCovers || []), url] }, '已隐藏'))}
                       className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 backdrop-blur-sm text-white text-[10px] flex items-center justify-center opacity-70 md:opacity-0 md:group-hover:opacity-100 hover:bg-red-500 transition-all"

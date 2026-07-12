@@ -5,6 +5,7 @@ import { Event, Photo, Expense } from '../lib/types';
 import { getEmoji, fmt, formatCurrency, calcTotalExpenses, getMoodEmoji } from '../lib/utils';
 import { EXPENSE_CATEGORIES } from '../lib/constants';
 import { ExpenseItem } from './ExpenseItem';
+import { SafeImage } from './SafeImage';
 
 export function EventDetail({
   event, photos, expenses, onClose, onEdit, onAddPhoto, onDeletePhoto, onReorderPhotos, onAddExpense, onDeleteExpense, onViewPhoto, uploading, uploadProgress, deleting
@@ -90,12 +91,13 @@ export function EventDetail({
 
             <div className="grid grid-cols-3 gap-2">
               {photos.map((p, i) => (
-                <div key={p.url} className="relative aspect-[4/5] rounded-xl overflow-hidden bg-[#efd8c3]/20 group">
-                  <img
+                <div key={p.url} className="relative aspect-[4/5] rounded-xl overflow-hidden bg-[#efd8c3]/20 group cursor-pointer">
+                  <SafeImage
                     src={p.thumbUrl || p.displayUrl || p.url}
                     alt=""
-                    className="w-full h-full object-cover cursor-pointer"
-                    loading="lazy"
+                    fill
+                    sizes="(max-width: 640px) 33vw, 200px"
+                    className="object-cover"
                     onClick={() => onViewPhoto(photos, i)}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent md:opacity-0 md:group-hover:opacity-100 transition-opacity" />
