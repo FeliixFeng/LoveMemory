@@ -1,10 +1,10 @@
 'use client';
 
-import { useRef, useEffect, useMemo, useState } from 'react';
+import { memo, useRef, useEffect, useMemo, useState } from 'react';
 import { Event } from '../lib/types';
 import { getEmoji } from '../lib/utils';
 
-export function HorizontalTimeline({
+export const HorizontalTimeline = memo(function HorizontalTimeline({
   events, selectedId, onSelect, scrollRef: externalScrollRef
 }: {
   events: Event[];
@@ -229,4 +229,4 @@ export function HorizontalTimeline({
       </div>
     </div>
   );
-}
+})

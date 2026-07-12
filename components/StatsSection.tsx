@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { Event, Photo, Expense } from '../lib/types';
 import { calcTotalExpenses, formatCurrency } from '../lib/utils';
 
@@ -33,7 +33,7 @@ function AnimatedNumber({ value, duration = 1000 }: { value: number; duration?: 
   return <>{display}</>;
 }
 
-export function StatsSection({
+export const StatsSection = memo(function StatsSection({
   events, photos, expenses, days
 }: {
   events: Event[];
@@ -95,4 +95,4 @@ export function StatsSection({
       </div>
     </section>
   );
-}
+})

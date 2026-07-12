@@ -1,11 +1,11 @@
 'use client';
 
-import { useRef } from 'react';
+import { memo, useRef } from 'react';
 import { Event, Photo, Expense } from '../lib/types';
 import { getEmoji, fmt, formatCurrency, calcTotalExpenses, getMoodEmoji } from '../lib/utils';
 import { SafeImage } from './SafeImage';
 
-export function EventPreviewCard({
+export const EventPreviewCard = memo(function EventPreviewCard({
   event, photos, expenses, onExpand, onEdit, onViewPhoto, onAddPhoto,
   onSwipeLeft, onSwipeRight
 }: {
@@ -142,4 +142,4 @@ export function EventPreviewCard({
       </div>
     </div>
   );
-}
+})
