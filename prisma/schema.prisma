@@ -3,32 +3,32 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 model Settings {
-  id           Int      @id @db.TinyInt
-  startDate    String   @default("") @map("start_date") @db.VarChar(20)
-  heroImage    String   @map("hero_image") @db.LongText
-  customCovers      String   @map("custom_covers") @db.LongText
-  hiddenDefaultCovers String   @map("hidden_default_covers") @db.LongText
-  countdowns        String   @db.LongText
-  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
+  id                  Int       @id @default(1)
+  startDate           String    @default("") @map("start_date")
+  heroImage           String    @map("hero_image")
+  customCovers        String    @map("custom_covers")
+  hiddenDefaultCovers String    @map("hidden_default_covers")
+  countdowns          String
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at")
 
   @@map("settings")
 }
 
 model Event {
-  id          String   @id @db.VarChar(64)
-  title       String   @db.VarChar(255)
-  date        String   @db.VarChar(20)
-  description String   @db.Text
-  icon        String   @default("heart") @db.VarChar(64)
-  location    String   @default("") @db.VarChar(500)
-  mood        String   @default("") @db.VarChar(100)
-  coverPhoto  String   @default("") @map("cover_photo") @db.VarChar(500)
-  sortOrder   Int      @default(0) @map("sort_order") @db.Int
+  id          String   @id
+  title       String
+  date        String
+  description String
+  icon        String   @default("heart")
+  location    String   @default("")
+  mood        String   @default("")
+  coverPhoto  String   @default("") @map("cover_photo")
+  sortOrder   Int      @default(0) @map("sort_order")
   createdAt   DateTime @default(now()) @map("created_at")
 
   photos   Photo[]
@@ -38,30 +38,29 @@ model Event {
 }
 
 model Photo {
-  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  url        String   @db.VarChar(500)
-  displayUrl String   @map("display_url") @db.Text
-  thumbUrl   String   @map("thumb_url") @db.Text
-  filename   String   @default("") @db.VarChar(255)
-  mimeType   String   @default("") @map("mime_type") @db.VarChar(100)
-  fileSize   Int      @default(0) @map("file_size") @db.UnsignedInt
-  sortOrder  Int      @default(0) @map("sort_order") @db.Int
-  uploadedAt String   @map("uploaded_at") @db.VarChar(40)
+  id         Int      @id @default(autoincrement())
+  url        String   @unique
+  displayUrl String   @map("display_url")
+  thumbUrl   String   @map("thumb_url")
+  filename   String   @default("")
+  mimeType   String   @default("") @map("mime_type")
+  fileSize   Int      @default(0) @map("file_size")
+  sortOrder  Int      @default(0) @map("sort_order")
+  uploadedAt String   @map("uploaded_at")
   createdAt  DateTime @default(now()) @map("created_at")
 
-  eventId String? @map("event_id") @db.VarChar(64)
+  eventId String? @map("event_id")
   event   Event?  @relation(fields: [eventId], references: [id], onDelete: SetNull)
 
-  @@unique([url], map: "photos_url_unique")
   @@map("photos")
 }
 
 model Expense {
   id        Int      @id @default(autoincrement())
-  eventId   String   @map("event_id") @db.VarChar(64)
-  amount    Float    @db.Double
-  category  String   @default("") @db.VarChar(100)
-  note      String   @default("") @db.VarChar(500)
+  eventId   String   @map("event_id")
+  amount    Float
+  category  String   @default("")
+  note      String   @default("")
   createdAt DateTime @default(now()) @map("created_at")
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -71,8 +70,8 @@ model Expense {
 
 model LoveQuote {
   id        Int      @id @default(autoincrement())
-  content   String   @db.Text
-  sortOrder Int      @default(0) @map("sort_order") @db.Int
+  content   String
+  sortOrder Int      @default(0) @map("sort_order")
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("love_quotes")
@@ -80,12 +79,12 @@ model LoveQuote {
 
 model Wish {
   id          Int      @id @default(autoincrement())
-  title       String   @db.VarChar(255)
-  description String   @default("") @db.VarChar(1000)
-  emoji       String   @default("💝") @db.VarChar(10)
+  title       String
+  description String   @default("")
+  emoji       String   @default("💝")
   isCompleted Boolean  @default(false) @map("is_completed")
-  completedAt String?  @map("completed_at") @db.VarChar(40)
-  sortOrder   Int      @default(0) @map("sort_order") @db.Int
+  completedAt String?  @map("completed_at")
+  sortOrder   Int      @default(0) @map("sort_order")
   createdAt   DateTime @default(now()) @map("created_at")
 
   @@map("wishes")
@@ -93,10 +92,10 @@ model Wish {
 
 model Capsule {
   id         Int      @id @default(autoincrement())
-  title      String   @db.VarChar(255)
-  content    String   @db.Text
-  emoji      String   @default("💌") @db.VarChar(10)
-  unlockDate String   @map("unlock_date") @db.VarChar(20)
+  title      String
+  content    String
+  emoji      String   @default("💌")
+  unlockDate String   @map("unlock_date")
   isOpened   Boolean  @default(false) @map("is_opened")
   createdAt  DateTime @default(now()) @map("created_at")
 

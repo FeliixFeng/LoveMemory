@@ -1,26 +1,45 @@
-# 使用官方轻量级 Node.js 镜像
-FROM node:20-alpine
-
-# 设置工作目录
+# Stage 1: Install dependencies
+FROM node:20-alpine AS deps
 WORKDIR /app
-
-# 优先复制依赖文件 (利用 Docker 缓存层，加速构建)
 COPY package*.json ./
-
-# 安装依赖
 RUN npm ci
 
-# 复制项目源代码
+# Stage 2: Build application
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# Generate Prisma client
 RUN npx prisma generate
-
-# 构建 Next.js 应用
 RUN npm run build
 
-# 暴露端口
+# Stage 3: Production runtime
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+# Copy standalone output
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
+# Create directories with proper ownership
+RUN mkdir -p /app/db /app/data /app/public/uploads/thumbs && \
+    chown -R nextjs:nodejs /app/db /app/data /app/public/uploads
+
+USER nextjs
+
 EXPOSE 3000
 
-# 启动命令
-CMD ["npm", "start"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+
+CMD ["node", "server.js"]
