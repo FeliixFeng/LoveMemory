@@ -48,7 +48,7 @@ export function EventModal({
                   key={ic.id}
                   onClick={() => setDraft(d => ({ ...d, icon: ic.id }))}
                   className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg border-2 transition-all shrink-0 ${
-                    draft.icon === ic.id ? 'bg-[#d48b60] border-[#d48b60] scale-110 shadow-md' : 'bg-white border-[#efd8c3]/40 hover:border-[#d48b60]/40'
+                    draft.icon === ic.id ? 'bg-gradient-to-br from-[#d48b60] to-[#aa6f4d] border-[#d48b60] scale-110 shadow-md text-white' : 'bg-white border-[#efd8c3]/40 hover:border-[#d48b60]/40'
                   }`}
                 >
                   {ic.emoji}
@@ -99,7 +99,7 @@ export function EventModal({
                   key={m.id}
                   onClick={() => setDraft(d => ({ ...d, mood: d.mood === m.id ? '' : m.id }))}
                   className={`px-3 py-1.5 rounded-xl text-xs border transition-all ${
-                    draft.mood === m.id ? 'bg-[#d48b60] border-[#d48b60] text-white shadow-sm' : 'bg-white border-[#efd8c3]/60 text-[#5c3d2a] hover:border-[#d48b60]/40'
+                    draft.mood === m.id ? 'bg-gradient-to-r from-[#d48b60] to-[#aa6f4d] border-[#d48b60] text-white shadow-sm' : 'bg-white border-[#efd8c3]/60 text-[#5c3d2a] hover:border-[#d48b60]/40'
                   }`}
                 >
                   {m.emoji} {m.label}
@@ -124,7 +124,7 @@ export function EventModal({
         {/* Actions */}
         <div className="px-5 py-4 border-t border-[#efd8c3]/20 flex gap-3">
           <button onClick={onClose} className="flex-1 py-3 bg-white border border-[#efd8c3] text-[#3d281c] rounded-xl font-medium active:scale-[0.98] transition-transform">取消</button>
-          <button onClick={onSave} className="flex-1 py-3 bg-[#3d281c] text-amber-50 rounded-xl font-medium shadow-lg active:scale-[0.98] transition-transform">保存</button>
+          <button onClick={onSave} className="flex-1 py-3 bg-gradient-to-r from-[#d48b60] to-[#aa6f4d] text-white rounded-xl font-medium shadow-lg active:scale-[0.98] transition-transform">保存</button>
         </div>
       </div>
     </div>

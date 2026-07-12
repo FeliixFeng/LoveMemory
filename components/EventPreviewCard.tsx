@@ -80,7 +80,7 @@ export function EventPreviewCard({
           {/* Expand button */}
           <button
             onClick={onExpand}
-            className="w-8 h-8 rounded-full bg-[#f0c8a8] text-white flex items-center justify-center hover:bg-[#e8b690] transition-colors shadow-sm active:scale-95 shrink-0"
+            className="w-8 h-8 rounded-full bg-gradient-to-br from-[#d48b60] to-[#aa6f4d] text-white flex items-center justify-center hover:shadow-md transition-all shadow-sm active:scale-95 shrink-0"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
           </button>

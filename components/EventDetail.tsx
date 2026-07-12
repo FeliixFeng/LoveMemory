@@ -69,7 +69,7 @@ export function EventDetail({
               </div>
             </div>
             <div className="flex gap-2">
-              <button onClick={onEdit} className="px-3 py-1.5 text-xs rounded-lg bg-[#efd8c3]/40 text-[#5c3d2a] hover:bg-[#efd8c3]/60 transition-colors">编辑</button>
+              <button onClick={onEdit} className="px-3 py-1.5 text-xs rounded-lg bg-gradient-to-r from-[#d48b60]/10 to-[#aa6f4d]/10 text-[#aa6f4d] hover:from-[#d48b60]/20 hover:to-[#aa6f4d]/20 transition-colors font-medium">编辑</button>
               <button onClick={onClose} className="w-10 h-10 -mr-2 rounded-full flex items-center justify-center text-[#5c3d2a]/50 hover:bg-[#efd8c3]/30 transition-colors">✕</button>
             </div>
           </div>
@@ -155,7 +155,7 @@ export function EventDetail({
               </h3>
               <button
                 onClick={() => setShowAddExpense(true)}
-                className="px-3 py-1 text-xs rounded-lg bg-[#d48b60] text-white"
+                className="px-3 py-1 text-xs rounded-lg bg-gradient-to-r from-[#d48b60] to-[#aa6f4d] text-white shadow-sm"
               >
                 + 添加
               </button>
@@ -227,7 +227,7 @@ export function EventDetail({
                 />
                 <div className="flex gap-2 justify-end">
                   <button onClick={() => setShowAddExpense(false)} className="px-4 py-2 text-xs text-[#5c3d2a]/60 hover:text-[#5c3d2a] transition-colors">取消</button>
-                  <button onClick={handleAddExpense} className="px-5 py-2 text-xs rounded-xl bg-[#3d281c] text-amber-50 font-medium active:scale-95 transition-transform">保存</button>
+                  <button onClick={handleAddExpense} className="px-5 py-2 text-xs rounded-xl bg-gradient-to-r from-[#d48b60] to-[#aa6f4d] text-white font-medium active:scale-95 transition-transform shadow-sm">保存</button>
                 </div>
               </div>
             )}

@@ -79,7 +79,7 @@ export function SettingsPage() {
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex-1 py-2.5 text-xs rounded-xl transition-all ${tab === t.key ? 'bg-[#aa6f4d] text-white font-semibold shadow-sm' : 'text-[#5c3d2a]/40 hover:text-[#5c3d2a]/60 hover:bg-[#efd8c3]/20'}`}
+            className={`flex-1 py-2.5 text-xs rounded-xl transition-all ${tab === t.key ? 'bg-gradient-to-r from-[#d48b60] to-[#aa6f4d] text-white font-semibold shadow-sm' : 'text-[#5c3d2a]/40 hover:text-[#5c3d2a]/60 hover:bg-[#efd8c3]/20'}`}
           >
             {t.icon} {t.label}
           </button>
@@ -214,7 +214,7 @@ export function SettingsPage() {
                 if (!newQuote.trim()) return;
                 withAuth(() => void save({ ...data, loveQuotes: [...data.loveQuotes, { id: Date.now(), content: newQuote.trim() }] }, '已添加'));
                 setNewQuote('');
-              }} className="px-4 py-2 bg-[#aa6f4d] text-white rounded-xl text-sm font-medium shrink-0 active:scale-95 transition-transform">添加</button>
+              }} className="px-4 py-2 bg-gradient-to-r from-[#d48b60] to-[#aa6f4d] text-white rounded-xl text-sm font-medium shrink-0 active:scale-95 transition-transform">添加</button>
             </div>
           </div>
 
@@ -278,7 +278,7 @@ export function SettingsPage() {
                   withAuth(() => void save({ ...data, countdowns: [...(data.countdowns || []), { ...newCountdown, id: Date.now() }] }, '已添加'));
                   setNewCountdown({ label: '', date: '', emoji: '🎂' });
                 }}
-                className="px-4 py-2 bg-[#aa6f4d] text-white rounded-xl text-sm font-medium shrink-0 active:scale-95 transition-transform"
+                className="px-4 py-2 bg-gradient-to-r from-[#d48b60] to-[#aa6f4d] text-white rounded-xl text-sm font-medium shrink-0 active:scale-95 transition-transform"
               >添加</button>
             </div>
           </div>

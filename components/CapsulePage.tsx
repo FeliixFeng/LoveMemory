@@ -92,7 +92,7 @@ export function CapsulePage() {
                   <span className="text-5xl">{c.emoji}</span>
                   <h2 className="text-lg font-bold text-[#3d281c]" style={{ fontFamily: 'Noto Serif SC, serif' }}>{c.title}</h2>
                   <p className="text-sm text-[#5c3d2a]/80 whitespace-pre-wrap">{c.content}</p>
-                  <button onClick={() => setOpenId(null)} className="w-full py-3 bg-[#3d281c] text-amber-50 rounded-xl font-medium">关闭</button>
+                  <button onClick={() => setOpenId(null)} className="w-full py-3 bg-gradient-to-r from-[#d48b60] to-[#aa6f4d] text-white rounded-xl font-medium">关闭</button>
                 </div>
               );
             })()}
@@ -104,7 +104,7 @@ export function CapsulePage() {
         <h1 className="text-lg font-bold text-[#3d281c]" style={{ fontFamily: 'Noto Serif SC, serif' }}>⏰ 时光胶囊</h1>
         <button
           onClick={() => withAuth(() => setShowAdd(true))}
-          className="px-3 py-1.5 bg-[#aa6f4d] text-white rounded-xl text-xs font-medium"
+          className="px-3 py-1.5 bg-gradient-to-r from-[#d48b60] to-[#aa6f4d] text-white rounded-xl text-xs font-medium"
         >+ 写信</button>
       </div>
 
@@ -145,7 +145,7 @@ export function CapsulePage() {
           </div>
           <div className="flex gap-2 justify-end">
             <button onClick={() => setShowAdd(false)} className="px-3 py-1.5 text-xs text-[#5c3d2a]/60">取消</button>
-            <button onClick={() => withAuth(createCapsule)} className="px-4 py-1.5 text-xs rounded-lg bg-[#3d281c] text-amber-50">封存</button>
+            <button onClick={() => withAuth(createCapsule)} className="px-4 py-1.5 text-xs rounded-lg bg-gradient-to-r from-[#d48b60] to-[#aa6f4d] text-white">封存</button>
           </div>
         </div>
       )}

@@ -142,12 +142,8 @@ export function LoveMemoryClient() {
 
         <StatsSection events={data.events} photos={data.photos} expenses={data.expenses} days={days} />
 
-        <footer className="px-6 pt-4 pb-2 text-center space-y-2">
-          <p className="text-[11px] text-[#5c3d2a]/25" style={{ fontFamily: 'Noto Serif SC, serif' }}>记录每一个值得珍藏的瞬间</p>
-          <div className="flex items-center justify-center gap-4 text-[10px] text-[#5c3d2a]/20">
-            <span>💕 LoveMemory</span><span>·</span><span>用爱记录时光</span>
-          </div>
-          <p className="text-[9px] text-[#5c3d2a]/15">Made with ❤️ for us</p>
+        <footer className="px-6 pt-2 pb-2 text-center">
+          <p className="text-[10px] text-[#5c3d2a]/20">💕 LoveMemory · Made with ❤️ for us</p>
         </footer>
       </main>
 

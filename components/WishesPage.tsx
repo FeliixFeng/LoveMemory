@@ -85,7 +85,7 @@ export function WishesPage() {
         <h1 className="text-lg font-bold text-[#3d281c]" style={{ fontFamily: 'Noto Serif SC, serif' }}>💝 愿望清单</h1>
         <button
           onClick={() => withAuth(() => setShowAdd(true))}
-          className="px-3 py-1.5 bg-[#aa6f4d] text-white rounded-xl text-xs font-medium active:scale-95 transition-transform"
+          className="px-3 py-1.5 bg-gradient-to-r from-[#d48b60] to-[#aa6f4d] text-white rounded-xl text-xs font-medium active:scale-95 transition-transform"
         >+ 添加</button>
       </div>
 
@@ -117,7 +117,7 @@ export function WishesPage() {
           />
           <div className="flex gap-2 justify-end">
             <button onClick={() => setShowAdd(false)} className="px-3 py-1.5 text-xs text-[#5c3d2a]/60">取消</button>
-            <button onClick={() => withAuth(createWish)} className="px-4 py-1.5 text-xs rounded-lg bg-[#3d281c] text-amber-50">保存</button>
+            <button onClick={() => withAuth(createWish)} className="px-4 py-1.5 text-xs rounded-lg bg-gradient-to-r from-[#d48b60] to-[#aa6f4d] text-white">保存</button>
           </div>
         </div>
       )}

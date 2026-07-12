@@ -46,40 +46,49 @@ export function StatsSection({
 
   return (
     <section className="px-4 lg:px-0 py-2" style={{ animation: 'slideUp 0.5s ease-out 0.2s both' }}>
-      <div className="lm-card rounded-2xl px-5 py-3">
-        <div className="flex flex-col items-center gap-1.5">
-          {/* Row 1 */}
-          <div className="flex justify-center gap-6">
-            <div className="flex items-center gap-1.5 text-xs text-[#5c3d2a]/55 w-[110px]">
-              <span>📌</span>
-              <span className="font-bold text-[#3d281c] tabular-nums"><AnimatedNumber value={events.length} duration={800} /></span>
-              <span>个事件</span>
+      <div className="lm-card rounded-2xl p-4">
+        {/* Desktop: one row with badges */}
+        <div className="hidden md:flex items-center justify-center gap-3 flex-wrap">
+          {[
+            { emoji: '📌', value: events.length, label: '个事件', color: 'from-pink-50 to-rose-50', border: 'border-pink-100/50', duration: 800 },
+            { emoji: '📷', value: photos.length, label: '张照片', color: 'from-amber-50 to-orange-50', border: 'border-amber-100/50', duration: 900 },
+            { emoji: '📍', value: locations.size, label: '座城市', color: 'from-blue-50 to-cyan-50', border: 'border-blue-100/50', duration: 700 },
+            { emoji: '📅', value: days, label: '天', color: 'from-purple-50 to-violet-50', border: 'border-purple-100/50', duration: 1200 },
+          ].map(item => (
+            <div key={item.label} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r ${item.color} border ${item.border}`}>
+              <span className="text-sm">{item.emoji}</span>
+              <span className="font-bold text-[#3d281c] text-xs tabular-nums"><AnimatedNumber value={item.value} duration={item.duration} /></span>
+              <span className="text-[10px] text-[#5c3d2a]/50">{item.label}</span>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-[#5c3d2a]/55 w-[110px]">
-              <span>📷</span>
-              <span className="font-bold text-[#3d281c] tabular-nums"><AnimatedNumber value={photos.length} duration={900} /></span>
-              <span>张照片</span>
-            </div>
-          </div>
-          {/* Row 2 */}
-          <div className="flex justify-center gap-6">
-            <div className="flex items-center gap-1.5 text-xs text-[#5c3d2a]/55 w-[110px]">
-              <span>📍</span>
-              <span className="font-bold text-[#3d281c] tabular-nums"><AnimatedNumber value={locations.size} duration={700} /></span>
-              <span>座城市</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-[#5c3d2a]/55 w-[110px]">
-              <span>📅</span>
-              <span className="font-bold text-[#3d281c] tabular-nums"><AnimatedNumber value={days} duration={1200} /></span>
-              <span>天</span>
-            </div>
-          </div>
-          {/* Row 3: Expense */}
+          ))}
           {totalExpenses > 0 && (
-            <div className="flex items-center justify-center gap-1.5 text-xs text-[#5c3d2a]/55 mt-1 pt-1.5 border-t border-[#efd8c3]/30 w-full">
-              <span>💰</span>
-              <span className="font-bold text-[#d48b60] tabular-nums">{formatCurrency(Math.round(totalExpenses))}</span>
-              <span>累计</span>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100/50">
+              <span className="text-sm">💰</span>
+              <span className="font-bold text-[#d48b60] text-xs tabular-nums">{formatCurrency(Math.round(totalExpenses))}</span>
+              <span className="text-[10px] text-[#5c3d2a]/50">累计</span>
+            </div>
+          )}
+        </div>
+
+        {/* Mobile: grid badges */}
+        <div className="md:hidden grid grid-cols-2 gap-2">
+          {[
+            { emoji: '📌', value: events.length, label: '个事件', color: 'from-pink-50 to-rose-50', border: 'border-pink-100/50', duration: 800 },
+            { emoji: '📷', value: photos.length, label: '张照片', color: 'from-amber-50 to-orange-50', border: 'border-amber-100/50', duration: 900 },
+            { emoji: '📍', value: locations.size, label: '座城市', color: 'from-blue-50 to-cyan-50', border: 'border-blue-100/50', duration: 700 },
+            { emoji: '📅', value: days, label: '天', color: 'from-purple-50 to-violet-50', border: 'border-purple-100/50', duration: 1200 },
+          ].map(item => (
+            <div key={item.label} className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r ${item.color} border ${item.border}`}>
+              <span className="text-sm">{item.emoji}</span>
+              <span className="font-bold text-[#3d281c] text-xs tabular-nums"><AnimatedNumber value={item.value} duration={item.duration} /></span>
+              <span className="text-[10px] text-[#5c3d2a]/50">{item.label}</span>
+            </div>
+          ))}
+          {totalExpenses > 0 && (
+            <div className="col-span-2 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100/50">
+              <span className="text-sm">💰</span>
+              <span className="font-bold text-[#d48b60] text-xs tabular-nums">{formatCurrency(Math.round(totalExpenses))}</span>
+              <span className="text-[10px] text-[#5c3d2a]/50">累计</span>
             </div>
           )}
         </div>
