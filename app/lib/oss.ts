@@ -42,7 +42,10 @@ export async function uploadToOss(
   }
 
   await ossClient.put(filename, buffer, {
-    headers: { 'Content-Type': mimeType }
+    headers: {
+      'Content-Type': mimeType,
+      'Cache-Control': 'public, max-age=2592000' // 30 days
+    }
   });
 
   return getOssUrl(filename);
