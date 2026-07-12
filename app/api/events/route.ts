@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server.js';
-import { readAppDataWithPrisma, readAppDataFromJson, createEventWithPrisma } from '../../lib/app-data.ts';
-import { getStorageDriver, getPin } from '../../lib/env.ts';
-import { verifyToken } from '../../lib/auth.ts';
+import { readAppData, createEvent } from '../../lib/app-data.ts';
+import { checkRequestAuth } from '../../lib/auth.ts';
+import { CreateEventSchema } from '../../lib/schemas.ts';
 
 export async function GET() {
   try {
-    const data = getStorageDriver() === 'mysql'
-      ? await readAppDataWithPrisma()
-      : await readAppDataFromJson();
+    const data = await readAppData();
     return NextResponse.json({ events: data.events });
   } catch (error) {
     console.error('Read events error:', error);
@@ -16,27 +14,18 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  if (getPin()) {
-    const authHeader = request.headers.get('authorization') || '';
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-    if (!token || !verifyToken(token)) {
-      return NextResponse.json({ error: '需要验证 PIN 码' }, { status: 401 });
-    }
-  }
+  const authErr = checkRequestAuth(request);
+  if (authErr) return authErr;
 
   try {
     const body = await request.json();
+    const parsed = CreateEventSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+    }
+
     const id = body.id || String(Date.now());
-    const event = await createEventWithPrisma({
-      id,
-      title: body.title || '',
-      date: body.date || '',
-      desc: body.desc || body.description || '',
-      icon: body.icon || 'heart',
-      location: body.location || '',
-      mood: body.mood || '',
-      coverPhoto: body.coverPhoto || ''
-    });
+    const event = await createEvent({ id, ...parsed.data, desc: parsed.data.desc });
     return NextResponse.json({ success: true, event });
   } catch (error) {
     console.error('Create event error:', error);

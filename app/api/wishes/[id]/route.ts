@@ -1,34 +1,21 @@
 import { NextResponse } from 'next/server.js';
-import { prisma } from '../../../lib/prisma.ts';
-import { getPin } from '../../../lib/env.ts';
-import { verifyToken } from '../../../lib/auth.ts';
-
-function checkAuth(request: Request) {
-  if (!getPin()) return true;
-  const authHeader = request.headers.get('authorization') || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-  return token && verifyToken(token);
-}
+import { updateWish, deleteWish } from '../../../lib/app-data.ts';
+import { checkRequestAuth } from '../../../lib/auth.ts';
+import { UpdateWishSchema } from '../../../lib/schemas.ts';
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    if (!checkAuth(request)) {
-      return NextResponse.json({ error: '需要验证 PIN 码' }, { status: 401 });
-    }
+  const authErr = checkRequestAuth(request);
+  if (authErr) return authErr;
 
+  try {
     const { id } = await params;
     const body = await request.json();
-    const wish = await prisma.wish.update({
-      where: { id: parseInt(id) },
-      data: {
-        ...(body.title !== undefined && { title: body.title }),
-        ...(body.description !== undefined && { description: body.description }),
-        ...(body.emoji !== undefined && { emoji: body.emoji }),
-        ...(body.isCompleted !== undefined && { isCompleted: body.isCompleted }),
-        ...(body.completedAt !== undefined && { completedAt: body.completedAt })
-      }
-    });
+    const parsed = UpdateWishSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+    }
 
+    const wish = await updateWish(parseInt(id), parsed.data);
     return NextResponse.json({ success: true, wish });
   } catch (error) {
     console.error('Update wish error:', error);
@@ -37,13 +24,12 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    if (!checkAuth(request)) {
-      return NextResponse.json({ error: '需要验证 PIN 码' }, { status: 401 });
-    }
+  const authErr = checkRequestAuth(request);
+  if (authErr) return authErr;
 
+  try {
     const { id } = await params;
-    await prisma.wish.delete({ where: { id: parseInt(id) } });
+    await deleteWish(parseInt(id));
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Delete wish error:', error);

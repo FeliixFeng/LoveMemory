@@ -1,19 +1,12 @@
 import { NextResponse } from 'next/server.js';
-import { prisma } from '../../lib/prisma.ts';
-import { getPin } from '../../lib/env.ts';
-import { verifyToken } from '../../lib/auth.ts';
-
-function checkAuth(request: Request) {
-  if (!getPin()) return true;
-  const authHeader = request.headers.get('authorization') || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-  return token && verifyToken(token);
-}
+import { readAppData, createWish } from '../../lib/app-data.ts';
+import { checkRequestAuth } from '../../lib/auth.ts';
+import { CreateWishSchema } from '../../lib/schemas.ts';
 
 export async function GET() {
   try {
-    const wishes = await prisma.wish.findMany({ orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }] });
-    return NextResponse.json(wishes);
+    const data = await readAppData();
+    return NextResponse.json(data.wishes);
   } catch (error) {
     console.error('Read wishes error:', error);
     return NextResponse.json([]);
@@ -21,22 +14,17 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const authErr = checkRequestAuth(request);
+  if (authErr) return authErr;
+
   try {
-    if (!checkAuth(request)) {
-      return NextResponse.json({ error: '需要验证 PIN 码' }, { status: 401 });
+    const body = await request.json();
+    const parsed = CreateWishSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
     }
 
-    const body = await request.json();
-    const count = await prisma.wish.count();
-    const wish = await prisma.wish.create({
-      data: {
-        title: body.title || '',
-        description: body.description || '',
-        emoji: body.emoji || '💝',
-        sortOrder: count
-      }
-    });
-
+    const wish = await createWish(parsed.data);
     return NextResponse.json({ success: true, wish });
   } catch (error) {
     console.error('Create wish error:', error);

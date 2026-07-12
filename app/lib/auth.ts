@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { NextResponse } from 'next/server.js';
 import { getPin } from './env.ts';
 
 const TOKEN_TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 days
@@ -46,4 +47,17 @@ export function verifyToken(token: string): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Check request authentication. Returns null if auth passes, or a 401 NextResponse if it fails.
+ */
+export function checkRequestAuth(request: Request): NextResponse | null {
+  if (!getPin()) return null;
+  const authHeader = request.headers.get('authorization') || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  if (!token || !verifyToken(token)) {
+    return NextResponse.json({ error: '需要验证 PIN 码' }, { status: 401 });
+  }
+  return null;
 }
