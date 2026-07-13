@@ -32,8 +32,8 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Create directories with proper ownership
-RUN mkdir -p /app/db /app/data /app/public/uploads/thumbs && \
-    chown -R nextjs:nodejs /app/db /app/data /app/public/uploads
+RUN mkdir -p /app/db /app/data /app/public/uploads/thumbs /app/.next/cache && \
+    chown -R nextjs:nodejs /app/db /app/data /app/public/uploads /app/.next
 
 USER nextjs
 
