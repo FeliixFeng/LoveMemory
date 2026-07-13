@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import ReactECharts from 'echarts-for-react';
 import { Event } from '../lib/types';
 
 const CITY_TO_PROVINCE: Record<string, string> = {
@@ -114,8 +115,6 @@ function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<s
     }]
   };
 
-  // Lazy load ReactECharts only when ready
-  const ReactECharts = require('echarts-for-react').default;
   return <ReactECharts option={option} style={{ height: '400px', width: '100%' }} opts={{ renderer: 'svg' }} />;
 }
 
