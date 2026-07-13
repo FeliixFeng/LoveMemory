@@ -90,6 +90,7 @@ function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<s
       emphasis: { label: { show: true, fontSize: 10, color: '#3d281c', textBorderColor: '#fff', textBorderWidth: 2 }, itemStyle: { areaColor: '#e8d5c4' } },
       regions: Array.from(visitedProvinces).map(p => ({
         name: { '上海':'上海市','北京':'北京市','天津':'天津市','重庆':'重庆市','安徽':'安徽省','浙江':'浙江省','江苏':'江苏省','广东':'广东省','四川':'四川省','湖北':'湖北省','湖南':'湖南省','河南':'河南省','山东':'山东省','福建':'福建省','云南':'云南省','陕西':'陕西省','黑龙江':'黑龙江省','吉林':'吉林省','辽宁':'辽宁省','山西':'山西省','河北':'河北省','甘肃':'甘肃省','宁夏':'宁夏回族自治区','青海':'青海省','新疆':'新疆维吾尔自治区','广西':'广西壮族自治区','贵州':'贵州省','江西':'江西省','内蒙古':'内蒙古自治区','西藏':'西藏自治区','海南':'海南省','台湾':'台湾省' }[p] || p,
+        label: { show: false },
         itemStyle: { areaColor: { type: 'linear', x: 0, y: 0, x2: 1, y2: 1, colorStops: [{ offset: 0, color: '#d48b60' }, { offset: 1, color: '#aa6f4d' }] }, borderColor: '#aa6f4d', borderWidth: 1 }
       }))
     },
@@ -113,7 +114,7 @@ function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<s
           return { name: c.city, value: [...coords, 10] };
         }).filter(Boolean);
       })(),
-      label: { show: true, position: 'bottom', formatter: '{b}', fontSize: 9, color: '#3d281c', distance: 5, textBorderColor: '#fff', textBorderWidth: 2 },
+      label: { show: true, position: 'bottom', formatter: '{b}', fontSize: 9, color: '#3d281c', distance: 5 },
       itemStyle: { color: '#d48b60', borderColor: '#fff', borderWidth: 2, shadowBlur: 6, shadowColor: 'rgba(212,139,96,0.5)' },
       emphasis: { scale: 1.5 }
     }]
