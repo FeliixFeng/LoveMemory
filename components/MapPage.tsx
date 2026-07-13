@@ -53,6 +53,7 @@ function getProvinceFromCity(location: string): string | null {
 function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<string>; visitedCities: { city: string; province: string }[] }) {
   const [ready, setReady] = useState(false);
   const [echarts, setEcharts] = useState<any>(null);
+  const [EChartsComponent, setEChartsComponent] = useState<any>(null);
 
   useEffect(() => {
     Promise.all([
@@ -65,7 +66,11 @@ function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<s
     }).catch(err => console.error('Map load error:', err));
   }, []);
 
-  if (!ready) {
+  useEffect(() => {
+    import('echarts-for-react').then(mod => setEChartsComponent(() => mod.default));
+  }, []);
+
+  if (!ready || !EChartsComponent) {
     return (
       <div className="h-[400px] flex items-center justify-center">
         <div className="text-center">
@@ -114,13 +119,6 @@ function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<s
     }]
   };
 
-  // Dynamically import echarts-for-react
-  const [EChartsComponent, setEChartsComponent] = useState<any>(null);
-  useEffect(() => {
-    import('echarts-for-react').then(mod => setEChartsComponent(() => mod.default));
-  }, []);
-
-  if (!EChartsComponent) return null;
   return <EChartsComponent option={option} style={{ height: '400px', width: '100%' }} opts={{ renderer: 'svg' }} />;
 }
 
