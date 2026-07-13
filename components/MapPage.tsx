@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import ReactECharts from 'echarts-for-react';
 import { Event } from '../lib/types';
 
 const CITY_TO_PROVINCE: Record<string, string> = {
@@ -109,13 +108,20 @@ function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<s
           return { name: c.city, value: [...coords, 10] };
         }).filter(Boolean);
       })(),
-      label: { show: true, position: 'bottom', formatter: '{b}', fontSize: 9, color: '#3d281c', distance: 5, textShadowColor: '#fff', textShadowBlur: 2 },
+      label: { show: true, position: 'bottom', formatter: '{b}', fontSize: 9, color: '#3d281c', distance: 5 },
       itemStyle: { color: '#d48b60', borderColor: '#fff', borderWidth: 2, shadowBlur: 6, shadowColor: 'rgba(212,139,96,0.5)' },
       emphasis: { scale: 1.5 }
     }]
   };
 
-  return <ReactECharts option={option} style={{ height: '400px', width: '100%' }} opts={{ renderer: 'svg' }} />;
+  // Dynamically import echarts-for-react
+  const [EChartsComponent, setEChartsComponent] = useState<any>(null);
+  useEffect(() => {
+    import('echarts-for-react').then(mod => setEChartsComponent(() => mod.default));
+  }, []);
+
+  if (!EChartsComponent) return null;
+  return <EChartsComponent option={option} style={{ height: '400px', width: '100%' }} opts={{ renderer: 'svg' }} />;
 }
 
 export function MapPage() {
