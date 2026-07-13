@@ -119,7 +119,7 @@ function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<s
     }]
   };
 
-  return <EChartsComponent option={option} style={{ height: '400px', width: '100%' }} opts={{ renderer: 'svg' }} />;
+  return <EChartsComponent option={option} style={{ height: '400px', width: '100%' }} />;
 }
 
 export function MapPage() {
