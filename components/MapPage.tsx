@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import ReactECharts from 'echarts-for-react';
-import * as echarts from 'echarts';
+import dynamic from 'next/dynamic';
 import { Event } from '../lib/types';
+
+const ReactECharts = dynamic(() => import('echarts-for-react'), { ssr: false });
 
 const CITY_TO_PROVINCE: Record<string, string> = {
   // 直辖市
@@ -308,6 +309,7 @@ export function MapPage() {
     if (typeof window === 'undefined') return;
     async function loadMap() {
       try {
+        const echarts = await import('echarts');
         const chinaMap = await fetch('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json').then(r => r.json());
         echarts.registerMap('china', chinaMap);
         setMapReady(true);
