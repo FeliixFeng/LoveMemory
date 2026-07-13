@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     container_name: love-memory
@@ -10,14 +8,9 @@ services:
     env_file:
       - ./.env.production
     volumes:
-      # SQLite database (named volume for proper file locking)
-      - db-data:/app/db
-      # Photo uploads persistence (bind mount)
+      # SQLite database (bind mount, same as uploads)
+      - ./data:/app/db
+      # Photo uploads persistence
       - ./public/uploads:/app/public/uploads
-      # Data directory for backups
-      - ./data:/app/data
       # System time
       - /etc/localtime:/etc/localtime:ro
-
-volumes:
-  db-data:
