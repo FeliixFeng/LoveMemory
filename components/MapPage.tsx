@@ -58,7 +58,7 @@ function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<s
   useEffect(() => {
     Promise.all([
       import('echarts'),
-      fetch('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json').then(r => r.json())
+      fetch('/china.json').then(r => r.json())
     ]).then(([echartsMod, chinaMap]) => {
       echartsMod.registerMap('china', chinaMap);
       setEcharts(echartsMod);
