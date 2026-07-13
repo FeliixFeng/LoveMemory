@@ -31,7 +31,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <script dangerouslySetInnerHTML={{ __html: `
+          // 开发模式：清除 Service Worker 缓存 + 禁用浏览器缓存
           if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              regs.forEach(function(reg) { reg.unregister(); });
+            });
+            caches.keys().then(function(names) {
+              names.forEach(function(name) { caches.delete(name); });
+            });
+          }
+          // 生产模式：注册 Service Worker
+          if ('serviceWorker' in navigator && location.protocol === 'https:') {
             window.addEventListener('load', function() {
               navigator.serviceWorker.register('/sw.js').catch(function() {});
             });

@@ -21,7 +21,10 @@ const nextConfig = {
       ...(process.env.NODE_ENV !== 'production' ? [{
         source: '/(.*)',
         headers: [
-          { key: 'Cache-Control', value: 'no-store, must-revalidate' },
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate, proxy-revalidate' },
+          { key: 'Pragma', value: 'no-cache' },
+          { key: 'Expires', value: '0' },
+          { key: 'Surrogate-Control', value: 'no-store' },
         ],
       }] : []),
     ];
