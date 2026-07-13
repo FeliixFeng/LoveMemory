@@ -32,3 +32,5 @@ data/*.json
 !data/.gitkeep
 tsconfig.tsbuildinfo
 prisma/data/
+db.sqlite
+data/*.sqlite*
