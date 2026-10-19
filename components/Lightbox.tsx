@@ -64,7 +64,7 @@ export function Lightbox({
 
       {/* Counter */}
       {hasMultiple && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-white/10 text-white/60 text-xs z-10" style={{ fontFamily: 'Playfair Display, serif' }}>
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-white/10 text-white/60 text-xs z-10" style={{ fontFamily: 'var(--lm-font-display)' }}>
           {index + 1} / {photos.length}
         </div>
       )}

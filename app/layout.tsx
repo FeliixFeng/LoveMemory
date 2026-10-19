@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import { THEME } from './lib/theme';
 
 export const metadata: Metadata = {
   title: 'LoveMemory | 珍藏回忆',
@@ -16,7 +17,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#d48b60'
+  themeColor: THEME.accent
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -18,7 +18,7 @@ export function ConfirmDialog({
       onClose={onCancel}
       layer="modal"
       backdropClassName="bg-black/30 backdrop-blur-[2px]"
-      panelClassName="w-full sm:max-w-sm bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl overflow-hidden pb-[env(safe-area-inset-bottom)]"
+      panelClassName="w-full sm:max-w-sm bg-lm-bg rounded-t-2xl sm:rounded-2xl overflow-hidden pb-[env(safe-area-inset-bottom)]"
     >
         <div className="w-10 h-1 bg-amber-200 rounded-full mx-auto mt-4 mb-3 sm:hidden" />
 
@@ -28,12 +28,12 @@ export function ConfirmDialog({
             {danger ? '⚠️' : '❓'}
           </div>
 
-          <h3 className="text-base font-bold text-[#3d281c] mb-2" style={{ fontFamily: 'Noto Serif SC, serif' }}>{title}</h3>
-          <p className="text-sm text-[#5c3d2a]/60 mb-6">{message}</p>
+          <h3 className="text-base font-bold text-lm-ink mb-2" style={{ fontFamily: 'var(--lm-font-serif)' }}>{title}</h3>
+          <p className="text-sm text-lm-body/60 mb-6">{message}</p>
 
           <div className="flex gap-3">
-            <button onClick={onCancel} className="flex-1 py-3 bg-white border border-[#efd8c3] text-[#3d281c] rounded-xl font-medium active:scale-[0.98] transition-transform">取消</button>
-            <button onClick={onConfirm} className={`flex-1 py-3 text-white rounded-xl font-medium active:scale-[0.98] transition-transform ${danger ? 'bg-red-500 shadow-red-200' : 'bg-[#d48b60] shadow-amber-200'} shadow-lg`}>{confirmLabel}</button>
+            <button onClick={onCancel} className="flex-1 py-3 bg-white border border-lm-line text-lm-ink rounded-xl font-medium active:scale-[0.98] transition-transform">取消</button>
+            <button onClick={onConfirm} className={`flex-1 py-3 text-white rounded-xl font-medium active:scale-[0.98] transition-transform ${danger ? 'bg-red-500 shadow-red-200' : 'bg-lm-accent shadow-amber-200'} shadow-lg`}>{confirmLabel}</button>
           </div>
         </div>
     </Overlay>

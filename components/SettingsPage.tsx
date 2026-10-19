@@ -49,7 +49,7 @@ export function SettingsPage() {
     }
   }
 
-  if (!data) return <div className="space-y-4"><div className="h-10 bg-[#efd8c3]/20 rounded-xl animate-pulse" /><div className="h-40 bg-[#efd8c3]/20 rounded-2xl animate-pulse" /></div>;
+  if (!data) return <div className="space-y-4"><div className="h-10 bg-lm-line/20 rounded-xl animate-pulse" /><div className="h-40 bg-lm-line/20 rounded-2xl animate-pulse" /></div>;
 
   const visibleDefaults = HERO_IMAGES.filter(u => !(data.hiddenDefaultCovers || []).includes(u));
   const hasHidden = (data.hiddenDefaultCovers || []).length > 0;
@@ -70,7 +70,7 @@ export function SettingsPage() {
       {/* Page header */}
       <div className="flex items-center gap-2">
         <span className="text-xl">⚙️</span>
-        <h1 className="text-lg font-bold text-[#3d281c]" style={{ fontFamily: 'Noto Serif SC, serif' }}>设置</h1>
+        <h1 className="text-lg font-bold text-lm-ink" style={{ fontFamily: 'var(--lm-font-serif)' }}>设置</h1>
       </div>
 
       {/* Tabs */}
@@ -79,7 +79,7 @@ export function SettingsPage() {
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex-1 py-2.5 text-xs rounded-xl transition-all ${tab === t.key ? 'bg-gradient-to-r from-[#d48b60] to-[#aa6f4d] text-white font-semibold shadow-sm' : 'text-[#5c3d2a]/40 hover:text-[#5c3d2a]/60 hover:bg-[#efd8c3]/20'}`}
+            className={`flex-1 py-2.5 text-xs rounded-xl transition-all ${tab === t.key ? 'bg-gradient-to-r from-lm-accent to-lm-accent-deep text-white font-semibold shadow-sm' : 'text-lm-body/40 hover:text-lm-body/60 hover:bg-lm-line/20'}`}
           >
             {t.icon} {t.label}
           </button>
@@ -91,20 +91,20 @@ export function SettingsPage() {
         <div className="lm-card rounded-2xl p-5 space-y-4">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-lg">📅</span>
-            <h2 className="text-sm font-bold text-[#3d281c]">在一起的日子</h2>
+            <h2 className="text-sm font-bold text-lm-ink">在一起的日子</h2>
           </div>
           <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-100">
             <span className="text-2xl">💕</span>
             <div>
-              <p className="text-xs text-[#5c3d2a]/50">起始日期</p>
-              <p className="text-base font-bold text-[#3d281c]" style={{ fontFamily: 'Noto Serif SC, serif' }}>{fmt(data.startDate)}</p>
+              <p className="text-xs text-lm-body/50">起始日期</p>
+              <p className="text-base font-bold text-lm-ink" style={{ fontFamily: 'var(--lm-font-serif)' }}>{fmt(data.startDate)}</p>
             </div>
           </div>
           <input
             type="date"
             value={data.startDate}
             onChange={e => withAuth(() => void save({ ...data, startDate: e.target.value }, '已保存'))}
-            className="w-full bg-white border border-[#efd8c3]/60 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#d48b60] transition-colors"
+            className="w-full bg-white border border-lm-line/60 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-lm-accent transition-colors"
           />
         </div>
       )}
@@ -116,7 +116,7 @@ export function SettingsPage() {
             <div className="lm-card rounded-2xl p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <span className="text-base">🖼</span>
-                <p className="text-xs font-medium text-[#5c3d2a]/60">我的封面</p>
+                <p className="text-xs font-medium text-lm-body/60">我的封面</p>
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {data.customCovers.map((url, i) => (
@@ -154,7 +154,7 @@ export function SettingsPage() {
                 };
                 input.click();
               })}
-              className="w-full py-3 bg-white border-2 border-dashed border-[#efd8c3] rounded-xl text-sm text-[#5c3d2a]/40 hover:border-[#d48b60] hover:text-[#d48b60] transition-colors flex items-center justify-center gap-2"
+              className="w-full py-3 bg-white border-2 border-dashed border-lm-line rounded-xl text-sm text-lm-body/40 hover:border-lm-accent hover:text-lm-accent transition-colors flex items-center justify-center gap-2"
             >
               <span className="text-lg">+</span>
               <span>添加封面图片</span>
@@ -166,10 +166,10 @@ export function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-base">🎨</span>
-                  <p className="text-xs font-medium text-[#5c3d2a]/60">默认封面</p>
+                  <p className="text-xs font-medium text-lm-body/60">默认封面</p>
                 </div>
                 {hasHidden && (
-                  <button onClick={() => withAuth(() => void save({ ...data, hiddenDefaultCovers: [] }, '已恢复默认'))} className="text-[10px] text-[#d48b60] hover:underline">恢复全部默认</button>
+                  <button onClick={() => withAuth(() => void save({ ...data, hiddenDefaultCovers: [] }, '已恢复默认'))} className="text-[10px] text-lm-accent hover:underline">恢复全部默认</button>
                 )}
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -194,7 +194,7 @@ export function SettingsPage() {
           <div className="lm-card rounded-2xl p-4 space-y-3">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-base">💬</span>
-              <p className="text-xs font-medium text-[#5c3d2a]/60">添加新语录</p>
+              <p className="text-xs font-medium text-lm-body/60">添加新语录</p>
             </div>
             <div className="flex gap-2">
               <input
@@ -208,28 +208,28 @@ export function SettingsPage() {
                   }
                 }}
                 placeholder="输入一句情话..."
-                className="flex-1 bg-white border border-[#efd8c3]/60 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#d48b60] transition-colors"
+                className="flex-1 bg-white border border-lm-line/60 rounded-xl px-3 py-2 text-sm outline-none focus:border-lm-accent transition-colors"
               />
               <button onClick={() => {
                 if (!newQuote.trim()) return;
                 withAuth(() => void save({ ...data, loveQuotes: [...data.loveQuotes, { id: Date.now(), content: newQuote.trim() }] }, '已添加'));
                 setNewQuote('');
-              }} className="px-4 py-2 bg-gradient-to-r from-[#d48b60] to-[#aa6f4d] text-white rounded-xl text-sm font-medium shrink-0 active:scale-95 transition-transform">添加</button>
+              }} className="px-4 py-2 bg-gradient-to-r from-lm-accent to-lm-accent-deep text-white rounded-xl text-sm font-medium shrink-0 active:scale-95 transition-transform">添加</button>
             </div>
           </div>
 
           {data.loveQuotes.length === 0 ? (
             <div className="lm-card rounded-2xl p-8 text-center">
               <span className="text-3xl mb-2 block">💬</span>
-              <p className="text-xs text-[#5c3d2a]/30">暂无语录</p>
+              <p className="text-xs text-lm-body/30">暂无语录</p>
             </div>
           ) : (
             <div className="space-y-2">
               {data.loveQuotes.map((q, i) => (
                 <div key={q.id} className="lm-card rounded-2xl px-4 py-3 flex items-center gap-3">
-                  <span className="w-6 h-6 rounded-full bg-[#efd8c3]/30 flex items-center justify-center text-[10px] text-[#5c3d2a]/30 shrink-0">{i + 1}</span>
-                  <span className="flex-1 text-sm text-[#3d281c]" style={{ fontFamily: 'Noto Serif SC, serif' }}>{q.content}</span>
-                  <button onClick={() => withAuth(() => setConfirm({ title: '确认删除语录', message: '确定要删除这条语录吗？', onConfirm: () => void save({ ...data, loveQuotes: data.loveQuotes.filter(x => x.id !== q.id) }, '已删除') }))} className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs text-[#5c3d2a]/20 hover:text-red-400 hover:bg-red-50 transition-colors">×</button>
+                  <span className="w-6 h-6 rounded-full bg-lm-line/30 flex items-center justify-center text-[10px] text-lm-body/30 shrink-0">{i + 1}</span>
+                  <span className="flex-1 text-sm text-lm-ink" style={{ fontFamily: 'var(--lm-font-serif)' }}>{q.content}</span>
+                  <button onClick={() => withAuth(() => setConfirm({ title: '确认删除语录', message: '确定要删除这条语录吗？', onConfirm: () => void save({ ...data, loveQuotes: data.loveQuotes.filter(x => x.id !== q.id) }, '已删除') }))} className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs text-lm-body/20 hover:text-red-400 hover:bg-red-50 transition-colors">×</button>
                 </div>
               ))}
             </div>
@@ -243,13 +243,13 @@ export function SettingsPage() {
           <div className="lm-card rounded-2xl p-4 space-y-3">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-base">⏰</span>
-              <p className="text-xs font-medium text-[#5c3d2a]/60">添加倒计时</p>
+              <p className="text-xs font-medium text-lm-body/60">添加倒计时</p>
             </div>
             <div className="flex gap-2">
               <select
                 value={newCountdown.emoji}
                 onChange={e => setNewCountdown(d => ({ ...d, emoji: e.target.value }))}
-                className="bg-white border border-[#efd8c3]/60 rounded-xl px-2 py-2 text-sm outline-none focus:border-[#d48b60] transition-colors"
+                className="bg-white border border-lm-line/60 rounded-xl px-2 py-2 text-sm outline-none focus:border-lm-accent transition-colors"
               >
                 <option value="🎂">🎂 生日</option>
                 <option value="💝">💝 纪念日</option>
@@ -262,7 +262,7 @@ export function SettingsPage() {
                 value={newCountdown.label}
                 onChange={e => setNewCountdown(d => ({ ...d, label: e.target.value }))}
                 placeholder="名称"
-                className="flex-1 bg-white border border-[#efd8c3]/60 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#d48b60] transition-colors"
+                className="flex-1 bg-white border border-lm-line/60 rounded-xl px-3 py-2 text-sm outline-none focus:border-lm-accent transition-colors"
               />
             </div>
             <div className="flex gap-2">
@@ -270,7 +270,7 @@ export function SettingsPage() {
                 type="date"
                 value={newCountdown.date}
                 onChange={e => setNewCountdown(d => ({ ...d, date: e.target.value }))}
-                className="flex-1 bg-white border border-[#efd8c3]/60 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#d48b60] transition-colors"
+                className="flex-1 bg-white border border-lm-line/60 rounded-xl px-3 py-2 text-sm outline-none focus:border-lm-accent transition-colors"
               />
               <button
                 onClick={() => {
@@ -278,7 +278,7 @@ export function SettingsPage() {
                   withAuth(() => void save({ ...data, countdowns: [...(data.countdowns || []), { ...newCountdown, id: Date.now() }] }, '已添加'));
                   setNewCountdown({ label: '', date: '', emoji: '🎂' });
                 }}
-                className="px-4 py-2 bg-gradient-to-r from-[#d48b60] to-[#aa6f4d] text-white rounded-xl text-sm font-medium shrink-0 active:scale-95 transition-transform"
+                className="px-4 py-2 bg-gradient-to-r from-lm-accent to-lm-accent-deep text-white rounded-xl text-sm font-medium shrink-0 active:scale-95 transition-transform"
               >添加</button>
             </div>
           </div>
@@ -286,7 +286,7 @@ export function SettingsPage() {
           {(data.countdowns || []).length === 0 ? (
             <div className="lm-card rounded-2xl p-8 text-center">
               <span className="text-3xl mb-2 block">⏰</span>
-              <p className="text-xs text-[#5c3d2a]/30">暂无倒计时</p>
+              <p className="text-xs text-lm-body/30">暂无倒计时</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -300,16 +300,16 @@ export function SettingsPage() {
                 })();
                 return (
                   <div key={c.id} className="lm-card rounded-2xl px-4 py-3 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#f0c8a8] to-[#d48b60] flex items-center justify-center text-lg shrink-0">{c.emoji}</div>
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lm-blush to-lm-accent flex items-center justify-center text-lg shrink-0">{c.emoji}</div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#3d281c] truncate">{c.label}</p>
-                      <p className="text-[10px] text-[#5c3d2a]/40">{c.date}</p>
+                      <p className="text-sm font-medium text-lm-ink truncate">{c.label}</p>
+                      <p className="text-[10px] text-lm-body/40">{c.date}</p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-lg font-bold text-[#d48b60]" style={{ fontFamily: 'Playfair Display, serif' }}>{daysLeft}</p>
-                      <p className="text-[9px] text-[#5c3d2a]/40">天后</p>
+                      <p className="text-lg font-bold text-lm-accent" style={{ fontFamily: 'var(--lm-font-display)' }}>{daysLeft}</p>
+                      <p className="text-[9px] text-lm-body/40">天后</p>
                     </div>
-                    <button onClick={() => withAuth(() => setConfirm({ title: '确认删除倒计时', message: '确定要删除这个倒计时吗？', onConfirm: () => void save({ ...data, countdowns: (data.countdowns || []).filter(x => x.id !== c.id) }, '已删除') }))} className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs text-[#5c3d2a]/20 hover:text-red-400 hover:bg-red-50 transition-colors">×</button>
+                    <button onClick={() => withAuth(() => setConfirm({ title: '确认删除倒计时', message: '确定要删除这个倒计时吗？', onConfirm: () => void save({ ...data, countdowns: (data.countdowns || []).filter(x => x.id !== c.id) }, '已删除') }))} className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs text-lm-body/20 hover:text-red-400 hover:bg-red-50 transition-colors">×</button>
                   </div>
                 );
               })}

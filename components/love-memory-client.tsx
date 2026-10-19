@@ -100,15 +100,15 @@ export function LoveMemoryClient() {
     return () => setFloatingButton(null);
   }, [withAuth]);
 
-  if (loading) return <main className="flex min-h-[60vh] items-center justify-center"><div className="lm-card rounded-full px-6 py-3 text-sm font-medium text-[#5c3d2a]"><span className="mr-2">💕</span>加载中...</div></main>;
+  if (loading) return <main className="flex min-h-[60vh] items-center justify-center"><div className="lm-card rounded-full px-6 py-3 text-sm font-medium text-lm-body"><span className="mr-2">💕</span>加载中...</div></main>;
 
   if (loadError) return (
     <main className="flex min-h-[60vh] items-center justify-center">
       <div className="lm-card rounded-2xl p-6 text-center">
         <span className="text-3xl mb-3 block">😥</span>
-        <p className="text-sm text-[#3d281c] mb-1 font-bold">加载失败</p>
-        <p className="text-xs text-[#5c3d2a]/50 mb-4">网络连接似乎有问题</p>
-        <button onClick={() => { /* @ts-ignore */ }} className="px-5 py-2 bg-[#aa6f4d] text-white rounded-xl text-sm font-medium active:scale-95 transition-transform">重新加载</button>
+        <p className="text-sm text-lm-ink mb-1 font-bold">加载失败</p>
+        <p className="text-xs text-lm-body/50 mb-4">网络连接似乎有问题</p>
+        <button onClick={() => { /* @ts-ignore */ }} className="px-5 py-2 bg-lm-accent-deep text-white rounded-xl text-sm font-medium active:scale-95 transition-transform">重新加载</button>
       </div>
     </main>
   );
@@ -152,7 +152,7 @@ export function LoveMemoryClient() {
         <StatsSection events={data.events} photos={data.photos} expenses={data.expenses} days={days} />
 
         <footer className="px-6 pt-2 pb-2 text-center">
-          <p className="text-[10px] text-[#5c3d2a]/20">💕 LoveMemory · Made with ❤️ for us</p>
+          <p className="text-[10px] text-lm-body/20">💕 LoveMemory · Made with ❤️ for us</p>
         </footer>
       </main>
 

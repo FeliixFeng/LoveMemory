@@ -24,18 +24,18 @@ export function ExpenseItem({
   const colorClass = CATEGORY_COLORS[expense.category] || CATEGORY_COLORS.other;
 
   return (
-    <div className="flex items-center gap-3 py-2.5 px-3 rounded-xl bg-white/60 border border-[#efd8c3]/30">
+    <div className="flex items-center gap-3 py-2.5 px-3 rounded-xl bg-white/60 border border-lm-line/30">
       <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${colorClass}`}>
         {cat?.emoji || '📝'}
       </div>
       <div className="flex-1 min-w-0">
-        <span className="text-xs font-medium text-[#3d281c]">{cat?.label || expense.category}</span>
-        {expense.note && <p className="text-[10px] text-[#5c3d2a]/50 truncate">{expense.note}</p>}
+        <span className="text-xs font-medium text-lm-ink">{cat?.label || expense.category}</span>
+        {expense.note && <p className="text-[10px] text-lm-body/50 truncate">{expense.note}</p>}
       </div>
-      <span className="text-sm font-semibold text-[#d48b60]">{formatCurrency(expense.amount)}</span>
+      <span className="text-sm font-semibold text-lm-accent">{formatCurrency(expense.amount)}</span>
       <button
         onClick={onDelete}
-        className="w-8 h-8 -mr-1 rounded-full flex items-center justify-center text-[10px] text-[#5c3d2a]/20 hover:text-red-400 hover:bg-red-50 transition-colors"
+        className="w-8 h-8 -mr-1 rounded-full flex items-center justify-center text-[10px] text-lm-body/20 hover:text-red-400 hover:bg-red-50 transition-colors"
       >
         ✕
       </button>

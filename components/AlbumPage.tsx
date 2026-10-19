@@ -27,12 +27,12 @@ export function AlbumPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-bold text-[#3d281c]" style={{ fontFamily: 'Noto Serif SC, serif' }}>📷 相册</h1>
+      <h1 className="text-lg font-bold text-lm-ink" style={{ fontFamily: 'var(--lm-font-serif)' }}>📷 相册</h1>
 
       {eventsWithPhotos.length === 0 && standalonePhotos.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16">
           <span className="text-4xl mb-3">📷</span>
-          <p className="text-sm text-[#5c3d2a]/50">还没有照片</p>
+          <p className="text-sm text-lm-body/50">还没有照片</p>
         </div>
       ) : (
         <>
@@ -44,10 +44,10 @@ export function AlbumPage() {
                 {/* Event header */}
                 <button
                   onClick={() => setExpandedId(isExpanded ? null : String(event.id))}
-                  className="w-full flex items-center gap-3 p-4 text-left hover:bg-[#efd8c3]/10 transition-colors"
+                  className="w-full flex items-center gap-3 p-4 text-left hover:bg-lm-line/10 transition-colors"
                 >
                   {/* Cover photo */}
-                  <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-[#efd8c3]/20 relative">
+                  <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-lm-line/20 relative">
                     {eventPhotos[0] && (
                       <SafeImage src={eventPhotos[0].thumbUrl || eventPhotos[0].displayUrl || eventPhotos[0].url} alt="" fill sizes="56px" className="object-cover" />
                     )}
@@ -55,14 +55,14 @@ export function AlbumPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-base">{getEmoji(event.icon)}</span>
-                      <h3 className="text-sm font-bold text-[#3d281c] truncate" style={{ fontFamily: 'Noto Serif SC, serif' }}>{event.title || '未命名'}</h3>
+                      <h3 className="text-sm font-bold text-lm-ink truncate" style={{ fontFamily: 'var(--lm-font-serif)' }}>{event.title || '未命名'}</h3>
                     </div>
-                    <div className="flex items-center gap-2 mt-0.5 text-[11px] text-[#5c3d2a]/45">
+                    <div className="flex items-center gap-2 mt-0.5 text-[11px] text-lm-body/45">
                       <span>{fmt(event.date)}</span>
                       <span>· {eventPhotos.length} 张照片</span>
                     </div>
                   </div>
-                  <span className="text-[#5c3d2a]/30 text-sm">{isExpanded ? '▲' : '▼'}</span>
+                  <span className="text-lm-body/30 text-sm">{isExpanded ? '▲' : '▼'}</span>
                 </button>
 
                 {/* Photos grid */}
@@ -71,7 +71,7 @@ export function AlbumPage() {
                     {eventPhotos.map((p, i) => (
                       <div
                         key={p.url}
-                        className="aspect-[4/5] rounded-lg overflow-hidden bg-[#efd8c3]/20 cursor-pointer hover:opacity-90 transition-opacity relative"
+                        className="aspect-[4/5] rounded-lg overflow-hidden bg-lm-line/20 cursor-pointer hover:opacity-90 transition-opacity relative"
                         onClick={() => setViewPhoto({ photos: eventPhotos, index: i })}
                       >
                         <SafeImage src={p.thumbUrl || p.displayUrl || p.url} alt="" fill sizes="(max-width: 640px) 20vw, 150px" className="object-cover" />
@@ -86,12 +86,12 @@ export function AlbumPage() {
           {/* Standalone photos */}
           {standalonePhotos.length > 0 && (
             <div className="lm-card rounded-2xl p-4">
-              <h3 className="text-sm font-bold text-[#3d281c] mb-3">其他照片 ({standalonePhotos.length})</h3>
+              <h3 className="text-sm font-bold text-lm-ink mb-3">其他照片 ({standalonePhotos.length})</h3>
               <div className="grid grid-cols-5 md:grid-cols-6 gap-1 stagger">
                 {standalonePhotos.map((p, i) => (
                   <div
                     key={p.url}
-                    className="aspect-[4/5] rounded-lg overflow-hidden bg-[#efd8c3]/20 cursor-pointer hover:opacity-90 transition-opacity relative"
+                    className="aspect-[4/5] rounded-lg overflow-hidden bg-lm-line/20 cursor-pointer hover:opacity-90 transition-opacity relative"
                     onClick={() => setViewPhoto({ photos: standalonePhotos, index: i })}
                   >
                     <SafeImage src={p.thumbUrl || p.displayUrl || p.url} alt="" fill sizes="(max-width: 640px) 20vw, 150px" className="object-cover" />

@@ -89,7 +89,7 @@ export const HorizontalTimeline = memo(function HorizontalTimeline({
                 left: `${padX + nodeMinWidth / 2}px`,
                 width: `${(items.length - 1) * (nodeMinWidth + nodeGap)}px`,
                 height: '1.5px',
-                background: 'linear-gradient(to right, rgba(212,139,96,0.15), rgba(212,139,96,0.5) 20%, rgba(170,111,77,0.65) 50%, rgba(212,139,96,0.5) 80%, rgba(212,139,96,0.15))'
+                background: 'linear-gradient(to right, rgba(204,146,102,0.15), rgba(204,146,102,0.5) 20%, rgba(173,124,87,0.65) 50%, rgba(204,146,102,0.5) 80%, rgba(204,146,102,0.15))'
               }}
             />
             <div
@@ -99,7 +99,7 @@ export const HorizontalTimeline = memo(function HorizontalTimeline({
                 left: `${padX + nodeMinWidth / 2}px`,
                 width: `${(items.length - 1) * (nodeMinWidth + nodeGap)}px`,
                 height: '8px',
-                background: 'linear-gradient(to right, transparent, rgba(212,139,96,0.15) 20%, rgba(170,111,77,0.2) 50%, rgba(212,139,96,0.15) 80%, transparent)',
+                background: 'linear-gradient(to right, transparent, rgba(204,146,102,0.15) 20%, rgba(173,124,87,0.2) 50%, rgba(204,146,102,0.15) 80%, transparent)',
                 filter: 'blur(4px)'
               }}
             />
@@ -142,10 +142,10 @@ export const HorizontalTimeline = memo(function HorizontalTimeline({
                     width: `${yearNodeSize}px`,
                     height: `${yearNodeSize}px`,
                     marginTop: '13px',
-                    background: 'linear-gradient(135deg, rgba(212,139,96,0.5), rgba(170,111,77,0.5))',
+                    background: 'linear-gradient(135deg, rgba(204,146,102,0.5), rgba(173,124,87,0.5))',
                     border: '1.5px solid rgba(255,255,255,0.35)',
                     backdropFilter: 'blur(4px)',
-                    fontFamily: 'Playfair Display, serif',
+                    fontFamily: 'var(--lm-font-display)',
                     fontSize: '11px',
                     fontWeight: 700,
                     color: '#fff',
@@ -179,7 +179,7 @@ export const HorizontalTimeline = memo(function HorizontalTimeline({
                     top: '-18px',
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    background: 'radial-gradient(circle, rgba(212,139,96,0.25) 0%, transparent 70%)',
+                    background: 'radial-gradient(circle, rgba(204,146,102,0.25) 0%, transparent 70%)',
                     animationDuration: '2s'
                   }}
                 />
@@ -193,11 +193,11 @@ export const HorizontalTimeline = memo(function HorizontalTimeline({
                   marginTop: isSelected ? '-9px' : '0',
                   fontSize: isSelected ? '32px' : '26px',
                   background: isSelected
-                    ? 'linear-gradient(135deg, #d48b60, #aa6f4d)'
+                    ? 'linear-gradient(135deg, var(--lm-accent), var(--lm-accent-deep))'
                     : 'rgba(0,0,0,0.25)',
                   border: isSelected ? '3px solid rgba(255,255,255,0.6)' : '2px solid rgba(255,255,255,0.2)',
                   boxShadow: isSelected
-                    ? '0 0 24px rgba(212,139,96,0.5), 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2)'
+                    ? '0 0 24px rgba(204,146,102,0.5), 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2)'
                     : '0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.1)',
                   backdropFilter: 'blur(4px)'
                 }}
@@ -220,7 +220,7 @@ export const HorizontalTimeline = memo(function HorizontalTimeline({
                 className="leading-tight"
                 style={{
                   fontSize: '10px',
-                  color: isSelected ? '#d48b60' : 'rgba(255,255,255,0.3)',
+                  color: isSelected ? 'var(--lm-accent)' : 'rgba(255,255,255,0.3)',
                   fontWeight: isSelected ? 600 : 400,
                   textShadow: '0 1px 2px rgba(0,0,0,0.3)'
                 }}

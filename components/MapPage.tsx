@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { THEME } from '../app/lib/theme';
 import { Event } from '../lib/types';
 
 const CITY_TO_PROVINCE: Record<string, string> = {
@@ -74,8 +75,8 @@ function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<s
     return (
       <div className="h-[400px] flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-[#d48b60]/20 border-t-[#d48b60] rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-xs text-[#5c3d2a]/40">地图加载中...</p>
+          <div className="w-8 h-8 border-2 border-lm-accent/20 border-t-lm-accent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-xs text-lm-body/40">地图加载中...</p>
         </div>
       </div>
     );
@@ -86,12 +87,12 @@ function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<s
     geo: {
       map: 'china', roam: true, zoom: 1.2,
       label: { show: false },
-      itemStyle: { areaColor: '#f5f0eb', borderColor: '#d4c4b0', borderWidth: 0.5 },
-      emphasis: { label: { show: true, fontSize: 10, color: '#3d281c', textBorderColor: '#fff', textBorderWidth: 2 }, itemStyle: { areaColor: '#e8d5c4' } },
+      itemStyle: { areaColor: THEME.map.areaLight, borderColor: THEME.map.areaMid, borderWidth: 0.5 },
+      emphasis: { label: { show: true, fontSize: 10, color: THEME.ink, textBorderColor: '#fff', textBorderWidth: 2 }, itemStyle: { areaColor: THEME.map.areaDeep } },
       regions: Array.from(visitedProvinces).map(p => ({
         name: { '上海':'上海市','北京':'北京市','天津':'天津市','重庆':'重庆市','安徽':'安徽省','浙江':'浙江省','江苏':'江苏省','广东':'广东省','四川':'四川省','湖北':'湖北省','湖南':'湖南省','河南':'河南省','山东':'山东省','福建':'福建省','云南':'云南省','陕西':'陕西省','黑龙江':'黑龙江省','吉林':'吉林省','辽宁':'辽宁省','山西':'山西省','河北':'河北省','甘肃':'甘肃省','宁夏':'宁夏回族自治区','青海':'青海省','新疆':'新疆维吾尔自治区','广西':'广西壮族自治区','贵州':'贵州省','江西':'江西省','内蒙古':'内蒙古自治区','西藏':'西藏自治区','海南':'海南省','台湾':'台湾省' }[p] || p,
         label: { show: false },
-        itemStyle: { areaColor: { type: 'linear', x: 0, y: 0, x2: 1, y2: 1, colorStops: [{ offset: 0, color: '#d48b60' }, { offset: 1, color: '#aa6f4d' }] }, borderColor: '#aa6f4d', borderWidth: 1 }
+        itemStyle: { areaColor: { type: 'linear', x: 0, y: 0, x2: 1, y2: 1, colorStops: [{ offset: 0, color: THEME.accent }, { offset: 1, color: THEME.accentDeep }] }, borderColor: THEME.accentDeep, borderWidth: 1 }
       }))
     },
     series: [{
@@ -178,8 +179,8 @@ function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<s
           return { name: c.city, value: [...coords, 10] };
         }).filter(Boolean);
       })(),
-      label: { show: true, position: 'bottom', formatter: '{b}', fontSize: 9, color: '#3d281c', distance: 5 },
-      itemStyle: { color: '#d48b60', borderColor: '#fff', borderWidth: 2, shadowBlur: 6, shadowColor: 'rgba(212,139,96,0.5)' },
+      label: { show: true, position: 'bottom', formatter: '{b}', fontSize: 9, color: THEME.ink, distance: 5 },
+      itemStyle: { color: THEME.accent, borderColor: '#fff', borderWidth: 2, shadowBlur: 6, shadowColor: 'rgba(204,146,102,0.5)' },
       emphasis: { scale: 1.5 }
     }]
   };
@@ -206,32 +207,32 @@ export function MapPage() {
   });
 
   const uniqueCities = [...new Set(visitedCities.map(c => c.city))];
-  if (loading) return <div className="space-y-4"><div className="h-64 bg-[#efd8c3]/20 rounded-2xl animate-pulse" /></div>;
+  if (loading) return <div className="space-y-4"><div className="h-64 bg-lm-line/20 rounded-2xl animate-pulse" /></div>;
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-bold text-[#3d281c]" style={{ fontFamily: 'Noto Serif SC, serif' }}>🗺️ 足迹</h1>
+      <h1 className="text-lg font-bold text-lm-ink" style={{ fontFamily: 'var(--lm-font-serif)' }}>🗺️ 足迹</h1>
       <div className="lm-card rounded-2xl overflow-hidden">
         <MapChart visitedProvinces={visitedProvinces} visitedCities={visitedCities} />
       </div>
       <div className="lm-card rounded-2xl px-4 py-3">
-        <div className="flex justify-center gap-6 text-xs text-[#5c3d2a]/55">
-          <div className="flex items-center gap-1.5"><span>📍</span><span className="font-bold text-[#3d281c]">{visitedProvinces.size}</span><span>个省份</span></div>
-          <div className="flex items-center gap-1.5"><span>🏙️</span><span className="font-bold text-[#3d281c]">{uniqueCities.length}</span><span>座城市</span></div>
+        <div className="flex justify-center gap-6 text-xs text-lm-body/55">
+          <div className="flex items-center gap-1.5"><span>📍</span><span className="font-bold text-lm-ink">{visitedProvinces.size}</span><span>个省份</span></div>
+          <div className="flex items-center gap-1.5"><span>🏙️</span><span className="font-bold text-lm-ink">{uniqueCities.length}</span><span>座城市</span></div>
         </div>
       </div>
       {uniqueCities.length > 0 && (
         <div className="lm-card rounded-2xl p-4">
-          <h3 className="text-sm font-bold text-[#3d281c] mb-3">📍 去过的城市</h3>
+          <h3 className="text-sm font-bold text-lm-ink mb-3">📍 去过的城市</h3>
           <div className="flex flex-wrap gap-2">
-            {uniqueCities.map(city => (<span key={city} className="px-3 py-1.5 rounded-full bg-gradient-to-r from-[#d48b60]/10 to-[#aa6f4d]/10 text-xs text-[#aa6f4d] font-medium">{city}</span>))}
+            {uniqueCities.map(city => (<span key={city} className="px-3 py-1.5 rounded-full bg-gradient-to-r from-lm-accent/10 to-lm-accent-deep/10 text-xs text-lm-accent-deep font-medium">{city}</span>))}
           </div>
         </div>
       )}
       {uniqueCities.length === 0 && (
         <div className="lm-card rounded-2xl p-8 text-center">
           <span className="text-4xl mb-3 block">🗺️</span>
-          <p className="text-sm text-[#5c3d2a]/50">还没有记录足迹</p>
+          <p className="text-sm text-lm-body/50">还没有记录足迹</p>
         </div>
       )}
     </div>

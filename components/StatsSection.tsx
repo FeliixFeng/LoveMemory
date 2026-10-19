@@ -57,15 +57,15 @@ export const StatsSection = memo(function StatsSection({
           ].map(item => (
             <div key={item.label} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r ${item.color} border ${item.border}`}>
               <span className="text-sm">{item.emoji}</span>
-              <span className="font-bold text-[#3d281c] text-xs tabular-nums"><AnimatedNumber value={item.value} duration={item.duration} /></span>
-              <span className="text-[10px] text-[#5c3d2a]/50">{item.label}</span>
+              <span className="font-bold text-lm-ink text-xs tabular-nums"><AnimatedNumber value={item.value} duration={item.duration} /></span>
+              <span className="text-[10px] text-lm-body/50">{item.label}</span>
             </div>
           ))}
           {totalExpenses > 0 && (
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100/50">
               <span className="text-sm">💰</span>
-              <span className="font-bold text-[#d48b60] text-xs tabular-nums">{formatCurrency(Math.round(totalExpenses))}</span>
-              <span className="text-[10px] text-[#5c3d2a]/50">累计</span>
+              <span className="font-bold text-lm-accent text-xs tabular-nums">{formatCurrency(Math.round(totalExpenses))}</span>
+              <span className="text-[10px] text-lm-body/50">累计</span>
             </div>
           )}
         </div>
@@ -80,15 +80,15 @@ export const StatsSection = memo(function StatsSection({
           ].map(item => (
             <div key={item.label} className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r ${item.color} border ${item.border}`}>
               <span className="text-sm">{item.emoji}</span>
-              <span className="font-bold text-[#3d281c] text-xs tabular-nums"><AnimatedNumber value={item.value} duration={item.duration} /></span>
-              <span className="text-[10px] text-[#5c3d2a]/50">{item.label}</span>
+              <span className="font-bold text-lm-ink text-xs tabular-nums"><AnimatedNumber value={item.value} duration={item.duration} /></span>
+              <span className="text-[10px] text-lm-body/50">{item.label}</span>
             </div>
           ))}
           {totalExpenses > 0 && (
             <div className="col-span-2 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100/50">
               <span className="text-sm">💰</span>
-              <span className="font-bold text-[#d48b60] text-xs tabular-nums">{formatCurrency(Math.round(totalExpenses))}</span>
-              <span className="text-[10px] text-[#5c3d2a]/50">累计</span>
+              <span className="font-bold text-lm-accent text-xs tabular-nums">{formatCurrency(Math.round(totalExpenses))}</span>
+              <span className="text-[10px] text-lm-body/50">累计</span>
             </div>
           )}
         </div>

@@ -74,7 +74,7 @@ export function HeroSection({
 
       {/* Top status indicator */}
       <div className="absolute top-3 left-3 z-10">
-        <div className="px-2 py-0.5 rounded-full bg-black/25 text-[9px] text-emerald-400 font-medium tracking-wide" style={{ fontFamily: 'Playfair Display, serif' }}>
+        <div className="px-2 py-0.5 rounded-full bg-black/25 text-[9px] text-emerald-400 font-medium tracking-wide" style={{ fontFamily: 'var(--lm-font-display)' }}>
           {saving ? 'SYNCING' : 'LOVING'}
         </div>
       </div>
@@ -86,7 +86,7 @@ export function HeroSection({
             {countdowns.length > 0 ? (
               <>
                 <div className="text-[10px] mb-0.5">{countdowns[countdownIdx]?.emoji || '💝'} <span className="text-white/50">{countdowns[countdownIdx]?.label || ''}</span></div>
-                <div className="text-lg font-bold text-white leading-none" style={{ fontFamily: 'Playfair Display, serif', textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
+                <div className="text-lg font-bold text-white leading-none" style={{ fontFamily: 'var(--lm-font-display)', textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
                   {countdownDays[countdownIdx] === Infinity ? '--' : countdownDays[countdownIdx]}
                 </div>
                 <div className="text-[9px] text-white/40 mt-0.5">天后</div>
@@ -94,7 +94,7 @@ export function HeroSection({
             ) : (
               <>
                 <div className="text-[10px] text-white/50 mb-0.5">💝 纪念日</div>
-                <div className="text-lg font-bold text-white leading-none" style={{ fontFamily: 'Playfair Display, serif', textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
+                <div className="text-lg font-bold text-white leading-none" style={{ fontFamily: 'var(--lm-font-display)', textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
                   {nextDays}
                 </div>
                 <div className="text-[9px] text-white/40 mt-0.5">天后</div>
@@ -106,15 +106,15 @@ export function HeroSection({
 
       {/* Info overlay - upper center */}
       <div className="absolute inset-0 flex flex-col items-center text-white text-center z-[4] px-6 pointer-events-none pt-[35%] md:pt-[15%]">
-        <span className="text-sm font-medium text-white/90 tracking-[0.3em] uppercase" style={{ fontFamily: 'Playfair Display, serif' }}>TOGETHER FOR</span>
+        <span className="text-sm font-medium text-white/90 tracking-[0.3em] uppercase" style={{ fontFamily: 'var(--lm-font-display)' }}>TOGETHER FOR</span>
         <div className="flex items-baseline mt-1">
-          <span className="text-6xl md:text-7xl font-bold leading-none" style={{ fontFamily: 'Noto Serif SC, serif', textShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>{animDays}</span>
-          <span className="text-xl font-light italic opacity-60 ml-2 mb-1" style={{ fontFamily: 'Playfair Display, serif' }}>Days</span>
+          <span className="text-6xl md:text-7xl font-bold leading-none" style={{ fontFamily: 'var(--lm-font-serif)', textShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>{animDays}</span>
+          <span className="text-xl font-light italic opacity-60 ml-2 mb-1" style={{ fontFamily: 'var(--lm-font-display)' }}>Days</span>
         </div>
         {quotes.length > 0 && (
           <p
             className="text-[11px] text-white/70 italic mt-2"
-            style={{ fontFamily: 'Noto Serif SC, serif', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
+            style={{ fontFamily: 'var(--lm-font-serif)', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
           >
             "{quotes[quoteIdx]?.content}"
           </p>

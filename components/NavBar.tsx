@@ -15,26 +15,26 @@ export function NavBar({ isAuthenticated, onSettings, onPin }: { isAuthenticated
   const pathname = usePathname();
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-40 bg-[#FBF8F4]/85 backdrop-blur-xl border-b border-[#C49A6C]/10">
+    <nav className="fixed top-0 left-0 right-0 z-40 bg-lm-bg/85 backdrop-blur-xl border-b border-lm-accent/10">
       <div className="max-w-lg md:max-w-3xl lg:max-w-6xl mx-auto flex justify-between items-center px-4 py-2.5">
         {/* Left: Logo + Date */}
         <div className="flex items-center gap-3">
           <Link href="/" className="hidden md:block">
-            <span className="text-base font-bold text-gradient" style={{ fontFamily: 'Noto Serif SC, serif' }}>珍藏回忆</span>
+            <span className="text-base font-bold text-gradient font-serif-cn">珍藏回忆</span>
           </Link>
-          <div className="hidden md:block w-px h-4 bg-[#C49A6C]/40" />
+          <div className="hidden md:block w-px h-4 bg-lm-accent/40" />
           <div className="flex flex-col">
-            <span className="text-[9px] font-bold tracking-[0.2em] text-[#C49A6C] uppercase" style={{ fontFamily: 'Playfair Display, serif' }}>TODAY</span>
-            <span suppressHydrationWarning className="text-xs font-semibold text-[#3d281c]">{new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+            <span className="text-[9px] font-bold tracking-[0.2em] text-lm-accent uppercase font-display">TODAY</span>
+            <span suppressHydrationWarning className="text-xs font-semibold text-lm-ink">{new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
           </div>
         </div>
 
         {/* Center: Nav links (desktop) / Title (mobile) */}
         <div className="flex flex-col items-center">
           <Link href="/" className="md:hidden">
-            <span className="text-lg font-bold text-gradient" style={{ fontFamily: 'Noto Serif SC, serif' }}>珍藏回忆</span>
+            <span className="text-lg font-bold text-gradient font-serif-cn">珍藏回忆</span>
           </Link>
-          <span className="text-[8px] text-[#C49A6C] tracking-[0.3em] uppercase md:hidden" style={{ fontFamily: 'Playfair Display, serif' }}>OUR STORY</span>
+          <span className="text-[8px] text-lm-accent tracking-[0.3em] uppercase md:hidden font-display">OUR STORY</span>
           <div className="hidden md:flex items-center gap-1">
             {NAV_LINKS.map(link => {
               const active = pathname === link.href;
@@ -42,12 +42,12 @@ export function NavBar({ isAuthenticated, onSettings, onPin }: { isAuthenticated
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`relative px-3 py-1.5 text-xs rounded-lg transition-all flex items-center gap-1.5 ${active ? 'text-[#C49A6C] font-semibold' : 'text-[#2C2420]/40 hover:text-[#2C2420]/60'}`}
+                  className={`relative px-3 py-1.5 text-xs rounded-lg transition-all flex items-center gap-1.5 ${active ? 'text-lm-accent font-semibold' : 'text-lm-ink-strong/40 hover:text-lm-ink-strong/60'}`}
                 >
                   <span className="text-sm">{link.icon}</span>
                   {link.label}
                   {active && (
-                    <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-[#C49A6C] rounded-full" />
+                    <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-lm-accent rounded-full" />
                   )}
                 </Link>
               );
@@ -57,11 +57,11 @@ export function NavBar({ isAuthenticated, onSettings, onPin }: { isAuthenticated
 
         {/* Right: Auth + Settings */}
         <div className="flex items-center gap-2">
-          <button suppressHydrationWarning onClick={onPin} className={`w-8 h-8 rounded-full border flex items-center justify-center text-sm transition-all ${isAuthenticated ? 'bg-emerald-50 border-emerald-200 text-emerald-600 shadow-sm' : 'bg-white border-[#C49A6C]/20 text-[#5c3d2a]/50 hover:bg-amber-50 hover:border-[#d48b60]/30'}`}>
+          <button suppressHydrationWarning onClick={onPin} className={`w-8 h-8 rounded-full border flex items-center justify-center text-sm transition-all ${isAuthenticated ? 'bg-emerald-50 border-emerald-200 text-emerald-600 shadow-sm' : 'bg-white border-lm-accent/20 text-lm-body/50 hover:bg-amber-50 hover:border-lm-clay/30'}`}>
             {isAuthenticated ? '🔓' : '🔒'}
           </button>
           {onSettings && (
-            <button onClick={onSettings} className="w-8 h-8 rounded-full bg-white border border-[#C49A6C]/20 flex items-center justify-center text-sm hover:bg-amber-50 hover:border-[#d48b60]/30 transition-all">⚙</button>
+            <button onClick={onSettings} className="w-8 h-8 rounded-full bg-white border border-lm-accent/20 flex items-center justify-center text-sm hover:bg-amber-50 hover:border-lm-clay/30 transition-all">⚙</button>
           )}
         </div>
       </div>

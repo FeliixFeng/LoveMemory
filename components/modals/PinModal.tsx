@@ -84,16 +84,16 @@ export function PinModal({
     <Overlay
       onClose={onClose}
       layer="modal"
-      panelClassName={`w-full sm:max-w-sm bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl p-5 pb-[calc(1.25rem_+_env(safe-area-inset-bottom))] ${error ? 'animate-shake' : ''}`}
+      panelClassName={`w-full sm:max-w-sm bg-lm-bg rounded-t-2xl sm:rounded-2xl p-5 pb-[calc(1.25rem_+_env(safe-area-inset-bottom))] ${error ? 'animate-shake' : ''}`}
     >
         <div className="w-10 h-1 bg-amber-200 rounded-full mx-auto mb-4" />
         <h3
-          className="text-base font-bold text-[#3d281c] mb-1 text-center"
-          style={{ fontFamily: 'Noto Serif SC, serif' }}
+          className="text-base font-bold text-lm-ink mb-1 text-center"
+          style={{ fontFamily: 'var(--lm-font-serif)' }}
         >
           输入 PIN 码
         </h3>
-        <p className="text-xs text-[#8b6f5e] text-center mb-5">
+        <p className="text-xs text-lm-muted text-center mb-5">
           请输入 6 位数字 PIN 码以继续操作
         </p>
 
@@ -111,8 +111,8 @@ export function PinModal({
               onFocus={e => e.target.select()}
               disabled={loading}
               className={`w-11 h-13 text-center text-xl font-bold rounded-xl border-2 outline-none transition-colors
-                ${error ? 'border-red-400 bg-red-50 text-red-500' : d ? 'border-[#d48b60] bg-[#fdf5ec] text-[#3d281c]' : 'border-[#efd8c3]/60 bg-white text-[#3d281c]'}
-                focus:border-[#d48b60] focus:bg-[#fdf5ec]
+                ${error ? 'border-red-400 bg-red-50 text-red-500' : d ? 'border-lm-accent bg-lm-bg text-lm-ink' : 'border-lm-line/60 bg-white text-lm-ink'}
+                focus:border-lm-accent focus:bg-lm-bg
                 disabled:opacity-50`}
             />
           ))}
@@ -123,12 +123,12 @@ export function PinModal({
         )}
 
         {loading && (
-          <p className="text-xs text-[#8b6f5e] text-center mb-3">验证中...</p>
+          <p className="text-xs text-lm-muted text-center mb-3">验证中...</p>
         )}
 
         <button
           onClick={onClose}
-          className="w-full py-3 bg-white border border-[#efd8c3]/60 text-[#5c3d2a] rounded-xl font-medium active:scale-[0.98] transition-transform text-sm"
+          className="w-full py-3 bg-white border border-lm-line/60 text-lm-body rounded-xl font-medium active:scale-[0.98] transition-transform text-sm"
         >
           取消
         </button>
