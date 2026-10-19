@@ -26,6 +26,7 @@ npm-debug.log*
 dist/
 build/
 .next/
+.next.bak*/
 
 # Runtime data
 data/*.json

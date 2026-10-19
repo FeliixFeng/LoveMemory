@@ -2,14 +2,47 @@
 
 html { color-scheme: light; scrollbar-gutter: stable; }
 
+/* ─────────────────────────────────────────────────────────────
+   设计 token —— 颜色与字体的唯一来源。
+   组件里不要再写死 hex / 字体名；要改视觉只改这一块。
+   ───────────────────────────────────────────────────────────── */
 :root {
+  /* 底色与面 */
   --lm-bg: #FBF8F4;
   --lm-card: rgba(255,255,255,0.7);
-  --lm-border: rgba(212,165,116,0.15);
-  --lm-accent: #C49A6C;
-  --lm-accent-deep: #A67C52;
-  --lm-text: #2C2420;
-  --lm-text-dim: #8C7E74;
+  --lm-border: rgba(173,124,87,0.15);
+  --lm-line: #EFD8C3;           /* 浅色描边 / 色块 */
+
+  /* 文字（由重到轻） */
+  --lm-ink-strong: #2C2420;     /* 大标题、天数数字 */
+  --lm-ink: #3D281C;            /* 区块标题 */
+  --lm-body: #5C3D2A;           /* 正文 */
+  --lm-muted: #8C7E74;          /* 次要说明 */
+
+  /* 强调色（折中：介于原赤陶与暖金之间，2026-10-19 定） */
+  --lm-accent: #CC9266;
+  --lm-accent-deep: #AD7C57;
+  --lm-blush: #F0C8A8;          /* 头像渐变暖粉端 */
+
+  /* 字体栈 */
+  --lm-font-serif: "Noto Serif SC", "Songti SC", "STSong", serif;
+  --lm-font-display: "Playfair Display", "Times New Roman", serif;
+}
+
+/* 把 token 暴露成 Tailwind 工具类：bg-lm-accent / text-lm-body/50 / font-serif-cn */
+@theme inline {
+  --color-lm-bg: var(--lm-bg);
+  --color-lm-line: var(--lm-line);
+  --color-lm-ink-strong: var(--lm-ink-strong);
+  --color-lm-ink: var(--lm-ink);
+  --color-lm-body: var(--lm-body);
+  --color-lm-muted: var(--lm-muted);
+  --color-lm-accent: var(--lm-accent);
+  --color-lm-accent-deep: var(--lm-accent-deep);
+  --color-lm-blush: var(--lm-blush);
+
+  --font-serif-cn: var(--lm-font-serif);
+  --font-display: var(--lm-font-display);
 }
 
 * { box-sizing: border-box; }
@@ -18,21 +51,21 @@ button, input, textarea { font: inherit; }
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: #FBF8F4;
+  background-color: var(--lm-bg);
   background-image:
-    radial-gradient(ellipse at 20% 0%, rgba(196,154,108,0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 100%, rgba(196,154,108,0.06) 0%, transparent 50%);
-  color: var(--lm-text);
+    radial-gradient(ellipse at 20% 0%, rgba(204,146,102,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, rgba(204,146,102,0.06) 0%, transparent 50%);
+  color: var(--lm-ink-strong);
   font-family: "Inter", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
 
 .lm-card {
-  background: rgba(255,255,255,0.7);
-  border: 1px solid rgba(212,165,116,0.12);
+  background: var(--lm-card);
+  border: 1px solid rgba(173,124,87,0.12);
   backdrop-filter: blur(8px);
-  box-shadow: 0 2px 16px rgba(44,36,32,0.04), 0 0 0 1px rgba(212,165,116,0.05);
+  box-shadow: 0 2px 16px rgba(44,36,32,0.04), 0 0 0 1px rgba(173,124,87,0.05);
   transition: all 0.3s ease;
 }
 
@@ -44,11 +77,11 @@ body {
 .lm-btn {
   background: linear-gradient(135deg, var(--lm-accent-deep), var(--lm-accent));
   color: #fff;
-  box-shadow: 0 4px 16px rgba(166,124,82,0.25);
+  box-shadow: 0 4px 16px rgba(173,124,87,0.25);
 }
 
 .text-gradient {
-  background: linear-gradient(135deg, #2C2420, #C49A6C);
+  background: linear-gradient(135deg, var(--lm-ink-strong), var(--lm-accent));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
