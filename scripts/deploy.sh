@@ -45,7 +45,7 @@ rsync -az --delete \
   ./ "$HOST:$REMOTE/"
 
 echo "→ 远程重建并启动"
-ssh "$HOST" "cd $REMOTE && docker compose up -d --build"
+ssh "$HOST" "cd $REMOTE && docker-compose up -d --build"
 
 echo "→ 健康检查（127.0.0.1:3001）"
 ssh "$HOST" 'curl -fsS --retry 10 --retry-delay 3 http://127.0.0.1:3001/api/health'
