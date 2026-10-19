@@ -52,7 +52,7 @@ export const EventPreviewCard = memo(function EventPreviewCard({
           <div
             className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 shadow-sm"
             style={{
-              background: 'linear-gradient(135deg, #d48b60, #aa6f4d)',
+              background: 'linear-gradient(135deg, #C49A6C, #A67C52)',
               boxShadow: '0 2px 8px rgba(170,111,77,0.25)'
             }}
           >
@@ -66,13 +66,13 @@ export const EventPreviewCard = memo(function EventPreviewCard({
               {event.mood && <span className="text-xs">{getMoodEmoji(event.mood)}</span>}
               <button
                 onClick={onEdit}
-                className="shrink-0 w-7 h-7 -mr-1 rounded-full flex items-center justify-center text-[10px] text-[#5c3d2a]/40 hover:text-[#5c3d2a]/60 hover:bg-[#efd8c3]/30 transition-all"
+                className="shrink-0 w-7 h-7 -mr-1 rounded-full flex items-center justify-center text-[10px] text-[#2C2420]/40 hover:text-[#2C2420]/60 hover:bg-[#C49A6C]/30 transition-all"
                 title="编辑"
               >
                 ✎
               </button>
             </div>
-            <div className="flex items-center gap-2 mt-0.5 text-[11px] text-[#5c3d2a]/45">
+            <div className="flex items-center gap-2 mt-0.5 text-[11px] text-[#2C2420]/45">
               <span>{fmt(event.date)}</span>
               {event.location && <span>· 📍 {event.location}</span>}
             </div>
@@ -80,7 +80,7 @@ export const EventPreviewCard = memo(function EventPreviewCard({
           {/* Expand button */}
           <button
             onClick={onExpand}
-            className="w-8 h-8 rounded-full bg-gradient-to-br from-[#d48b60] to-[#aa6f4d] text-white flex items-center justify-center hover:shadow-md transition-all shadow-sm active:scale-95 shrink-0"
+            className="w-8 h-8 rounded-full bg-gradient-to-br from-[#C49A6C] to-[#A67C52] text-white flex items-center justify-center hover:shadow-md transition-all shadow-sm active:scale-95 shrink-0"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
           </button>
@@ -88,11 +88,11 @@ export const EventPreviewCard = memo(function EventPreviewCard({
 
         {/* Description + Expense */}
         <div className="flex items-center justify-between mt-2 gap-2 min-h-[18px]">
-          <p className="text-xs text-[#5c3d2a]/50 line-clamp-1 flex-1">
+          <p className="text-xs text-[#2C2420]/50 line-clamp-1 flex-1">
             {event.desc || ''}
           </p>
           {total > 0 ? (
-            <span className="text-[10px] text-[#5c3d2a]/40 shrink-0 px-2 py-0.5 rounded-md bg-[#efd8c3]/20">
+            <span className="text-[10px] text-[#2C2420]/40 shrink-0 px-2 py-0.5 rounded-md bg-[#C49A6C]/20">
               💰 {formatCurrency(total)}
             </span>
           ) : (
@@ -106,7 +106,7 @@ export const EventPreviewCard = memo(function EventPreviewCard({
             {photos.slice(0, 4).map((p, i) => (
               <div
                 key={i}
-                className="shrink-0 rounded-xl overflow-hidden bg-[#efd8c3]/20 cursor-pointer hover:opacity-90 transition-opacity shadow-sm relative"
+                className="shrink-0 rounded-xl overflow-hidden bg-[#C49A6C]/20 cursor-pointer hover:opacity-90 transition-opacity shadow-sm relative"
                 style={{ width: '80px', height: '80px' }}
                 onClick={() => onViewPhoto?.(photos, i)}
               >
@@ -121,18 +121,18 @@ export const EventPreviewCard = memo(function EventPreviewCard({
             ))}
             {photos.length > 4 && (
               <div
-                className="shrink-0 rounded-xl bg-[#efd8c3]/20 flex items-center justify-center cursor-pointer hover:bg-[#efd8c3]/30 transition-colors"
+                className="shrink-0 rounded-xl bg-[#C49A6C]/20 flex items-center justify-center cursor-pointer hover:bg-[#C49A6C]/30 transition-colors"
                 style={{ width: '80px', height: '80px' }}
                 onClick={onExpand}
               >
-                <span className="text-xs text-[#5c3d2a]/40 font-medium">+{photos.length - 4}</span>
+                <span className="text-xs text-[#2C2420]/40 font-medium">+{photos.length - 4}</span>
               </div>
             )}
           </div>
         ) : (
           <button
             onClick={onAddPhoto}
-            className="mt-3 w-full py-3 rounded-xl border-2 border-dashed border-[#efd8c3] flex items-center justify-center gap-2 text-[#5c3d2a]/35 hover:border-[#d48b60] hover:text-[#d48b60] transition-colors"
+            className="mt-3 w-full py-3 rounded-xl border-2 border-dashed border-[#efd8c3] flex items-center justify-center gap-2 text-[#2C2420]/35 hover:border-[#C49A6C] hover:text-[#C49A6C] transition-colors"
           >
             <span className="text-lg">📷</span>
             <span className="text-xs">添加几张照片来记录这个瞬间</span>

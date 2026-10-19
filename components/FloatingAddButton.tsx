@@ -6,8 +6,8 @@ export function FloatingAddButton({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       className="fixed bottom-[64px] md:bottom-6 right-4 z-[100] w-12 h-12 rounded-full flex items-center justify-center text-xl text-white shadow-lg hover:shadow-xl active:scale-95 transition-all"
       style={{
-        background: 'linear-gradient(135deg, #d48b60, #aa6f4d)',
-        boxShadow: '0 4px 20px rgba(170,111,77,0.35)'
+        background: 'linear-gradient(135deg, #C49A6C, #A67C52)',
+        boxShadow: '0 4px 20px rgba(166,124,82,0.35)'
       }}
       aria-label="添加事件"
     >

@@ -15,7 +15,7 @@ export function BottomTabBar() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[#fdfbf7]/90 backdrop-blur-sm border-t border-[#efd8c3]/30">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[#FBF8F4]/90 backdrop-blur-sm border-t border-[#C49A6C]/10">
       <div className="flex justify-around items-center h-14 max-w-lg mx-auto">
         {TABS.map(tab => {
           const active = pathname === tab.href;
@@ -23,7 +23,7 @@ export function BottomTabBar() {
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${active ? 'text-[#aa6f4d]' : 'text-[#5c3d2a]/40'}`}
+              className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${active ? 'text-[#C49A6C]' : 'text-[#2C2420]/40'}`}
             >
               <span className="text-base leading-none">{tab.icon}</span>
               <span className="text-[10px] leading-none">{tab.label}</span>
