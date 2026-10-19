@@ -4,8 +4,8 @@
   "description": "用爱记录时光",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#fdfbf7",
-  "theme_color": "#d48b60",
+  "background_color": "#FBF8F4",
+  "theme_color": "#CC9266",
   "orientation": "portrait",
   "icons": [
     {

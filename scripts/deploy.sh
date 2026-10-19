@@ -24,6 +24,9 @@ if [ -n "$(git status --porcelain)" ]; then
   [ "$ans" = "y" ] || exit 1
 fi
 
+echo "→ 本地 typecheck（部署前门禁）"
+npm run typecheck
+
 echo "→ 同步代码到 $HOST:$REMOTE（不含数据）"
 rsync -az --delete \
   --rsync-path="sudo -u user rsync" \
