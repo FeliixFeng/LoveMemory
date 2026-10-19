@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { Overlay } from '../ui/Overlay';
 
 export function PinModal({
   onVerify,
@@ -80,11 +81,11 @@ export function PinModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-black/20 modal-backdrop" onClick={onClose} />
-      <div
-        className={`relative w-full sm:max-w-sm bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl p-5 modal-content ${error ? 'animate-shake' : ''}`}
-      >
+    <Overlay
+      onClose={onClose}
+      layer="modal"
+      panelClassName={`w-full sm:max-w-sm bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl p-5 pb-[calc(1.25rem_+_env(safe-area-inset-bottom))] ${error ? 'animate-shake' : ''}`}
+    >
         <div className="w-10 h-1 bg-amber-200 rounded-full mx-auto mb-4" />
         <h3
           className="text-base font-bold text-[#3d281c] mb-1 text-center"
@@ -131,7 +132,6 @@ export function PinModal({
         >
           取消
         </button>
-      </div>
-    </div>
+    </Overlay>
   );
 }

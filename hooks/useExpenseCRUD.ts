@@ -9,16 +9,17 @@ export function useExpenseCRUD(
   setToast: (msg: string) => void,
   onAuthRequired: (op: () => void) => void
 ) {
-  async function addExpense(eventId: string, expenseData: { amount: number; category: string; note: string }) {
+  async function addExpense(eventId: string, expenseData: { amount: number; category: string; note: string }): Promise<boolean> {
     try {
       const { expense } = await apiFetch<{ expense: Expense }>(`/api/events/${eventId}/expenses`, { method: 'POST', body: expenseData });
-      await save({ ...data, expenses: [...data.expenses, expense] }, '已添加');
+      return await save({ ...data, expenses: [...data.expenses, expense] }, '已添加');
     } catch (err) {
       if (err instanceof ApiError && err.isAuthError) {
-        onAuthRequired(() => addExpense(eventId, expenseData));
+        onAuthRequired(() => { void addExpense(eventId, expenseData); });
       } else {
         setToast('添加失败');
       }
+      return false;
     }
   }
 

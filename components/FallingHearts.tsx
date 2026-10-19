@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 
 const PARTICLES = ['💕', '✨', '🌸', '💫', '🩷', '🌺'];
-const PARTICLE_COUNT = 12;
+const PARTICLE_COUNT = 6;
 
 type Particle = { emoji: string; left: string; dur: string; delay: string; opacity: number; size: string; sway: string };
 

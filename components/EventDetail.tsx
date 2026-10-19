@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Event, Photo, Expense } from '../lib/types';
 import { getEmoji, fmt, formatCurrency, calcTotalExpenses, getMoodEmoji } from '../lib/utils';
 import { EXPENSE_CATEGORIES } from '../lib/constants';
 import { ExpenseItem } from './ExpenseItem';
 import { SafeImage } from './SafeImage';
+import { Overlay } from './ui/Overlay';
 
 export function EventDetail({
   event, photos, expenses, onClose, onEdit, onAddPhoto, onDeletePhoto, onReorderPhotos, onAddExpense, onDeleteExpense, onViewPhoto, uploading, uploadProgress, deleting
@@ -18,7 +19,7 @@ export function EventDetail({
   onAddPhoto: () => void;
   onDeletePhoto: (p: Photo) => void;
   onReorderPhotos: (fromIndex: number, toIndex: number) => void;
-  onAddExpense: (data: { amount: number; category: string; note: string }) => void;
+  onAddExpense: (data: { amount: number; category: string; note: string }) => Promise<boolean>;
   onDeleteExpense: (id: number) => void;
   onViewPhoto: (photos: Photo[], index: number) => void;
   uploading: boolean;
@@ -27,22 +28,68 @@ export function EventDetail({
 }) {
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [expenseDraft, setExpenseDraft] = useState({ amount: '', category: 'food', note: '' });
+  const [submittingExpense, setSubmittingExpense] = useState(false);
   const total = calcTotalExpenses(expenses);
 
-  function handleAddExpense() {
+  const formRef = useRef<HTMLDivElement>(null);
+  const lastExpenseRef = useRef<HTMLDivElement>(null);
+  // 记录上一次的账单数量，用来判断「新增了一条」
+  const prevExpenseRef = useRef({ eventId: event.id, count: expenses.length });
+  // 本次提交是否还在进行中：避免乐观更新时把表单提前关掉
+  const savingRef = useRef(false);
+
+  // 打开表单时，把输入框滚进可视区（列表长的时候表单会落在屏幕外）
+  useEffect(() => {
+    if (!showAddExpense) return;
+    const raf = requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [showAddExpense]);
+
+  // 账单数量增加时，滚到最新一条；如果表单还开着（例如走 PIN 验证后重试成功），顺手收起
+  useEffect(() => {
+    const prev = prevExpenseRef.current;
+    prevExpenseRef.current = { eventId: event.id, count: expenses.length };
+
+    // 切换事件不算新增
+    if (prev.eventId !== event.id || expenses.length <= prev.count) return;
+
+    const raf = requestAnimationFrame(() => {
+      lastExpenseRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
+    // 如果不是本次表单提交触发的（例如 PIN 验证后重试成功），顺手把表单收起
+    if (showAddExpense && !savingRef.current) {
+      setShowAddExpense(false);
+      setExpenseDraft({ amount: '', category: 'food', note: '' });
+    }
+    return () => cancelAnimationFrame(raf);
+  }, [expenses.length, event.id]);
+
+  async function handleAddExpense() {
     const amount = parseFloat(expenseDraft.amount);
-    if (!amount || amount <= 0) return;
-    onAddExpense({ amount, category: expenseDraft.category, note: expenseDraft.note });
-    setExpenseDraft({ amount: '', category: 'food', note: '' });
-    setShowAddExpense(false);
+    if (!amount || amount <= 0 || submittingExpense) return;
+
+    setSubmittingExpense(true);
+    savingRef.current = true;
+    const ok = await onAddExpense({ amount, category: expenseDraft.category, note: expenseDraft.note });
+    savingRef.current = false;
+    setSubmittingExpense(false);
+
+    // 只有真正保存成功才收起表单，失败时保留草稿
+    if (ok) {
+      setExpenseDraft({ amount: '', category: 'food', note: '' });
+      setShowAddExpense(false);
+    }
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-black/30 modal-backdrop" onClick={onClose} />
-      <div
-        className="relative w-full sm:max-w-lg max-h-[85vh] bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl overflow-y-auto modal-content"
-      >
+    <Overlay
+      onClose={onClose}
+      layer="sheet"
+      labelledBy="event-detail-title"
+      panelClassName="w-full sm:max-w-lg max-h-[85dvh] bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl overflow-y-auto pb-[env(safe-area-inset-bottom)]"
+    >
         {/* Header */}
         <div className="sticky top-0 bg-[#fdfbf7]/95 backdrop-blur-sm z-10 px-5 py-4 border-b border-[#efd8c3]/30">
           <div className="flex items-center justify-between">
@@ -57,7 +104,7 @@ export function EventDetail({
                 {getEmoji(event.icon)}
               </div>
               <div>
-                <h2 className="text-base font-bold text-[#3d281c]" style={{ fontFamily: 'Noto Serif SC, serif' }}>
+                <h2 id="event-detail-title" className="text-base font-bold text-[#3d281c]" style={{ fontFamily: 'Noto Serif SC, serif' }}>
                   {event.title || '未命名事件'}
                 </h2>
                 <div className="flex items-center gap-2 text-[11px] text-[#5c3d2a]/50">
@@ -191,14 +238,16 @@ export function EventDetail({
               </div>
             ) : (
               <div className="space-y-2">
-                {expenses.map(e => (
-                  <ExpenseItem key={e.id} expense={e} onDelete={() => onDeleteExpense(e.id)} />
+                {expenses.map((e, i) => (
+                  <div key={e.id} ref={i === expenses.length - 1 ? lastExpenseRef : undefined}>
+                    <ExpenseItem expense={e} onDelete={() => onDeleteExpense(e.id)} />
+                  </div>
                 ))}
               </div>
             )}
 
             {showAddExpense && (
-              <div className="mt-3 p-4 rounded-xl bg-gradient-to-b from-white to-[#fdfbf7] border border-[#efd8c3]/40 space-y-3">
+              <div ref={formRef} className="mt-3 p-4 rounded-xl bg-gradient-to-b from-white to-[#fdfbf7] border border-[#efd8c3]/40 space-y-3">
                 <div className="flex gap-2">
                   <input
                     type="number"
@@ -225,14 +274,15 @@ export function EventDetail({
                   className="w-full bg-white border border-[#efd8c3]/60 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#d48b60] transition-colors"
                 />
                 <div className="flex gap-2 justify-end">
-                  <button onClick={() => setShowAddExpense(false)} className="px-4 py-2 text-xs text-[#5c3d2a]/60 hover:text-[#5c3d2a] transition-colors">取消</button>
-                  <button onClick={handleAddExpense} className="px-5 py-2 text-xs rounded-xl bg-gradient-to-r from-[#d48b60] to-[#aa6f4d] text-white font-medium active:scale-95 transition-transform shadow-sm">保存</button>
+                  <button onClick={() => setShowAddExpense(false)} disabled={submittingExpense} className="px-4 py-2 text-xs text-[#5c3d2a]/60 hover:text-[#5c3d2a] transition-colors disabled:opacity-50">取消</button>
+                  <button onClick={handleAddExpense} disabled={submittingExpense} className="px-5 py-2 text-xs rounded-xl bg-gradient-to-r from-[#d48b60] to-[#aa6f4d] text-white font-medium active:scale-95 transition-transform shadow-sm disabled:opacity-60">
+                    {submittingExpense ? '保存中…' : '保存'}
+                  </button>
                 </div>
               </div>
             )}
           </div>
         </div>
-      </div>
-    </div>
+    </Overlay>
   );
 }

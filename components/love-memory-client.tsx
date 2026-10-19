@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Photo } from '../lib/types';
 import { useAuth } from './SiteLayoutClient';
 import { HeroSection } from './HeroSection';
@@ -53,30 +53,39 @@ export function LoveMemoryClient() {
   const timelineScrollRef = useRef<HTMLDivElement>(null);
   const heroContainerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  // 封面与时间轴是一体的：整块 hero 接管垂直滚轮，转成时间轴横向滚动
+  useLayoutEffect(() => {
     const container = heroContainerRef.current;
     if (!container) return;
 
     function handleWheel(e: WheelEvent) {
+      // 缩放（Ctrl/⌘ + 滚轮）直接放行
+      if (e.ctrlKey || e.metaKey) return;
+      // 触控板横向手势交给原生
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      // 只在页面顶部接管：一旦开始下滚看正文，就恢复普通滚动
+      if (window.scrollY > 8) return;
+
       const el = timelineScrollRef.current;
-      // 没有时间线或时间线不需要滚动时，不拦截
-      if (!el || el.scrollWidth <= el.clientWidth) return;
-      // 只在垂直滚动时拦截
-      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-        e.preventDefault();
-        el.scrollLeft += e.deltaY;
-      }
+      if (!el) return;
+
+      const max = el.scrollWidth - el.clientWidth;
+      if (max <= 0) return;
+
+      // deltaMode === 1 表示以「行」为单位（部分 Firefox / 鼠标），换算成像素
+      const delta = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+      const atStart = el.scrollLeft <= 0;
+      const atEnd = el.scrollLeft >= max - 1;
+
+      // 边界释放：时间轴滚到头，就把控制权还给页面
+      if ((delta > 0 && atEnd) || (delta < 0 && atStart)) return;
+
+      e.preventDefault();
+      el.scrollLeft = Math.min(max, Math.max(0, el.scrollLeft + delta));
     }
 
-    // 延迟绑定，确保 timelineScrollRef 已经被设置
-    const timer = setTimeout(() => {
-      container.addEventListener('wheel', handleWheel, { passive: false });
-    }, 500);
-
-    return () => {
-      clearTimeout(timer);
-      container.removeEventListener('wheel', handleWheel);
-    };
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
   }, [data.events]);
 
   // Set initial selected event
@@ -106,7 +115,7 @@ export function LoveMemoryClient() {
 
   return (
     <>
-      <main className="max-w-lg md:max-w-3xl lg:max-w-6xl mx-auto pt-16 pb-20 md:pb-8 px-0 md:px-8 flex flex-col gap-4">
+      <main className="max-w-lg md:max-w-3xl lg:max-w-6xl mx-auto pt-16 pb-[calc(5rem_+_env(safe-area-inset-bottom))] md:pb-8 px-0 md:px-8 flex flex-col gap-4">
         <div ref={heroContainerRef} className="px-4 lg:px-0">
           <HeroSection
             heroImages={heroImages} saving={saving}

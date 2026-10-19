@@ -27,9 +27,13 @@ export const HorizontalTimeline = memo(function HorizontalTimeline({
   }, []);
 
   useEffect(() => {
-    if (!scrollRef.current || !selectedId || !padX) return;
-    const el = scrollRef.current.querySelector(`[data-event-id="${selectedId}"]`);
-    if (el) el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    const el = scrollRef.current;
+    if (!el || !selectedId || !padX) return;
+    const node = el.querySelector<HTMLElement>(`[data-event-id="${selectedId}"]`);
+    if (!node) return;
+    // 手动计算居中位置：scrollIntoView 会连带滚动整个页面
+    const target = node.offsetLeft - (el.clientWidth - node.offsetWidth) / 2;
+    el.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
   }, [selectedId, padX]);
 
   function shortDate(d: string) {
@@ -74,7 +78,7 @@ export const HorizontalTimeline = memo(function HorizontalTimeline({
 
   return (
     <div ref={outerRef} className="px-4 pt-6 pb-3">
-      <div ref={setScrollRef} className="flex items-start overflow-x-auto no-scrollbar pt-6 pb-1 relative" style={{ gap: `${nodeGap}px`, paddingLeft: `${padX}px`, paddingRight: `${padX}px` }}>
+      <div ref={setScrollRef} className="flex items-start overflow-x-auto overscroll-x-contain no-scrollbar pt-6 pb-1 relative" style={{ gap: `${nodeGap}px`, paddingLeft: `${padX}px`, paddingRight: `${padX}px` }}>
         {/* Connecting line */}
         {items.length > 1 && (
           <>

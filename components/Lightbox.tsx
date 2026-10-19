@@ -2,6 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Photo } from '../lib/types';
+import { useScrollLock } from '../hooks/useScrollLock';
+import { useOverlayLayer } from '../hooks/useOverlayLayer';
+import { Z_LAYER } from './ui/Overlay';
 
 export function Lightbox({
   photos, index, onClose, onPrev, onNext
@@ -17,12 +20,16 @@ export function Lightbox({
   const photo = photos[index];
   const hasMultiple = photos.length > 1;
 
+  useScrollLock(true);
+  const { isTop } = useOverlayLayer();
+
   useEffect(() => {
     setLoaded(false);
   }, [index]);
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
+      if (!isTop()) return;
       if (e.key === 'Escape') onClose();
       if (e.key === 'ArrowLeft') onPrev();
       if (e.key === 'ArrowRight') onNext();
@@ -46,7 +53,8 @@ export function Lightbox({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center"
+      className="fixed inset-0 bg-black/95 backdrop-blur-sm flex items-center justify-center"
+      style={{ zIndex: Z_LAYER.lightbox }}
       onClick={onClose}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}

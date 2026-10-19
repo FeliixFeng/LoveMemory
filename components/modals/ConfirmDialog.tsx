@@ -1,5 +1,7 @@
 'use client';
 
+import { Overlay } from '../ui/Overlay';
+
 export function ConfirmDialog({
   title, message, confirmLabel = '删除', danger = true,
   onConfirm, onCancel
@@ -12,9 +14,12 @@ export function ConfirmDialog({
   onCancel: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] modal-backdrop" onClick={onCancel} />
-      <div className="relative w-full sm:max-w-sm bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl overflow-hidden modal-content">
+    <Overlay
+      onClose={onCancel}
+      layer="modal"
+      backdropClassName="bg-black/30 backdrop-blur-[2px]"
+      panelClassName="w-full sm:max-w-sm bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl overflow-hidden pb-[env(safe-area-inset-bottom)]"
+    >
         <div className="w-10 h-1 bg-amber-200 rounded-full mx-auto mt-4 mb-3 sm:hidden" />
 
         <div className="p-5 text-center">
@@ -31,7 +36,6 @@ export function ConfirmDialog({
             <button onClick={onConfirm} className={`flex-1 py-3 text-white rounded-xl font-medium active:scale-[0.98] transition-transform ${danger ? 'bg-red-500 shadow-red-200' : 'bg-[#d48b60] shadow-amber-200'} shadow-lg`}>{confirmLabel}</button>
           </div>
         </div>
-      </div>
-    </div>
+    </Overlay>
   );
 }

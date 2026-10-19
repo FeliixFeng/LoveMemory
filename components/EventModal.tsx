@@ -2,6 +2,7 @@
 
 import { Event } from '../lib/types';
 import { ICONS, MOODS } from '../lib/constants';
+import { Overlay } from './ui/Overlay';
 
 export type EventDraft = {
   title: string;
@@ -23,9 +24,11 @@ export function EventModal({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-black/30 modal-backdrop" onClick={onClose} />
-      <div className="relative w-full sm:max-w-sm bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl max-h-[85vh] overflow-y-auto modal-content">
+    <Overlay
+      onClose={onClose}
+      layer="modal"
+      panelClassName="w-full sm:max-w-sm bg-[#fdfbf7] rounded-t-2xl sm:rounded-2xl max-h-[85dvh] overflow-y-auto pb-[env(safe-area-inset-bottom)]"
+    >
         <div className="w-10 h-1 bg-amber-200 rounded-full mx-auto mt-4 mb-3 sm:hidden" />
 
         {/* Header */}
@@ -126,7 +129,6 @@ export function EventModal({
           <button onClick={onClose} className="flex-1 py-3 bg-white border border-[#efd8c3] text-[#3d281c] rounded-xl font-medium active:scale-[0.98] transition-transform">取消</button>
           <button onClick={onSave} className="flex-1 py-3 bg-gradient-to-r from-[#d48b60] to-[#aa6f4d] text-white rounded-xl font-medium shadow-lg active:scale-[0.98] transition-transform">保存</button>
         </div>
-      </div>
-    </div>
+    </Overlay>
   );
 }

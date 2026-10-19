@@ -15,14 +15,14 @@ export function NavBar({ isAuthenticated, onSettings, onPin }: { isAuthenticated
   const pathname = usePathname();
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-[#FBF8F4]/85 backdrop-blur-xl border-b border-[#C49A6C]/10">
+    <nav className="fixed top-0 left-0 right-0 z-40 bg-[#FBF8F4]/85 backdrop-blur-xl border-b border-[#C49A6C]/10">
       <div className="max-w-lg md:max-w-3xl lg:max-w-6xl mx-auto flex justify-between items-center px-4 py-2.5">
         {/* Left: Logo + Date */}
         <div className="flex items-center gap-3">
           <Link href="/" className="hidden md:block">
             <span className="text-base font-bold text-gradient" style={{ fontFamily: 'Noto Serif SC, serif' }}>珍藏回忆</span>
           </Link>
-          <div className="hidden md:block w-px h-4 bg-[#C49A6C]/20/40" />
+          <div className="hidden md:block w-px h-4 bg-[#C49A6C]/40" />
           <div className="flex flex-col">
             <span className="text-[9px] font-bold tracking-[0.2em] text-[#C49A6C] uppercase" style={{ fontFamily: 'Playfair Display, serif' }}>TODAY</span>
             <span suppressHydrationWarning className="text-xs font-semibold text-[#3d281c]">{new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>

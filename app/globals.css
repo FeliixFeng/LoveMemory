@@ -31,7 +31,7 @@ body {
 .lm-card {
   background: rgba(255,255,255,0.7);
   border: 1px solid rgba(212,165,116,0.12);
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(8px);
   box-shadow: 0 2px 16px rgba(44,36,32,0.04), 0 0 0 1px rgba(212,165,116,0.05);
   transition: all 0.3s ease;
 }
@@ -80,6 +80,12 @@ body {
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* 浮层 / 横向列表：滚动不传递给页面 */
+.lm-scroll-contain {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
 
 .line-clamp-2 {
   display: -webkit-box;

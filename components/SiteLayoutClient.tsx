@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useRef, useCallback, type ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { NavBar } from './NavBar';
 import { BottomTabBar } from './BottomTabBar';
 import { FallingHearts } from './FallingHearts';
@@ -36,6 +37,7 @@ export function useAuth() {
 }
 
 export function SiteLayoutClient({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const [floatingButton, setFloatingButton] = useState<ReactNode>(null);
   const [token, setToken] = useState(() => {
     if (typeof window === 'undefined') return '';
@@ -66,7 +68,7 @@ export function SiteLayoutClient({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ token, tokenRef, showPin, setShowPin, pendingOp, withAuth, onPinVerified, floatingButton, setFloatingButton }}>
-      <FallingHearts />
+      {pathname === '/' && <FallingHearts />}
       <NavBar isAuthenticated={!!token} onPin={() => {
         if (token) {
           setToken('');

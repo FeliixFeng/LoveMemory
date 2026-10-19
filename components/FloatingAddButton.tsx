@@ -4,7 +4,7 @@ export function FloatingAddButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="fixed bottom-[64px] md:bottom-6 right-4 z-[100] w-12 h-12 rounded-full flex items-center justify-center text-xl text-white shadow-lg hover:shadow-xl active:scale-95 transition-all"
+      className="fixed bottom-[calc(64px_+_env(safe-area-inset-bottom))] md:bottom-6 right-4 z-40 w-12 h-12 rounded-full flex items-center justify-center text-xl text-white shadow-lg hover:shadow-xl active:scale-95 transition-all"
       style={{
         background: 'linear-gradient(135deg, #C49A6C, #A67C52)',
         boxShadow: '0 4px 20px rgba(166,124,82,0.35)'
