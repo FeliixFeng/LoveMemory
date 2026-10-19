@@ -8,4 +8,4 @@
 
 - 改数据相关逻辑前先读 `app/lib/app-data.ts`
 - 不要读写 `data/*.sqlite*`（那是运行时数据）
-- 不要试图恢复 `.github/workflows/deploy.yml.disabled`，部署走 `scripts/deploy.sh`
+- 不要试图恢复 `.github/workflows/deploy.yml.disabled`，也不要用脚本一键部署；手动四步见 `AGENTS.md` 部署章节（`scripts/deploy.sh` 已删除）

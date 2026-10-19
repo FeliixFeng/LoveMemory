@@ -43,11 +43,10 @@ APP_PIN=******                        # 访问 PIN
 
 ## 部署
 
-```bash
-./scripts/deploy.sh    # rsync 代码 -> 远程 docker compose up -d --build -> 健康检查
-```
+手动四步：`typecheck` → `rsync`（排除数据）→ 远程 `docker-compose up -d --build` → 健康检查。
+完整命令、服务器事实、IOPS 事故教训见 **[AGENTS.md](./AGENTS.md) 部署章节**。`scripts/deploy.sh` 已删除，不要重建脚本。
 
-线上：<https://lovexin.felixfeng.online>（nginx → 容器 `love-memory`，127.0.0.1:3001）。
+线上：<https://lovexin.felixfeng.online>（nginx → 容器 `love-memory`，127.0.0.1:3000）。
 
 ## Health check
 
@@ -66,5 +65,5 @@ components/     UI 组件
 hooks/          数据与 CRUD hooks
 prisma/         schema.prisma
 data/           本地 SQLite（gitignore）
-scripts/        pull-prod-db.sh、deploy.sh
+scripts/        pull-prod-db.sh
 ```

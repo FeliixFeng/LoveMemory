@@ -59,19 +59,56 @@ npm run prisma:generate
 
 ## 部署
 
-**GitHub Actions 已停用**（`.github/workflows/deploy.yml.disabled`）。2026-07-13 连续两次部署失败后手动改名关闭，之后都是手动部署。最后上线内容 = `5a47323`。
+**GitHub Actions 已停用**（`.github/workflows/deploy.yml.disabled`）。2026-07-13 连续两次部署失败后手动改名关闭。**`scripts/deploy.sh` 也已删除（2026-10-19）**——部署按下面四步手动执行，每步单独看结果，不要写成脚本一把梭。
+
+### 四步手动部署
 
 ```bash
-./scripts/deploy.sh    # rsync 代码 + 远程 rebuild + 健康检查
+# 1. 本地门禁
+npm run typecheck
+
+# 2. 同步代码（排除项一个都不能少，尤其 data/ 和 .env.production）
+rsync -az --delete \
+  --rsync-path="sudo -u user rsync" \
+  --exclude '.git' --exclude '.github' --exclude '.next' --exclude 'node_modules' \
+  --exclude 'data' --exclude 'public/uploads' \
+  --exclude '.env.local' --exclude '.env.production' \
+  --exclude '.DS_Store' --exclude '.idea' --exclude '.claude' \
+  --exclude 'tsconfig.tsbuildinfo' \
+  ./ ali1:/data/app/love-memory/
+
+# 3. 远程构建并重启（用连字符形式，这台机器提供的是 docker-compose）
+ssh ali1 'cd /data/app/love-memory && docker-compose up -d --build'
+
+# 4. 健康检查（容器内 3000 + 外网域名，两边都要过）
+ssh ali1 'curl -fsS --retry 10 --retry-delay 3 http://127.0.0.1:3000/api/health'
+curl -fsS https://lovexin.felixfeng.online/api/health
 ```
 
-服务器事实：
+### 服务器事实
 
-- `ssh ali1` → `root@47.121.181.198`
+- `ssh ali1` → `root@47.121.181.198`（2核2G，云盘 40G）
 - 部署目录 `/data/app/love-memory`（**不是 git 仓库**，纯文件覆盖）
-- 容器 `love-memory`，端口 **3001:3000**（3000 被 `ali1-new-api` 占用）
-- nginx：`lovexin.felixfeng.online` → `127.0.0.1:3001`，Let's Encrypt 证书
+- 容器 `love-memory`，端口 **3000:3000**
+- nginx：`lovexin.felixfeng.online` → `127.0.0.1:3000`，Let's Encrypt 证书
 - 环境变量只在服务器 `.env.production`：`DATABASE_URL=file:/app/db/data.sqlite`
+- 同机还有 `frps`（felixfeng.online 一级域名靠它）；`ali1-new-api` 已于 2026-10-19 移除，3000 归还本项目，其镜像与数据 `/root/apps/new-api/data` 保留，想恢复就去 `/root/apps/new-api` 跑 `docker-compose up -d`
+
+### 事故课：别把云盘 IOPS 打爆（2026-10-19）
+
+当天反复 `docker-compose build`，构建缓存累积到 **7.6GB / 60 条**，21:05 那次构建把云盘 IOPS 打满，整机"半死"：
+
+- **症状**：TCP 能握手但 **SSH 不吐 banner**、VNC 里刷 `Failed to start Journal Service` / `Failed to start Snap Daemon`、nginx 80 正常回包但 443 反代全挂、frp 的一级域名一起挂
+- **误判教训**：这不是封 IP / 安全组 / fail2ban——那些会在 TCP 握手阶段就断。**握手成功 + 同机 nginx 还能回包 = 机器内部 IO 卡死**，别去折腾防火墙
+- **恢复**：阿里云控制台重启实例（云盘持久化，数据无损，容器 `restart: always` 自己起来）。先别急着重启，能登录就先 `df -h; free -h; docker system df` 留证据
+
+预防规则：
+
+1. **部署前不要清构建缓存**——清了就得全量重建，突发写入反而更大。缓存是保护，不是垃圾
+2. `docker system df` 的 **Build Cache 超过 ~3GB** 就清一次 `docker builder prune -af`（只动缓存；**绝不加 `--volumes`**，那会删数据卷）
+3. 构建前看一眼 `df -h` / `free -h`：磁盘可用 <5G、可用内存 <300M 先收拾再部署
+4. 构建中途别反复中断重来，一次跑完；2核2G 单次全量构建 5~10 分钟属正常
+5. 只在本机和服务器各构建一次，不要"改一行就重 build"，反复构建才是打爆 IOPS 的原因
 
 ## UI 约定（2026-10 重构后）
 
@@ -159,7 +196,7 @@ token 通过 `@theme inline` 暴露成 Tailwind 工具类，直接当普通类�
 
 ## 已知坑
 
-1. **端口漂移**：本地 `docker-compose.yml` 写 `3000:3000`，服务器是 `3001:3000`。若恢复 CI，workflow 里健康检查写的是 `127.0.0.1:3000`，会打到 `ali1-new-api` 上造成假通过——必须改成 3001。
+1. **端口已统一 3000**（2026-10-19 起）：本地与服务器 compose 都是 `3000:3000`，nginx upstream 是 `127.0.0.1:3000`。历史上的 `3001` 是因为 `ali1-new-api` 占着 3000，该服务已移除，**全机无 3001 残留，不要再引入**（改端口要同时改 compose + nginx 两处）。
 2. **SQLite WAL**：拷贝数据库必须连 `-wal` / `-shm` 一起，只拷主文件会丢最近的写入。
 3. **`predev` 会删 `.next`**：在受限环境里可能被删除保护拦截，此时用 `npx next dev` 跳过 predev。
 4. **Agent 环境启动**：若通过 WorkBuddy/CodeBuddy 的 shell 启动，`NODE_OPTIONS` 会注入 fs shim，导致 Next 建 `.next` 时报 `EEXIST`。用 `env -u NODE_OPTIONS npx next dev` 启动；用户自己终端里 `npm run dev` 不受影响。
@@ -178,6 +215,6 @@ hooks/          useAppData / useEventCRUD / useExpenseCRUD / usePhotoUpload
                 useScrollLock / useOverlayLayer
 prisma/         schema.prisma（provider = sqlite）
 data/           本地 SQLite（gitignore）
-scripts/        pull-prod-db.sh / deploy.sh
+scripts/        pull-prod-db.sh（部署脚本已删，手动四步见「部署」章）
 PLAN.md         分阶段优化计划
 ```

@@ -112,7 +112,7 @@
 ### 阶段 3：性能（D1/D2/D4）
 1. 数据 Provider：`useAppData` 提升到 `SiteLayoutClient`，四个页面共享一份 + 变更后失效重取（不引第三方依赖）
 2. `writeSettings` 用 `$transaction([...])` 批量提交；照片改用 `url` 唯一键直接 `upsert`，去掉 `findFirst`
-3. 加 `npm run typecheck`（`tsc --noEmit`），并前置到 `deploy.sh`
+3. 加 `npm run typecheck`（`tsc --noEmit`），作为部署第 1 步（已写入 AGENTS.md 部署章节；deploy.sh 已删除）
 4. 验收：切 tab 只发 1 次 `/api/data`；typecheck 通过
 
 ### 阶段 4：移动端底部抽屉
