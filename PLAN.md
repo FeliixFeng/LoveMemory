@@ -1,8 +1,10 @@
 # LoveMemory 优化计划（2026-10-19）
 
-> 状态：**阶段 0、1 已完成（2026-10-19），阶段 2-4 待做**。确认后按阶段执行，每阶段独立可验收。
+> 状态：**阶段 0、1 已完成（2026-10-19），样式/字体（B 节）已完成（2026-10-19 后续会话），阶段 2-4 待做**。
 >
 > 阶段 1 额外完成：账单表单打开自动滚入视区、新增账单后自动滚到最新一条、保存成功后才关闭表单。
+>
+> 样式/字体收口要点：颜色 token 11 个（`--lm-bg/line/ink/ink-strong/body/muted/accent/accent-deep/blush`），强调色定折中 `#CC9266`（旧赤陶 ↔ 新暖金中点），字体 token 2 个；260 处硬编码 hex → 0；26 处内联 `fontFamily` → `var(--lm-font-*)`；`app/lib/theme.ts` 承载 canvas/echarts 颜色（与 `:root` 同步维护）。
 
 ---
 
@@ -41,19 +43,20 @@
 5. 触控板横向手势（`|deltaX| > |deltaY|`）保持原生，不干预
 6. 作用域**保持整个 hero**（封面 + 时间轴一体），不做收窄
 
-### B. 样式与字体（**本期不做**，用户决定）
+### B. 样式与字体（**2026-10-19 完成**）
 
-> 配色全量替换和字体改造影响面太大，先搁置。仅顺手修 B4 那一行非法类名。
-> B1-B3、B5-B6 记录在案，等以后单独排期。
+> 已统一为 token 系统：`app/globals.css` 单一来源 + Tailwind v4 `@theme inline` 自动生成工具类。
+> 强调色决策：折中 `#CC9266`（旧赤陶 `#D48B60` 与新暖金 `#C49A6C` 中点），新旧页面差异最小。
+> 画布/echarts 不认 CSS 变量，颜色常量在 `app/lib/theme.ts`，与 `:root` 同步维护。
 
-| # | 问题 | 规模 |
+| # | 原问题 | 现状 |
 |---|---|---|
-| B1 | **配色只改了一半**：新暖金只覆盖 5 个文件，其余仍是旧色 | 17 个文件 / 约 280 处（`#d48b60` 67、`#5c3d2a` 74、`#efd8c3` 64、`#3d281c` 38、`#aa6f4d` 29、`#fdfbf7` 8） |
-| B2 | **Google Fonts 在国内基本加载不出来**，且 `<link rel="stylesheet">` 阻塞渲染 | `app/layout.tsx:26-29` → 首屏可能白等超时，标题回退宋体 |
-| B3 | `Inter` 在 CSS 里声明了但**从未加载** | `globals.css:26` |
-| B4 | 非法类名 `bg-[#C49A6C]/20/40` | `NavBar.tsx:25`，分隔线不显示 |
-| B5 | 内联 `fontFamily` 20+ 处，无统一 token | 各组件 |
-| B6 | `manifest.json` / `themeColor` 仍是旧色 | `public/manifest.json`、`app/layout.tsx` |
+| B1 | 配色只改一半 | ✅ 260 处硬编码 hex → 0（仅 `globals.css` 自身 + `theme.ts` 保留字面量）|
+| B2 | Google Fonts 阻塞 + 国内加载失败 | ⏸ 仍走 `link rel=stylesheet`；新加了中英兜底（Songti SC / STSong / Times New Roman）降低首屏空白 |
+| B3 | `Inter` 声明但未加载 | ⏸ 同上未处理（系统栈兜底可接受） |
+| B4 | 非法类名 `bg-[#C49A6C]/20/40` | ✅ |
+| B5 | 26 处内联 `fontFamily` | ✅ 全部改为 `var(--lm-font-*)` 引用 |
+| B6 | `manifest.json` / `themeColor` 旧色 | ✅ `themeColor` 已用 `THEME.accent`；manifest 待下次清理 |
 
 ### C. 数据安全（你交给我优化）
 

@@ -100,6 +100,39 @@ npm run prisma:generate
 - `useScrollLock` —— 锁 body 滚动，嵌套计数（详情上再弹确认框不会提前解锁）
 - `useOverlayLayer` —— Esc 只关最上面一层（详情 → 灯箱时，Esc 只关灯箱）
 
+### 颜色与字体：只认 token，不写死
+
+**唯一来源是 `app/globals.css` 的 `:root`。** 组件里出现 `#RRGGBB` 或字体名字面量都算 bug（画布/echarts 例外，见下）。
+
+token 通过 `@theme inline` 暴露成 Tailwind 工具类，直接当普通类用，支持透明度修饰：
+
+| token | 工具类 | 用途 | 当前值 |
+|---|---|---|---|
+| `--lm-bg` | `bg-lm-bg` | 页面底色 | `#FBF8F4` |
+| `--lm-line` | `border-lm-line` / `bg-lm-line` | 浅描边、占位色块 | `#EFD8C3` |
+| `--lm-ink-strong` | `text-lm-ink-strong` | 大标题、天数数字 | `#2C2420` |
+| `--lm-ink` | `text-lm-ink` | 区块标题 | `#3D281C` |
+| `--lm-body` | `text-lm-body` | 正文 | `#5C3D2A` |
+| `--lm-muted` | `text-lm-muted` | 次要说明 | `#8C7E74` |
+| `--lm-accent` | `text-lm-accent` / `bg-lm-accent` | 主强调 | `#CC9266` |
+| `--lm-accent-deep` | `*-lm-accent-deep` | 强调渐变深端 | `#AD7C57` |
+| `--lm-blush` | `from-lm-blush` | 头像渐变暖粉端 | `#F0C8A8` |
+
+字体同理，只有两个栈：
+
+```tsx
+<h2 className="font-serif-cn">区块标题</h2>          {/* Noto Serif SC */}
+<span className="font-display">TOGETHER FOR</span>    {/* Playfair Display */}
+```
+
+内联样式里需要时用变量：`style={{ fontFamily: 'var(--lm-font-serif)' }}`。
+
+**例外：canvas 不认 CSS 变量。** echarts / canvas 配置里的颜色用不了 `var()`，从 `app/lib/theme.ts` 取常量。改色时**两处同步**（`:root` 和 `theme.ts`），改一行即全站生效。
+
+**透明度不要自己算**：写 `text-lm-body/50`，不要另找一个"50% 的棕色"。
+
+**2026-10-19 决策**：accent 走折中色 `#CC9266`（介于原赤陶 `#D48B60` 与暖金 `#C49A6C` 之间），新旧页面差异最小。clay 已删除。
+
 ### 安全区
 
 `viewport-fit=cover` 已开启，任何贴边元素都要留 `env(safe-area-inset-*)`：
