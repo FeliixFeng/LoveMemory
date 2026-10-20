@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { Wish, Capsule } from '../lib/types';
 import { useAuth } from './SiteLayoutClient';
 import { FallingHearts } from './FallingHearts';
@@ -14,7 +15,9 @@ type Tab = 'wishes' | 'capsules';
 
 export function WishesCapsulesPage() {
   const { token, withAuth } = useAuth();
-  const [tab, setTab] = useState<Tab>('wishes');
+  const router = useRouter();
+  const pathname = usePathname();
+  const tab: Tab = pathname === '/capsule' ? 'capsules' : 'wishes';
   const [loading, setLoading] = useState(true);
 
   // Wishes state
@@ -167,13 +170,13 @@ export function WishesCapsulesPage() {
       {/* Tab switcher */}
       <div className="flex gap-1.5 p-1 lm-card rounded-2xl">
         <button
-          onClick={() => setTab('wishes')}
+          onClick={() => router.push('/wishes')}
           className={`flex-1 py-2.5 text-xs rounded-xl transition-all ${tab === 'wishes' ? 'bg-gradient-to-r from-lm-accent to-lm-accent-deep text-white font-semibold shadow-sm' : 'text-lm-body/40 hover:text-lm-body/60'}`}
         >
           💝 愿望 {pendingWishes.length > 0 && `(${pendingWishes.length})`}
         </button>
         <button
-          onClick={() => setTab('capsules')}
+          onClick={() => router.push('/capsule')}
           className={`flex-1 py-2.5 text-xs rounded-xl transition-all ${tab === 'capsules' ? 'bg-gradient-to-r from-lm-accent to-lm-accent-deep text-white font-semibold shadow-sm' : 'text-lm-body/40 hover:text-lm-body/60'}`}
         >
           💌 胶囊 {capsules.length > 0 && `(${capsules.length})`}

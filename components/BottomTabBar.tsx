@@ -18,7 +18,7 @@ export function BottomTabBar() {
     <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-lm-bg/90 backdrop-blur-sm border-t border-lm-accent/10 pb-[env(safe-area-inset-bottom)]">
       <div className="flex justify-around items-center h-14 max-w-lg mx-auto">
         {TABS.map(tab => {
-          const active = pathname === tab.href;
+          const active = pathname === tab.href || (tab.href === '/wishes' && pathname === '/capsule');
           return (
             <Link
               key={tab.href}
