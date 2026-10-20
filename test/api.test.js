@@ -33,6 +33,12 @@ const salt = `${Date.now()}-${Math.random()}`;
 const dataRoute = await import(new URL(`../app/api/data/route.ts?${salt}`, import.meta.url).href);
 const uploadRoute = await import(new URL(`../app/api/upload/route.ts?${salt}`, import.meta.url).href);
 const healthRoute = await import(new URL(`../app/api/health/route.ts?${salt}`, import.meta.url).href);
+const eventsRoute = await import(new URL(`../app/api/events/route.ts?${salt}`, import.meta.url).href);
+const eventByIdRoute = await import(new URL(`../app/api/events/[id]/route.ts?${salt}`, import.meta.url).href);
+const wishesRoute = await import(new URL(`../app/api/wishes/route.ts?${salt}`, import.meta.url).href);
+const wishByIdRoute = await import(new URL(`../app/api/wishes/[id]/route.ts?${salt}`, import.meta.url).href);
+const capsulesRoute = await import(new URL(`../app/api/capsules/route.ts?${salt}`, import.meta.url).href);
+const capsuleByIdRoute = await import(new URL(`../app/api/capsules/[id]/route.ts?${salt}`, import.meta.url).href);
 
 // Get the shared prisma client to clean up between tests
 const prismaModule = await import(new URL(`../app/lib/prisma.ts?${salt}`, import.meta.url).href);
@@ -296,6 +302,170 @@ test('deleting an event keeps settings and photos, cascades expenses', async () 
     const body = await read.json();
     assert.equal(body.startDate, '2021-06-06');
     assert.equal(body.heroImage, '/hero-keep.jpg');
+  } finally {
+    await ctx.cleanup();
+  }
+});
+
+test('events resource: create/read/update/delete round-trip', async () => {
+  const ctx = await createTestContext();
+
+  try {
+    const createRes = await eventsRoute.POST(
+      new Request('http://localhost/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: '第一次约会', date: '2020-05-20', location: '杭州' })
+      })
+    );
+    assert.equal(createRes.status, 200);
+    const created = await createRes.json();
+    assert.equal(created.success, true);
+    assert.equal(created.event.title, '第一次约会');
+    const id = created.event.id;
+
+    const badRes = await eventsRoute.POST(
+      new Request('http://localhost/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: '', date: '2020-01-01' })
+      })
+    );
+    assert.equal(badRes.status, 400);
+    assert.equal(await prisma.event.count(), 1);
+
+    const listRes = await eventsRoute.GET();
+    const list = await listRes.json();
+    assert.equal(list.events.length, 1);
+
+    await prisma.photo.create({ data: { url: '/uploads/e1.jpg', displayUrl: '/uploads/e1.jpg', thumbUrl: '/uploads/e1.jpg', uploadedAt: '2026-01-01T00:00:00.000Z', eventId: id } });
+    await prisma.expense.create({ data: { amount: 88, category: '餐饮', note: '', eventId: id } });
+
+    const detailRes = await eventByIdRoute.GET(
+      new Request(`http://localhost/api/events/${id}`),
+      { params: Promise.resolve({ id }) }
+    );
+    const detail = await detailRes.json();
+    assert.equal(detail.event.title, '第一次约会');
+    assert.equal(detail.photos.length, 1);
+    assert.equal(detail.expenses.length, 1);
+
+    const putRes = await eventByIdRoute.PUT(
+      new Request(`http://localhost/api/events/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: '纪念日' })
+      }),
+      { params: Promise.resolve({ id }) }
+    );
+    assert.equal(putRes.status, 200);
+    const updated = await prisma.event.findUnique({ where: { id } });
+    assert.equal(updated.title, '纪念日');
+
+    const delRes = await eventByIdRoute.DELETE(
+      new Request(`http://localhost/api/events/${id}`, { method: 'DELETE' }),
+      { params: Promise.resolve({ id }) }
+    );
+    assert.equal(delRes.status, 200);
+    assert.equal(await prisma.event.count(), 0);
+  } finally {
+    await ctx.cleanup();
+  }
+});
+
+test('wishes resource: create/complete/delete round-trip', async () => {
+  const ctx = await createTestContext();
+
+  try {
+    const createRes = await wishesRoute.POST(
+      new Request('http://localhost/api/wishes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: '一起看海' })
+      })
+    );
+    assert.equal(createRes.status, 200);
+    const created = await createRes.json();
+    assert.equal(created.success, true);
+    const id = created.wish.id;
+
+    const badRes = await wishesRoute.POST(
+      new Request('http://localhost/api/wishes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: '' })
+      })
+    );
+    assert.equal(badRes.status, 400);
+
+    const completedAt = '2026-10-17T12:00:00.000Z';
+    const putRes = await wishByIdRoute.PUT(
+      new Request(`http://localhost/api/wishes/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isCompleted: true, completedAt })
+      }),
+      { params: Promise.resolve({ id: String(id) }) }
+    );
+    assert.equal(putRes.status, 200);
+    const updated = await prisma.wish.findUnique({ where: { id } });
+    assert.equal(updated.isCompleted, true);
+    assert.equal(updated.completedAt, completedAt);
+
+    const delRes = await wishByIdRoute.DELETE(
+      new Request(`http://localhost/api/wishes/${id}`, { method: 'DELETE' }),
+      { params: Promise.resolve({ id: String(id) }) }
+    );
+    assert.equal(delRes.status, 200);
+    assert.equal(await prisma.wish.count(), 0);
+  } finally {
+    await ctx.cleanup();
+  }
+});
+
+test('capsules resource: create/update/delete round-trip', async () => {
+  const ctx = await createTestContext();
+
+  try {
+    const createRes = await capsulesRoute.POST(
+      new Request('http://localhost/api/capsules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: '写给一年后', unlockDate: '2027-10-17' })
+      })
+    );
+    assert.equal(createRes.status, 200);
+    const created = await createRes.json();
+    assert.equal(created.success, true);
+    const id = created.capsule.id;
+
+    const badRes = await capsulesRoute.POST(
+      new Request('http://localhost/api/capsules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: '' })
+      })
+    );
+    assert.equal(badRes.status, 400);
+
+    const putRes = await capsuleByIdRoute.PUT(
+      new Request(`http://localhost/api/capsules/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: '要幸福' })
+      }),
+      { params: Promise.resolve({ id: String(id) }) }
+    );
+    assert.equal(putRes.status, 200);
+    const updated = await prisma.capsule.findUnique({ where: { id } });
+    assert.equal(updated.content, '要幸福');
+
+    const delRes = await capsuleByIdRoute.DELETE(
+      new Request(`http://localhost/api/capsules/${id}`, { method: 'DELETE' }),
+      { params: Promise.resolve({ id: String(id) }) }
+    );
+    assert.equal(delRes.status, 200);
+    assert.equal(await prisma.capsule.count(), 0);
   } finally {
     await ctx.cleanup();
   }
