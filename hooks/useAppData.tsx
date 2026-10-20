@@ -11,6 +11,18 @@ const EMPTY_DATA: AppData = {
   events: [], photos: [], expenses: [], loveQuotes: [], countdowns: [], wishes: [], capsules: []
 };
 
+function normalizeAppData(d: Partial<AppData>): AppData {
+  return {
+    ...EMPTY_DATA,
+    ...d,
+    events: (d.events || []).slice().sort((a: Event, b: Event) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+    photos: (d.photos || []).map((p: Photo) => ({ ...p, displayUrl: p.displayUrl || p.url, thumbUrl: p.thumbUrl || p.displayUrl || p.url })),
+    expenses: d.expenses || [], loveQuotes: d.loveQuotes || [],
+    customCovers: d.customCovers || [], hiddenDefaultCovers: d.hiddenDefaultCovers || [],
+    countdowns: d.countdowns || [], wishes: d.wishes || [], capsules: d.capsules || []
+  };
+}
+
 type AppDataContextValue = {
   data: AppData;
   setData: (updater: (prev: AppData) => AppData) => void;
@@ -27,9 +39,9 @@ type AppDataContextValue = {
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
 
-export function AppDataProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<AppData>(EMPTY_DATA);
-  const [loading, setLoading] = useState(true);
+export function AppDataProvider({ children, initialData }: { children: ReactNode; initialData?: AppData }) {
+  const [data, setData] = useState<AppData>(() => (initialData ? normalizeAppData(initialData) : EMPTY_DATA));
+  const [loading, setLoading] = useState(!initialData);
   const [loadError, setLoadError] = useState(false);
   const [toast, setToast] = useState('');
 
@@ -38,9 +50,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     fetch('/api/data', { cache: 'no-store' })
       .then(r => { if (!r.ok) throw new Error(); return r.json(); })
       .then(d => {
-        const events = (d.events || []).sort((a: Event, b: Event) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        const photos = (d.photos || []).map((p: Photo) => ({ ...p, displayUrl: p.displayUrl || p.url, thumbUrl: p.thumbUrl || p.displayUrl || p.url }));
-        setData({ ...d, events, photos, expenses: d.expenses || [], loveQuotes: d.loveQuotes || [], customCovers: d.customCovers || [], hiddenDefaultCovers: d.hiddenDefaultCovers || [], countdowns: d.countdowns || [], wishes: d.wishes || [], capsules: d.capsules || [] });
+        setData(normalizeAppData(d));
       })
       .catch(() => {
         if (retryCount < 1) setTimeout(() => loadData(retryCount + 1), 2000);
@@ -49,7 +59,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { if (!initialData) loadData(); }, []);
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 2000); return () => clearTimeout(t); }, [toast]);
 
   async function saveSettings(patch: SettingsPatch, msg?: string): Promise<void> {

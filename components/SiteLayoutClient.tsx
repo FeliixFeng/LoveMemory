@@ -37,7 +37,7 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
-export function SiteLayoutClient({ children }: { children: ReactNode }) {
+export function SiteLayoutClient({ children, initialData }: { children: ReactNode; initialData?: import('../lib/types').AppData }) {
   const pathname = usePathname();
   const [floatingButton, setFloatingButton] = useState<ReactNode>(null);
   const [token, setToken] = useState(() => {
@@ -79,7 +79,7 @@ export function SiteLayoutClient({ children }: { children: ReactNode }) {
           setShowPin(true);
         }
       }} />
-      <AppDataProvider>
+      <AppDataProvider initialData={initialData}>
         <ErrorBoundary>
           {children}
         </ErrorBoundary>
