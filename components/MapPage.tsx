@@ -101,10 +101,10 @@ function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<s
       <button
         type="button"
         onClick={() => setResetKey(k => k + 1)}
-        className="absolute top-2 right-2 z-10 px-2.5 py-1.5 rounded-full bg-white/85 backdrop-blur-sm border border-lm-line/60 text-[11px] text-lm-body/70 shadow-sm active:scale-95 transition-transform"
+        className="absolute top-2 right-2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/60 backdrop-blur-sm border border-lm-line/50 text-sm shadow-sm active:scale-95 transition-transform"
         title="回到初始视角"
       >
-        🎯 归位
+        🎯
       </button>
     </div>
   );
@@ -117,7 +117,6 @@ export function MapPage() {
   const excludedWords = ['家里', '待定', '内', '附近', '门口', '学校', '公司'];
   const visitedProvinces = new Set<string>();
   const visitedCities: { city: string; province: string }[] = [];
-  const unmappedCities: string[] = [];
 
   events.forEach(e => {
     if (!e.location || excludedWords.some(w => e.location.includes(w))) return;
@@ -125,11 +124,6 @@ export function MapPage() {
     if (province) {
       visitedProvinces.add(province);
       visitedCities.push({ city: e.location, province });
-      if (!CITY_COORDS[e.location] && !unmappedCities.includes(e.location)) {
-        unmappedCities.push(e.location);
-      }
-    } else if (!unmappedCities.includes(e.location)) {
-      unmappedCities.push(e.location);
     }
   });
 
@@ -141,9 +135,6 @@ export function MapPage() {
       <h1 className="text-lg font-bold text-lm-ink" style={{ fontFamily: 'var(--lm-font-serif)' }}>🗺️ 足迹</h1>
       <div className="lm-card rounded-2xl overflow-hidden">
         <MapChart visitedProvinces={visitedProvinces} visitedCities={visitedCities} />
-        {unmappedCities.length > 0 && (
-          <p className="px-4 pb-3 text-[11px] text-lm-body/40">以下地点暂未收录坐标，仅计入统计未标点：{unmappedCities.join('、')}</p>
-        )}
       </div>
       <div className="lm-card rounded-2xl px-4 py-3">
         <div className="flex justify-center gap-6 text-xs text-lm-body/55">
