@@ -1,9 +1,5 @@
-import dynamic from 'next/dynamic';
 import { PageWrapper } from '../../../components/PageWrapper';
-
-const AlbumPage = dynamic(() => import('../../../components/AlbumPage').then(m => m.AlbumPage), {
-  loading: () => <div className="space-y-4"><div className="h-40 bg-lm-line/20 rounded-2xl animate-pulse" /><div className="h-40 bg-lm-line/20 rounded-2xl animate-pulse" /></div>
-});
+import { AlbumPage } from '../../../components/AlbumPage';
 
 export default function Album() {
   return (

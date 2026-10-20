@@ -1,9 +1,5 @@
-import dynamic from 'next/dynamic';
 import { PageWrapper } from '../../../components/PageWrapper';
-
-const WishesCapsulesPage = dynamic(() => import('../../../components/WishesCapsulesPage').then(m => m.WishesCapsulesPage), {
-  loading: () => <div className="grid grid-cols-2 gap-3"><div className="h-40 bg-lm-line/20 rounded-2xl animate-pulse" /><div className="h-40 bg-lm-line/20 rounded-2xl animate-pulse" /></div>
-});
+import { WishesCapsulesPage } from '../../../components/WishesCapsulesPage';
 
 export default function Capsule() {
   return (
