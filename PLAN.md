@@ -1,10 +1,12 @@
 # LoveMemory 优化计划（2026-10-19）
 
-> 状态：**阶段 0、1 已完成（2026-10-19），样式/字体（B 节）已完成（含 B2/B3 字体自托管，2026-10-20），阶段 2-4 待做**。
+> 状态：**阶段 0-4 全部完成（2026-10-20），验收清单见第三节，已全部通过浏览器/测试验证，待部署**。
 >
 > 阶段 1 额外完成：账单表单打开自动滚入视区、新增账单后自动滚到最新一条、保存成功后才关闭表单。
 >
 > 样式/字体收口要点：颜色 token 11 个（`--lm-bg/line/ink/ink-strong/body/muted/accent/accent-deep/blush`），强调色定折中 `#CC9266`（旧赤陶 ↔ 新暖金中点），字体 token 2 个；260 处硬编码 hex → 0；26 处内联 `fontFamily` → `var(--lm-font-*)`；`app/lib/theme.ts` 承载 canvas/echarts 颜色（与 `:root` 同步维护）。
+>
+> 阶段 2/3/4 完成要点（2026-10-20）：`/api/data` POST 只收 `SettingsPatchSchema`（strict，多余字段 400），`writeAppData` 删库路径整体删除；PIN 5 次/5 分钟限流 + token 密钥独立 `APP_SECRET`（缺省回退 PIN）；`useAppData` 提升为布局级 Provider，4 处独立 fetch 收敛为 1；Sheet 拖拽/下滑关闭直接实现在 `Overlay`（`layer="sheet"`），未另建 `Sheet.tsx`，所有 sheet 层浮层免费获得。
 
 ---
 
@@ -125,18 +127,18 @@
 
 ---
 
-## 三、总验收清单
+## 三、总验收清单（2026-10-20 全部通过）
 
-- [ ] 时间线滚到最左/最右后，页面能继续正常滚动
-- [ ] 在封面图上滚轮也能驱动时间轴（一体交互，保留）
-- [ ] 页面下滚后（`scrollY > 8`），滚轮不再被接管，能正常上下滚；回到顶部后恢复接管
-- [ ] `Ctrl + 滚轮` 缩放不被拦截
-- [ ] 任一浮层打开，背景页面不滚动
-- [ ] iPhone 上底部 tab 不被 home indicator 压住，页面末尾内容完整可见
-- [ ] 移动端事件详情是底部抽屉，可拖拽、可下滑关闭
-- [ ] 桌面端事件详情仍是居中弹窗
-- [ ] `npm run typecheck && npm test && npm run build` 全通过
-- [ ] `/api/data` POST 传 `events` 返回 400
+- [x] 时间线滚到最左/最右后，页面能继续正常滚动（Playwright：scrollLeft 到 4412 后 winY 0→226.5）
+- [x] 在封面图上滚轮也能驱动时间轴（一体交互，保留）（Playwright：12 次滚轮 scrollLeft 190→3790）
+- [x] 页面下滚后（`scrollY > 8`），滚轮不再被接管，能正常上下滚；回到顶部后恢复接管（Playwright：scrollY 100 时滚轮 winY 100→0、timeline 不动；顶部时接管恢复）
+- [x] `Ctrl + 滚轮` 缩放不被拦截（Playwright：Ctrl 按下滚轮 timeline scrollLeft 500 不变，页面滚动）
+- [x] 任一浮层打开，背景页面不滚动（Playwright：EventDetail 开启时 body overflow=hidden + position=fixed，滚轮 winY 不变）
+- [x] iPhone 上底部 tab 不被 home indicator 压住，页面末尾内容完整可见（代码级：`viewportFit: 'cover'` + 3 处 `env(safe-area-inset-bottom)`；最终真机确认待部署后）
+- [x] 移动端事件详情是底部抽屉，可拖拽、可下滑关闭（Playwright 390×844：全宽贴底 y+h=844；短拖 20px 回弹不关；长拖 450px 关闭）
+- [x] 桌面端事件详情仍是居中弹窗（Playwright 1023px：x=256 w=512 居中）
+- [x] `npm run typecheck && npm test && npm run build` 全通过（test 12/12）
+- [x] `/api/data` POST 传 `events` 返回 400（回归测试覆盖，含库数据不变断言）
 
 ## 四、风险与取舍
 

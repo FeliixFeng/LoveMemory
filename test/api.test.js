@@ -235,3 +235,68 @@ test('upload and delete route handlers manage original and thumbnail files', asy
     await ctx.cleanup();
   }
 });
+
+test('concurrent settings patches of different fields both persist', async () => {
+  const ctx = await createTestContext();
+
+  try {
+    const post = payload => ctx.dataRoute.POST(
+      new Request('http://localhost/api/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+    );
+
+    const [a, b] = await Promise.all([
+      post({ startDate: '2022-02-02' }),
+      post({ heroImage: '/hero-concurrent.jpg' })
+    ]);
+    assert.equal(a.status, 200);
+    assert.equal(b.status, 200);
+
+    const res = await ctx.dataRoute.GET(new Request('http://localhost/api/data'));
+    const body = await res.json();
+    assert.equal(body.startDate, '2022-02-02');
+    assert.equal(body.heroImage, '/hero-concurrent.jpg');
+  } finally {
+    await ctx.cleanup();
+  }
+});
+
+test('deleting an event keeps settings and photos, cascades expenses', async () => {
+  const ctx = await createTestContext();
+  const eventsRoute = await import(new URL(`../app/api/events/[id]/route.ts?${Date.now()}`, import.meta.url).href);
+
+  try {
+    await ctx.dataRoute.POST(
+      new Request('http://localhost/api/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ startDate: '2021-06-06', heroImage: '/hero-keep.jpg' })
+      })
+    );
+    await prisma.event.create({ data: { id: 'evt-del', title: 'Doomed', date: '2021-06-06', description: '' } });
+    await prisma.photo.create({ data: { url: '/uploads/orphan.jpg', displayUrl: '/uploads/orphan.jpg', thumbUrl: '/uploads/orphan.jpg', uploadedAt: '2026-01-01T00:00:00.000Z', eventId: 'evt-del' } });
+    await prisma.expense.create({ data: { amount: 99, category: '餐饮', note: '', eventId: 'evt-del' } });
+
+    const res = await eventsRoute.DELETE(
+      new Request('http://localhost/api/events/evt-del', { method: 'DELETE' }),
+      { params: Promise.resolve({ id: 'evt-del' }) }
+    );
+    assert.equal(res.status, 200);
+
+    assert.equal(await prisma.event.count(), 0);
+    assert.equal(await prisma.expense.count(), 0);
+    assert.equal(await prisma.photo.count(), 1);
+    const photo = await prisma.photo.findFirst();
+    assert.equal(photo.eventId, null);
+
+    const read = await ctx.dataRoute.GET(new Request('http://localhost/api/data'));
+    const body = await read.json();
+    assert.equal(body.startDate, '2021-06-06');
+    assert.equal(body.heroImage, '/hero-keep.jpg');
+  } finally {
+    await ctx.cleanup();
+  }
+});

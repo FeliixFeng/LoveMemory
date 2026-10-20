@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react';
 import { useScrollLock } from '../../hooks/useScrollLock';
 import { useOverlayLayer } from '../../hooks/useOverlayLayer';
 
@@ -44,6 +44,50 @@ export function Overlay({
   const panelRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
   const { isTop } = useOverlayLayer();
+
+  const dragRef = useRef({ active: false, startY: 0, prevY: 0, prevT: 0, dy: 0 });
+
+  function handleDragStart(e: ReactPointerEvent<HTMLDivElement>) {
+    if (e.button !== 0) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const d = dragRef.current;
+    const now = performance.now();
+    d.active = true;
+    d.startY = e.clientY;
+    d.prevY = e.clientY;
+    d.prevT = now;
+    d.dy = 0;
+    const panel = panelRef.current;
+    if (panel) {
+      panel.style.transition = 'none';
+      panel.style.transform = 'translateY(0)';
+    }
+  }
+
+  function handleDragMove(e: ReactPointerEvent<HTMLDivElement>) {
+    const d = dragRef.current;
+    if (!d.active) return;
+    d.dy = Math.max(0, e.clientY - d.startY);
+    d.prevY = e.clientY;
+    d.prevT = performance.now();
+    const panel = panelRef.current;
+    if (panel) panel.style.transform = `translateY(${d.dy}px)`;
+  }
+
+  function handleDragEnd(e: ReactPointerEvent<HTMLDivElement>) {
+    const d = dragRef.current;
+    if (!d.active) return;
+    d.active = false;
+    const panel = panelRef.current;
+    if (!panel) return;
+    const velocity = (e.clientY - d.prevY) / Math.max(1, performance.now() - d.prevT);
+    if (d.dy >= 24 && (d.dy > panel.offsetHeight * 0.3 || velocity > 0.6)) {
+      onCloseRef.current();
+      return;
+    }
+    panel.style.transition = 'transform 0.25s cubic-bezier(0.32, 0.72, 0, 1)';
+    panel.style.transform = '';
+  }
 
   useScrollLock(true);
 
@@ -118,6 +162,18 @@ export function Overlay({
         tabIndex={-1}
         className={`relative lm-scroll-contain outline-none ${panelClassName}`}
       >
+        {layer === 'sheet' && (
+          <div
+            aria-hidden="true"
+            onPointerDown={handleDragStart}
+            onPointerMove={handleDragMove}
+            onPointerUp={handleDragEnd}
+            onPointerCancel={handleDragEnd}
+            className="sticky top-0 z-10 flex touch-none select-none items-center justify-center bg-inherit py-2.5 cursor-grab active:cursor-grabbing"
+          >
+            <span className="h-1 w-9 rounded-full bg-lm-line" />
+          </div>
+        )}
         {children}
       </div>
     </div>

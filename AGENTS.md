@@ -85,6 +85,10 @@ ssh ali1 'curl -fsS --retry 10 --retry-delay 3 http://127.0.0.1:3000/api/health'
 curl -fsS https://lovexin.felixfeng.online/api/health
 ```
 
+> **APP_SECRET（2026-10-20 新增）**：token 签名密钥已从 PIN 独立出来。rsync 不传 `.env.production`，所以**首次部署这批代码前**要手动给服务器补一行（随机长字符串，只执行这一次）：
+> `ssh ali1 'echo "APP_SECRET=$(openssl rand -hex 32)" >> /data/app/love-memory/.env.production'`
+> 不配也能跑（回退用 PIN 签名并打告警），但配上后 PIN 泄露不会波及已签发 token。注意：配好后旧 token 全部失效，用户需重输一次 PIN。
+
 ### 服务器事实
 
 - `ssh ali1` → `root@47.121.181.198`（2核2G，云盘 40G）
