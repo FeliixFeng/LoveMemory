@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AppData } from '../lib/types';
+import type { SettingsPatch } from '../app/lib/schemas';
 import { HERO_IMAGES } from '../lib/constants';
 import { useAuth } from './SiteLayoutClient';
 import { fmt } from '../lib/utils';
@@ -33,15 +34,15 @@ export function SettingsPage() {
 
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 2000); return () => clearTimeout(t); }, [toast]);
 
-  async function save(next: AppData, msg?: string) {
+  async function save(patch: SettingsPatch, msg?: string) {
     if (!data) return;
     const prev = data;
-    setData(next);
+    setData({ ...data, ...patch });
     if (msg) setToast(msg);
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
-      const r = await fetch('/api/data', { method: 'POST', headers, body: JSON.stringify(next) });
+      const r = await fetch('/api/data', { method: 'POST', headers, body: JSON.stringify(patch) });
       if (!r.ok) throw new Error();
     } catch {
       setData(prev);
@@ -103,7 +104,7 @@ export function SettingsPage() {
           <input
             type="date"
             value={data.startDate}
-            onChange={e => withAuth(() => void save({ ...data, startDate: e.target.value }, '已保存'))}
+            onChange={e => withAuth(() => void save({ startDate: e.target.value }, '已保存'))}
             className="w-full bg-white border border-lm-line/60 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-lm-accent transition-colors"
           />
         </div>
@@ -123,7 +124,7 @@ export function SettingsPage() {
                   <div key={i} className="relative rounded-xl overflow-hidden aspect-[4/3] group shadow-sm">
                     <SafeImage src={url} alt="" fill sizes="(max-width: 640px) 33vw, 200px" className="object-cover" />
                     <button
-                      onClick={() => withAuth(() => setConfirm({ title: '确认移除封面', message: '确定要移除这张封面吗？', onConfirm: () => void save({ ...data, customCovers: data.customCovers.filter(c => c !== url) }, '已删除') }))}
+                      onClick={() => withAuth(() => setConfirm({ title: '确认移除封面', message: '确定要移除这张封面吗？', onConfirm: () => void save({ customCovers: data.customCovers.filter(c => c !== url) }, '已删除') }))}
                       className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 backdrop-blur-sm text-white text-[10px] flex items-center justify-center opacity-70 md:opacity-0 md:group-hover:opacity-100 hover:bg-red-500 transition-all"
                     >×</button>
                   </div>
@@ -149,7 +150,7 @@ export function SettingsPage() {
                   if (r.ok) {
                     const d = await r.json();
                     const url = d.displayUrl || d.url;
-                    void save({ ...data, customCovers: [...data.customCovers, url] }, '封面已添加');
+                    void save({ customCovers: [...data.customCovers, url] }, '封面已添加');
                   }
                 };
                 input.click();
@@ -169,7 +170,7 @@ export function SettingsPage() {
                   <p className="text-xs font-medium text-lm-body/60">默认封面</p>
                 </div>
                 {hasHidden && (
-                  <button onClick={() => withAuth(() => void save({ ...data, hiddenDefaultCovers: [] }, '已恢复默认'))} className="text-[10px] text-lm-accent hover:underline">恢复全部默认</button>
+                  <button onClick={() => withAuth(() => void save({ hiddenDefaultCovers: [] }, '已恢复默认'))} className="text-[10px] text-lm-accent hover:underline">恢复全部默认</button>
                 )}
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -177,7 +178,7 @@ export function SettingsPage() {
                   <div key={i} className="relative rounded-xl overflow-hidden aspect-[4/3] group shadow-sm">
                     <SafeImage src={url} alt="" fill sizes="(max-width: 640px) 33vw, 200px" className="object-cover" />
                     <button
-                      onClick={() => withAuth(() => void save({ ...data, hiddenDefaultCovers: [...(data.hiddenDefaultCovers || []), url] }, '已隐藏'))}
+                      onClick={() => withAuth(() => void save({ hiddenDefaultCovers: [...(data.hiddenDefaultCovers || []), url] }, '已隐藏'))}
                       className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 backdrop-blur-sm text-white text-[10px] flex items-center justify-center opacity-70 md:opacity-0 md:group-hover:opacity-100 hover:bg-red-500 transition-all"
                     >×</button>
                   </div>
@@ -203,7 +204,7 @@ export function SettingsPage() {
                 onChange={e => setNewQuote(e.target.value)}
                 onKeyDown={e => {
                   if (e.key === 'Enter' && newQuote.trim()) {
-                    withAuth(() => void save({ ...data, loveQuotes: [...data.loveQuotes, { id: Date.now(), content: newQuote.trim() }] }, '已添加'));
+                    withAuth(() => void save({ loveQuotes: [...data.loveQuotes, { id: Date.now(), content: newQuote.trim() }] }, '已添加'));
                     setNewQuote('');
                   }
                 }}
@@ -212,7 +213,7 @@ export function SettingsPage() {
               />
               <button onClick={() => {
                 if (!newQuote.trim()) return;
-                withAuth(() => void save({ ...data, loveQuotes: [...data.loveQuotes, { id: Date.now(), content: newQuote.trim() }] }, '已添加'));
+                withAuth(() => void save({ loveQuotes: [...data.loveQuotes, { id: Date.now(), content: newQuote.trim() }] }, '已添加'));
                 setNewQuote('');
               }} className="px-4 py-2 bg-gradient-to-r from-lm-accent to-lm-accent-deep text-white rounded-xl text-sm font-medium shrink-0 active:scale-95 transition-transform">添加</button>
             </div>
@@ -229,7 +230,7 @@ export function SettingsPage() {
                 <div key={q.id} className="lm-card rounded-2xl px-4 py-3 flex items-center gap-3">
                   <span className="w-6 h-6 rounded-full bg-lm-line/30 flex items-center justify-center text-[10px] text-lm-body/30 shrink-0">{i + 1}</span>
                   <span className="flex-1 text-sm text-lm-ink" style={{ fontFamily: 'var(--lm-font-serif)' }}>{q.content}</span>
-                  <button onClick={() => withAuth(() => setConfirm({ title: '确认删除语录', message: '确定要删除这条语录吗？', onConfirm: () => void save({ ...data, loveQuotes: data.loveQuotes.filter(x => x.id !== q.id) }, '已删除') }))} className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs text-lm-body/20 hover:text-red-400 hover:bg-red-50 transition-colors">×</button>
+                  <button onClick={() => withAuth(() => setConfirm({ title: '确认删除语录', message: '确定要删除这条语录吗？', onConfirm: () => void save({ loveQuotes: data.loveQuotes.filter(x => x.id !== q.id) }, '已删除') }))} className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs text-lm-body/20 hover:text-red-400 hover:bg-red-50 transition-colors">×</button>
                 </div>
               ))}
             </div>
@@ -275,7 +276,7 @@ export function SettingsPage() {
               <button
                 onClick={() => {
                   if (!newCountdown.label || !newCountdown.date) return;
-                  withAuth(() => void save({ ...data, countdowns: [...(data.countdowns || []), { ...newCountdown, id: Date.now() }] }, '已添加'));
+                  withAuth(() => void save({ countdowns: [...(data.countdowns || []), { ...newCountdown, id: Date.now() }] }, '已添加'));
                   setNewCountdown({ label: '', date: '', emoji: '🎂' });
                 }}
                 className="px-4 py-2 bg-gradient-to-r from-lm-accent to-lm-accent-deep text-white rounded-xl text-sm font-medium shrink-0 active:scale-95 transition-transform"
@@ -309,7 +310,7 @@ export function SettingsPage() {
                       <p className="text-lg font-bold text-lm-accent" style={{ fontFamily: 'var(--lm-font-display)' }}>{daysLeft}</p>
                       <p className="text-[9px] text-lm-body/40">天后</p>
                     </div>
-                    <button onClick={() => withAuth(() => setConfirm({ title: '确认删除倒计时', message: '确定要删除这个倒计时吗？', onConfirm: () => void save({ ...data, countdowns: (data.countdowns || []).filter(x => x.id !== c.id) }, '已删除') }))} className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs text-lm-body/20 hover:text-red-400 hover:bg-red-50 transition-colors">×</button>
+                    <button onClick={() => withAuth(() => setConfirm({ title: '确认删除倒计时', message: '确定要删除这个倒计时吗？', onConfirm: () => void save({ countdowns: (data.countdowns || []).filter(x => x.id !== c.id) }, '已删除') }))} className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs text-lm-body/20 hover:text-red-400 hover:bg-red-50 transition-colors">×</button>
                   </div>
                 );
               })}

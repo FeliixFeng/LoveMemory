@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import imageCompression from 'browser-image-compression';
 import { Photo, AppData } from '../lib/types';
 import { apiFetch, ApiError } from '../app/lib/api-client';
+import type { SettingsPatch } from '../app/lib/schemas';
 
 const COMPRESS_OPTIONS = {
   maxSizeMB: 1.5,           // 最大 1.5MB
@@ -30,7 +31,8 @@ async function compressImage(file: File): Promise<File> {
 
 export function usePhotoUpload(
   data: AppData,
-  save: (next: AppData, msg?: string) => Promise<boolean>,
+  setData: (updater: (prev: AppData) => AppData) => void,
+  saveSettings: (patch: SettingsPatch, msg?: string) => Promise<void>,
   setToast: (msg: string) => void,
   onAuthRequired: (op: () => void) => void
 ) {
@@ -86,7 +88,8 @@ export function usePhotoUpload(
         up.push(await doUpload(files[i], selectedEventId || undefined));
       }
       setUploadProgress(100);
-      await save({ ...data, photos: [...up.reverse(), ...data.photos] }, '已上传');
+      setData(prev => ({ ...prev, photos: [...up.reverse(), ...prev.photos] }));
+      setToast('已上传');
     } catch (err) {
       if ((err as Error)?.message !== 'auth') setToast('上传失败');
     } finally {
@@ -100,7 +103,8 @@ export function usePhotoUpload(
     setDeleting(p.url);
     try {
       await apiFetch('/api/upload', { method: 'DELETE', body: { url: p.url } });
-      await save({ ...data, photos: data.photos.filter(x => x.url !== p.url) }, '已删除');
+      setData(prev => ({ ...prev, photos: prev.photos.filter(x => x.url !== p.url) }));
+      setToast('已删除');
       if (viewPhoto && viewPhoto.photos[viewPhoto.index]?.url === p.url) setViewPhoto(null);
     } catch (err) {
       if (err instanceof ApiError && err.isAuthError) {
@@ -120,9 +124,13 @@ export function usePhotoUpload(
     try {
       const u = await doUpload(file);
       const url = u.displayUrl || u.url;
-      await save({ ...data, customCovers: [...data.customCovers, url] }, '封面已添加');
+      await saveSettings({ customCovers: [...data.customCovers, url] }, '封面已添加');
     } catch (err) {
-      if ((err as Error)?.message !== 'auth') setToast('上传失败');
+      if (err instanceof ApiError && err.isAuthError) {
+        onAuthRequired(() => { void onHeroUpload(e); });
+      } else if ((err as Error)?.message !== 'auth') {
+        setToast('封面保存失败');
+      }
     } finally {
       setUploading(false);
       e.target.value = '';

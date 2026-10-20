@@ -6,10 +6,10 @@ import { fmt } from '../lib/utils';
 import { SafeImage } from './SafeImage';
 
 export function HeroSection({
-  heroImages, saving, animDays, nextDays, startDate, quotes, countdowns,
+  heroImages, animDays, nextDays, startDate, quotes, countdowns,
   onHeroUpload, heroRef, children
 }: {
-  heroImages: string[]; saving: boolean; animDays: number; nextDays: number; startDate: string;
+  heroImages: string[]; animDays: number; nextDays: number; startDate: string;
   quotes: LoveQuote[];
   countdowns: Countdown[];
   onHeroUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -75,7 +75,7 @@ export function HeroSection({
       {/* Top status indicator */}
       <div className="absolute top-3 left-3 z-10">
         <div className="px-2 py-0.5 rounded-full bg-black/25 text-[9px] text-emerald-400 font-medium tracking-wide" style={{ fontFamily: 'var(--lm-font-display)' }}>
-          {saving ? 'SYNCING' : 'LOVING'}
+          {'LOVING'}
         </div>
       </div>
 

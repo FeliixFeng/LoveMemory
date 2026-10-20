@@ -103,41 +103,90 @@ test('GET /api/data returns default payload for a fresh database', async () => {
   }
 });
 
-test('POST /api/data merges updates without losing untouched fields', async () => {
+test('POST /api/data updates only settings fields', async () => {
   const ctx = await createTestContext();
 
   try {
-    const initialPayload = {
-      startDate: '2020-01-01',
-      heroImage: '/hero.jpg',
-      events: [{ id: '1', date: '2020-01-02', title: 'First Date', desc: 'Cafe', icon: 'heart', location: '', mood: '', coverPhoto: '' }],
-      photos: [{ url: '/uploads/test.jpg', displayUrl: '/uploads/test.jpg', thumbUrl: '/uploads/test.jpg', uploadedAt: '2026-03-19T00:00:00.000Z' }],
-      expenses: [{ id: 1, eventId: '1', amount: 100, category: 'food', note: 'dinner' }]
-    };
+    await prisma.event.create({ data: { id: 'evt-1', title: 'First Date', date: '2020-01-02', description: 'Cafe' } });
 
-    await ctx.dataRoute.POST(
+    const first = await ctx.dataRoute.POST(
       new Request('http://localhost/api/data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(initialPayload)
+        body: JSON.stringify({ startDate: '2020-01-01', heroImage: '/hero.jpg' })
       })
     );
+    assert.equal(first.status, 200);
 
-    const response = await ctx.dataRoute.POST(
+    const second = await ctx.dataRoute.POST(
       new Request('http://localhost/api/data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ heroImage: '/updated-hero.jpg' })
       })
     );
-    const body = await response.json();
+    const body = await second.json();
 
-    assert.equal(response.status, 200);
+    assert.equal(second.status, 200);
     assert.equal(body.data.startDate, '2020-01-01');
     assert.equal(body.data.heroImage, '/updated-hero.jpg');
     assert.equal(body.data.events.length, 1);
-    assert.equal(body.data.photos.length, 1);
-    assert.equal(body.data.expenses.length, 1);
+  } finally {
+    await ctx.cleanup();
+  }
+});
+
+test('POST /api/data rejects events/photos payloads with 400 and keeps data intact', async () => {
+  const ctx = await createTestContext();
+
+  try {
+    await prisma.event.create({ data: { id: 'evt-keep', title: 'Keep Me', date: '2021-01-01', description: '' } });
+    await prisma.photo.create({ data: { url: '/uploads/keep.jpg', displayUrl: '/uploads/keep.jpg', thumbUrl: '/uploads/keep.jpg', uploadedAt: '2026-01-01T00:00:00.000Z', eventId: 'evt-keep' } });
+
+    for (const payload of [{ events: [] }, { photos: [] }, { expenses: [] }, { wishes: [] }, { capsules: [] }, { milestones: [] }]) {
+      const res = await ctx.dataRoute.POST(
+        new Request('http://localhost/api/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+      );
+      assert.equal(res.status, 400, `expected 400 for ${JSON.stringify(payload)}`);
+    }
+
+    assert.equal(await prisma.event.count(), 1);
+    assert.equal(await prisma.photo.count(), 1);
+  } finally {
+    await ctx.cleanup();
+  }
+});
+
+test('PUT /api/photos/order reorders photos without deleting any', async () => {
+  const ctx = await createTestContext();
+  const orderRoute = await import(new URL(`../app/api/photos/order/route.ts?${Date.now()}`, import.meta.url).href);
+
+  try {
+    await prisma.event.create({ data: { id: 'evt-2', title: 'Trip', date: '2022-05-01', description: '' } });
+    for (const url of ['/uploads/a.jpg', '/uploads/b.jpg']) {
+      await prisma.photo.create({ data: { url, displayUrl: url, thumbUrl: url, uploadedAt: '2026-01-01T00:00:00.000Z', eventId: 'evt-2', sortOrder: url === '/uploads/a.jpg' ? 0 : 1 } });
+    }
+
+    const res = await orderRoute.PUT(
+      new Request('http://localhost/api/photos/order', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId: 'evt-2', urls: ['/uploads/b.jpg', '/uploads/a.jpg'] })
+      })
+    );
+    const body = await res.json();
+
+    assert.equal(res.status, 200);
+    assert.equal(body.updated, 2);
+    assert.equal(await prisma.photo.count(), 2);
+    const b = await prisma.photo.findUnique({ where: { url: '/uploads/b.jpg' } });
+    const a = await prisma.photo.findUnique({ where: { url: '/uploads/a.jpg' } });
+    assert.equal(b.sortOrder, 0);
+    assert.equal(a.sortOrder, 1);
   } finally {
     await ctx.cleanup();
   }

@@ -58,3 +58,31 @@ export const AddExpenseSchema = z.object({
   category: z.string().max(100).default('other'),
   note: z.string().max(500).default('')
 });
+
+// --- Settings（/api/data POST 只接受这些字段；strict 会把 events/photos 等拒成 400） ---
+export const SettingsPatchSchema = z.object({
+  startDate: z.string().max(32).optional(),
+  heroImage: z.string().max(500).optional(),
+  customCovers: z.array(z.string().max(500)).max(100).optional(),
+  hiddenDefaultCovers: z.array(z.string().max(500)).max(500).optional(),
+  countdowns: z.array(z.object({
+    id: z.number(),
+    label: z.string().max(100),
+    date: z.string().max(32),
+    emoji: z.string().max(10).default('🎂')
+  })).max(50).optional(),
+  loveQuotes: z.array(z.object({
+    id: z.number(),
+    content: z.string().min(1).max(500)
+  })).max(200).optional()
+}).strict();
+
+export type SettingsPatch = z.infer<typeof SettingsPatchSchema>;
+
+// --- Photo order（只改排序，永不删除） ---
+export const PhotoOrderSchema = z.object({
+  eventId: z.string().min(1).max(64),
+  urls: z.array(z.string().min(1).max(500)).min(1).max(2000)
+}).strict();
+
+export type PhotoOrderInput = z.infer<typeof PhotoOrderSchema>;

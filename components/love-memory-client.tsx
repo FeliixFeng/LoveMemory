@@ -18,6 +18,7 @@ import { useAppData } from '../hooks/useAppData';
 import { usePhotoUpload } from '../hooks/usePhotoUpload';
 import { useEventCRUD } from '../hooks/useEventCRUD';
 import { useExpenseCRUD } from '../hooks/useExpenseCRUD';
+import { apiFetch } from '../app/lib/api-client';
 
 function useAnimatedNum(target: number) {
   const [val, setVal] = useState(0);
@@ -35,7 +36,7 @@ function useAnimatedNum(target: number) {
 
 export function LoveMemoryClient() {
   const { tokenRef, setShowPin, pendingOp, withAuth, setFloatingButton } = useAuth();
-  const { data, setData, loading, loadError, saving, toast, setToast, loadData, save, days, nextDays, heroImages } = useAppData();
+  const { data, setData, loading, loadError, toast, setToast, loadData, saveSettings, days, nextDays, heroImages } = useAppData();
   const [confirm, setConfirm] = useState<{ title: string; message: string; danger?: boolean; onConfirm: () => void } | null>(null);
 
   const animDays = useAnimatedNum(days);
@@ -45,9 +46,9 @@ export function LoveMemoryClient() {
     setShowPin(true);
   };
 
-  const photos = usePhotoUpload(data, save, setToast, onAuthRequired);
-  const events = useEventCRUD(data, setData, save, setToast, onAuthRequired);
-  const expenses = useExpenseCRUD(data, save, setToast, onAuthRequired);
+  const photos = usePhotoUpload(data, setData, saveSettings, setToast, onAuthRequired);
+  const events = useEventCRUD(data, setData, setToast, onAuthRequired);
+  const expenses = useExpenseCRUD(data, setData, setToast, onAuthRequired);
 
   const heroRef = useRef<HTMLInputElement>(null);
   const timelineScrollRef = useRef<HTMLDivElement>(null);
@@ -118,7 +119,7 @@ export function LoveMemoryClient() {
       <main className="max-w-lg md:max-w-3xl lg:max-w-6xl mx-auto pt-16 pb-[calc(5rem_+_env(safe-area-inset-bottom))] md:pb-8 px-0 md:px-8 flex flex-col gap-4">
         <div ref={heroContainerRef} className="px-4 lg:px-0">
           <HeroSection
-            heroImages={heroImages} saving={saving}
+            heroImages={heroImages}
             animDays={animDays} nextDays={nextDays} startDate={data.startDate}
             quotes={data.loveQuotes} countdowns={data.countdowns}
             onHeroUpload={photos.onHeroUpload} heroRef={heroRef}
@@ -179,7 +180,15 @@ export function LoveMemoryClient() {
             const otherPhotos = data.photos.filter(p => p.eventId !== events.eventDetailId);
             const swapped = [...eventPhotos];
             [swapped[from], swapped[to]] = [swapped[to], swapped[from]];
-            void save({ ...data, photos: [...otherPhotos, ...swapped] });
+            const orderedUrls = swapped.map(p => p.url);
+            setData({ ...data, photos: [...otherPhotos, ...swapped] });
+            void apiFetch('/api/photos/order', {
+              method: 'PUT',
+              body: { eventId: events.eventDetailId, urls: orderedUrls }
+            }).catch(() => {
+              setToast('排序保存失败，请重试');
+              loadData();
+            });
           }}
           onAddExpense={(d) => expenses.addExpense(events.eventDetailId!, d)}
           onDeleteExpense={id => withAuth(() => setConfirm({ title: '确认删除账单', message: '确定要删除这条账单吗？', onConfirm: () => { void expenses.deleteExpense(id); setConfirm(null); } }))}

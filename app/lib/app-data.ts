@@ -1,5 +1,7 @@
+import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma.ts';
 import type { Event, Photo, Expense, LoveQuote, Wish, Capsule, AppData } from '../../lib/types.ts';
+import type { SettingsPatch } from './schemas.ts';
 
 export type { AppData };
 
@@ -25,48 +27,11 @@ export const DEFAULT_APP_DATA: AppData = {
 
 // --- Prisma result types ---
 
-interface PrismaPhoto {
-  id: bigint;
-  url: string;
-  displayUrl: string;
-  thumbUrl: string;
-  filename: string;
-  mimeType: string;
-  fileSize: number;
-  sortOrder: number;
-  uploadedAt: string;
-  eventId: string | null;
-}
-
-interface PrismaEventWithRelations {
-  id: string;
-  title: string;
-  date: string;
-  description: string;
-  icon: string;
-  location: string;
-  mood: string;
-  coverPhoto: string;
-  sortOrder: number;
-  photos: PrismaPhoto[];
-  expenses: PrismaExpense[];
-}
-
-interface PrismaExpense {
-  id: number;
-  eventId: string;
-  amount: number;
-  category: string;
-  note: string;
-}
-
-interface PrismaSettings {
-  startDate: string;
-  heroImage: string;
-  customCovers: string;
-  hiddenDefaultCovers: string;
-  countdowns: string;
-}
+type EventWithRelations = Prisma.EventGetPayload<{ include: { photos: true; expenses: true } }>;
+type PhotoRow = Prisma.PhotoGetPayload<{}>;
+type ExpenseRow = Prisma.ExpenseGetPayload<{}>;
+type WishRow = Prisma.WishGetPayload<{}>;
+type CapsuleRow = Prisma.CapsuleGetPayload<{}>;
 
 // --- Helpers ---
 
@@ -98,7 +63,7 @@ function normalizePhoto(photo: Partial<Photo> & { url?: string }): NormalizedPho
   };
 }
 
-function toEvent(item: PrismaEventWithRelations): Event {
+function toEvent(item: EventWithRelations): Event {
   return {
     id: item.id,
     title: item.title,
@@ -111,7 +76,7 @@ function toEvent(item: PrismaEventWithRelations): Event {
   };
 }
 
-function toPhoto(item: PrismaPhoto, eventId?: string | null): NormalizedPhoto {
+function toPhoto(item: PhotoRow, eventId?: string | null): NormalizedPhoto {
   return normalizePhoto({
     url: item.url,
     displayUrl: item.displayUrl,
@@ -124,7 +89,7 @@ function toPhoto(item: PrismaPhoto, eventId?: string | null): NormalizedPhoto {
   });
 }
 
-function toExpense(item: PrismaExpense): Expense {
+function toExpense(item: ExpenseRow): Expense {
   return {
     id: item.id,
     eventId: item.eventId,
@@ -134,7 +99,7 @@ function toExpense(item: PrismaExpense): Expense {
   };
 }
 
-function toWish(item: { id: number; title: string; description: string; emoji: string; isCompleted: boolean; completedAt: string | null; sortOrder: number }): Wish {
+function toWish(item: WishRow): Wish {
   return {
     id: item.id,
     title: item.title,
@@ -146,7 +111,7 @@ function toWish(item: { id: number; title: string; description: string; emoji: s
   };
 }
 
-function toCapsule(item: { id: number; title: string; content: string; emoji: string; unlockDate: string; isOpened: boolean }): Capsule {
+function toCapsule(item: CapsuleRow): Capsule {
   return {
     id: item.id,
     title: item.title,
@@ -168,7 +133,7 @@ export async function readAppData(): Promise<AppData> {
   const [settings, events, standalonePhotos, loveQuotes, wishes, capsules] = await Promise.all([
     prisma.settings.findUnique({ where: { id: 1 } }),
     prisma.event.findMany({
-      include: { photos: true, expenses: true },
+      include: { photos: { orderBy: { sortOrder: 'asc' } }, expenses: true },
       orderBy: [{ date: 'desc' }, { createdAt: 'desc' }]
     }),
     prisma.photo.findMany({
@@ -180,23 +145,19 @@ export async function readAppData(): Promise<AppData> {
     prisma.capsule.findMany({ orderBy: { createdAt: 'desc' } })
   ]);
 
-  const typedEvents = events as unknown as PrismaEventWithRelations[];
-  const typedStandalone = standalonePhotos as unknown as PrismaPhoto[];
-  const typedSettings = settings as PrismaSettings | null;
-
-  const eventPhotos = typedEvents.flatMap(e => e.photos.map(p => toPhoto(p, e.id)));
-  const standalone = typedStandalone.map(p => toPhoto(p));
+  const eventPhotos = events.flatMap(e => e.photos.map(p => toPhoto(p, e.id)));
+  const standalone = standalonePhotos.map(p => toPhoto(p));
   const allPhotos = [...eventPhotos, ...standalone];
 
-  const allExpenses = typedEvents.flatMap(e => e.expenses.map(toExpense));
+  const allExpenses = events.flatMap(e => e.expenses.map(toExpense));
 
   return {
-    startDate: typedSettings?.startDate || '',
-    heroImage: typedSettings?.heroImage || '',
-    customCovers: parseJsonArray(typedSettings?.customCovers, []),
-    hiddenDefaultCovers: parseJsonArray(typedSettings?.hiddenDefaultCovers, []),
-    countdowns: parseJsonArray(typedSettings?.countdowns, []),
-    events: typedEvents.map(toEvent),
+    startDate: settings?.startDate || '',
+    heroImage: settings?.heroImage || '',
+    customCovers: parseJsonArray(settings?.customCovers, []),
+    hiddenDefaultCovers: parseJsonArray(settings?.hiddenDefaultCovers, []),
+    countdowns: parseJsonArray(settings?.countdowns, []),
+    events: events.map(toEvent),
     photos: allPhotos,
     expenses: allExpenses,
     loveQuotes: loveQuotes.map(item => ({ id: item.id, content: item.content })),
@@ -207,105 +168,62 @@ export async function readAppData(): Promise<AppData> {
 
 // --- Write ---
 
-export async function writeAppData(payload: Partial<AppData>): Promise<AppData> {
-  const currentData = await readAppData();
-  const nextData: AppData = {
-    ...DEFAULT_APP_DATA,
-    ...currentData,
-    ...payload,
-    photos: Array.isArray(payload.photos) ? payload.photos.map(normalizePhoto) : currentData.photos,
-    events: Array.isArray(payload.events) ? payload.events : currentData.events,
-    expenses: Array.isArray(payload.expenses) ? payload.expenses : currentData.expenses,
-    loveQuotes: Array.isArray(payload.loveQuotes) ? payload.loveQuotes : currentData.loveQuotes,
-    customCovers: Array.isArray(payload.customCovers) ? payload.customCovers : currentData.customCovers,
-    hiddenDefaultCovers: Array.isArray(payload.hiddenDefaultCovers) ? payload.hiddenDefaultCovers : currentData.hiddenDefaultCovers,
-    countdowns: Array.isArray(payload.countdowns) ? payload.countdowns : currentData.countdowns,
-    wishes: Array.isArray(payload.wishes) ? payload.wishes : currentData.wishes,
-    capsules: Array.isArray(payload.capsules) ? payload.capsules : currentData.capsules
-  };
+export async function writeSettings(patch: SettingsPatch): Promise<void> {
+  const settingsData: Prisma.SettingsUpdateInput = {};
+  if (patch.startDate !== undefined) settingsData.startDate = patch.startDate;
+  if (patch.heroImage !== undefined) settingsData.heroImage = patch.heroImage;
+  if (patch.customCovers !== undefined) settingsData.customCovers = JSON.stringify(patch.customCovers);
+  if (patch.hiddenDefaultCovers !== undefined) settingsData.hiddenDefaultCovers = JSON.stringify(patch.hiddenDefaultCovers);
+  if (patch.countdowns !== undefined) settingsData.countdowns = JSON.stringify(patch.countdowns);
 
-  const has = {
-    settings: payload.startDate !== undefined || payload.heroImage !== undefined || payload.customCovers !== undefined || payload.hiddenDefaultCovers !== undefined || payload.countdowns !== undefined,
-    events: Array.isArray(payload.events) && JSON.stringify(payload.events) !== JSON.stringify(currentData.events),
-    photos: Array.isArray(payload.photos) && JSON.stringify(payload.photos) !== JSON.stringify(currentData.photos),
-    expenses: Array.isArray(payload.expenses) && JSON.stringify(payload.expenses) !== JSON.stringify(currentData.expenses),
-    loveQuotes: Array.isArray(payload.loveQuotes) && JSON.stringify(payload.loveQuotes) !== JSON.stringify(currentData.loveQuotes),
-    wishes: Array.isArray(payload.wishes) && JSON.stringify(payload.wishes) !== JSON.stringify(currentData.wishes),
-    capsules: Array.isArray(payload.capsules) && JSON.stringify(payload.capsules) !== JSON.stringify(currentData.capsules)
-  };
+  const hasSettingsPatch = Object.keys(settingsData).length > 0;
+  if (!hasSettingsPatch && patch.loveQuotes === undefined) return;
 
   await prisma.$transaction(async (tx) => {
-    if (has.settings) {
+    if (hasSettingsPatch) {
       await tx.settings.upsert({
         where: { id: 1 },
-        create: { id: 1, startDate: nextData.startDate, heroImage: nextData.heroImage, customCovers: JSON.stringify(nextData.customCovers), hiddenDefaultCovers: JSON.stringify(nextData.hiddenDefaultCovers), countdowns: JSON.stringify(nextData.countdowns) },
-        update: { startDate: nextData.startDate, heroImage: nextData.heroImage, customCovers: JSON.stringify(nextData.customCovers), hiddenDefaultCovers: JSON.stringify(nextData.hiddenDefaultCovers), countdowns: JSON.stringify(nextData.countdowns) }
+        create: {
+          id: 1,
+          startDate: patch.startDate || '',
+          heroImage: patch.heroImage || '',
+          customCovers: JSON.stringify(patch.customCovers || []),
+          hiddenDefaultCovers: JSON.stringify(patch.hiddenDefaultCovers || []),
+          countdowns: JSON.stringify(patch.countdowns || [])
+        },
+        update: settingsData
       });
     }
 
-    if (has.loveQuotes) {
-      const ids = nextData.loveQuotes.map(q => q.id);
-      await tx.loveQuote.deleteMany(ids.length > 0 ? { where: { id: { notIn: ids } } } : undefined);
-      for (let i = 0; i < nextData.loveQuotes.length; i++) {
-        const q = nextData.loveQuotes[i];
-        await tx.loveQuote.upsert({ where: { id: q.id }, create: { id: q.id, content: q.content, sortOrder: i }, update: { content: q.content, sortOrder: i } });
-      }
-    }
-
-    if (has.events) {
-      const ids = nextData.events.map(e => String(e.id));
-      await tx.event.deleteMany(ids.length > 0 ? { where: { id: { notIn: ids } } } : undefined);
-      for (let i = 0; i < nextData.events.length; i++) {
-        const e = nextData.events[i];
-        await tx.event.upsert({
-          where: { id: String(e.id) },
-          create: { id: String(e.id), title: e.title, date: e.date, description: e.desc, icon: e.icon || 'heart', location: e.location || '', mood: e.mood || '', coverPhoto: e.coverPhoto || '', sortOrder: i },
-          update: { title: e.title, date: e.date, description: e.desc, icon: e.icon || 'heart', location: e.location || '', mood: e.mood || '', coverPhoto: e.coverPhoto || '', sortOrder: i }
+    if (patch.loveQuotes !== undefined) {
+      const ids = patch.loveQuotes.map(q => q.id);
+      await tx.loveQuote.deleteMany({ where: ids.length > 0 ? { id: { notIn: ids } } : {} });
+      for (let i = 0; i < patch.loveQuotes.length; i++) {
+        const q = patch.loveQuotes[i];
+        await tx.loveQuote.upsert({
+          where: { id: q.id },
+          create: { id: q.id, content: q.content, sortOrder: i },
+          update: { content: q.content, sortOrder: i }
         });
       }
     }
-
-    if (has.expenses) {
-      const ids = nextData.expenses.map(e => e.id);
-      await tx.expense.deleteMany(ids.length > 0 ? { where: { id: { notIn: ids } } } : undefined);
-      for (const exp of nextData.expenses) {
-        await tx.expense.upsert({ where: { id: exp.id }, create: { id: exp.id, eventId: exp.eventId, amount: exp.amount, category: exp.category, note: exp.note }, update: { eventId: exp.eventId, amount: exp.amount, category: exp.category, note: exp.note } });
-      }
-    }
-
-    if (has.photos) {
-      const urls = nextData.photos.map(p => p.url);
-      await tx.photo.deleteMany(urls.length > 0 ? { where: { url: { notIn: urls } } } : undefined);
-      for (let i = 0; i < nextData.photos.length; i++) {
-        const photo = normalizePhoto(nextData.photos[i]);
-        const existing = await tx.photo.findFirst({ where: { url: photo.url }, select: { id: true } });
-        if (existing) {
-          await tx.photo.update({ where: { id: existing.id }, data: { displayUrl: photo.displayUrl, thumbUrl: photo.thumbUrl, filename: photo.filename, mimeType: photo.mimeType, fileSize: photo.size, sortOrder: i, uploadedAt: photo.uploadedAt, eventId: photo.eventId || null } });
-        } else {
-          await tx.photo.create({ data: { url: photo.url, displayUrl: photo.displayUrl, thumbUrl: photo.thumbUrl, filename: photo.filename, mimeType: photo.mimeType, fileSize: photo.size, sortOrder: i, uploadedAt: photo.uploadedAt, eventId: photo.eventId || null } });
-        }
-      }
-    }
-
-    if (has.wishes) {
-      const ids = nextData.wishes.map(w => w.id);
-      await tx.wish.deleteMany(ids.length > 0 ? { where: { id: { notIn: ids } } } : undefined);
-      for (let i = 0; i < nextData.wishes.length; i++) {
-        const w = nextData.wishes[i];
-        await tx.wish.upsert({ where: { id: w.id }, create: { id: w.id, title: w.title, description: w.description || '', emoji: w.emoji || '💝', isCompleted: w.isCompleted || false, completedAt: w.completedAt || null, sortOrder: i }, update: { title: w.title, description: w.description || '', emoji: w.emoji || '💝', isCompleted: w.isCompleted || false, completedAt: w.completedAt || null, sortOrder: i } });
-      }
-    }
-
-    if (has.capsules) {
-      const ids = nextData.capsules.map(c => c.id);
-      await tx.capsule.deleteMany(ids.length > 0 ? { where: { id: { notIn: ids } } } : undefined);
-      for (const c of nextData.capsules) {
-        await tx.capsule.upsert({ where: { id: c.id }, create: { id: c.id, title: c.title, content: c.content || '', emoji: c.emoji || '💌', unlockDate: c.unlockDate || '', isOpened: c.isOpened || false }, update: { title: c.title, content: c.content || '', emoji: c.emoji || '💌', unlockDate: c.unlockDate || '', isOpened: c.isOpened || false } });
-      }
-    }
   }, { maxWait: 10000, timeout: 10000 });
+}
 
-  return nextData;
+export async function updatePhotoOrder(eventId: string, urls: string[]): Promise<number> {
+  return prisma.$transaction(async (tx) => {
+    const owned = await tx.photo.findMany({
+      where: { eventId, url: { in: urls } },
+      select: { url: true }
+    });
+    const ownedUrls = new Set(owned.map(p => p.url));
+    const ordered = urls.filter(u => ownedUrls.has(u));
+
+    for (let i = 0; i < ordered.length; i++) {
+      await tx.photo.updateMany({ where: { url: ordered[i], eventId }, data: { sortOrder: i } });
+    }
+    return ordered.length;
+  }, { maxWait: 10000, timeout: 10000 });
 }
 
 // --- Photo CRUD ---

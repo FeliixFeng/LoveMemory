@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Event, Photo, AppData } from '../lib/types';
 import { HERO_IMAGES } from '../lib/constants';
-import { apiFetch, ApiError } from '../app/lib/api-client';
+import { apiFetch } from '../app/lib/api-client';
+import type { SettingsPatch } from '../app/lib/schemas';
 
 const EMPTY_DATA: AppData = {
   startDate: '', heroImage: '', customCovers: [], hiddenDefaultCovers: [],
@@ -14,9 +15,7 @@ export function useAppData() {
   const [data, setData] = useState<AppData>(EMPTY_DATA);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
-  const pendingSave = useRef<(() => Promise<void>) | null>(null);
 
   function loadData(retryCount = 0) {
     setLoadError(false);
@@ -37,26 +36,10 @@ export function useAppData() {
   useEffect(() => { loadData(); }, []);
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 2000); return () => clearTimeout(t); }, [toast]);
 
-  async function save(next: AppData, msg?: string): Promise<boolean> {
-    const prev = data;
-    setData(next);
+  async function saveSettings(patch: SettingsPatch, msg?: string): Promise<void> {
+    setData(prev => ({ ...prev, ...patch }));
     if (msg) setToast(msg);
-    setSaving(true);
-    try {
-      await apiFetch('/api/data', { method: 'POST', body: next });
-      return true;
-    } catch (err) {
-      if (err instanceof ApiError && err.isAuthError) {
-        setData(prev);
-        pendingSave.current = () => save(next, msg).then(() => {});
-        return false;
-      }
-      setData(prev);
-      setToast('保存失败，请重试');
-      return false;
-    } finally {
-      setSaving(false);
-    }
+    await apiFetch('/api/data', { method: 'POST', body: patch });
   }
 
   // Derived data
@@ -71,8 +54,7 @@ export function useAppData() {
   const heroImages = [...data.customCovers, ...visibleDefaults];
 
   return {
-    data, setData, loading, loadError, saving, toast, setToast,
-    loadData, save, pendingSave,
-    days, nextDays, heroImages
+    data, setData, loading, loadError, toast, setToast,
+    loadData, saveSettings, days, nextDays, heroImages
   };
 }

@@ -7,8 +7,7 @@ import { apiFetch, ApiError } from '../app/lib/api-client';
 
 export function useEventCRUD(
   data: AppData,
-  setData: (d: AppData) => void,
-  save: (next: AppData, msg?: string) => Promise<boolean>,
+  setData: (updater: (prev: AppData) => AppData) => void,
   setToast: (msg: string) => void,
   onAuthRequired: (op: () => void) => void
 ) {
@@ -42,13 +41,15 @@ export function useEventCRUD(
       const events = data.events.map(e => e.id === editEvent.id ? { ...e, ...eventDraft } : e);
       const sorted = events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setEventModal(false); setEditEvent(null);
-      await save({ ...data, events }, '已保存');
+      setData(prev => ({ ...prev, events }));
+      setToast('已保存');
     } else {
       try {
         const { event: created } = await apiFetch<{ event: Event }>('/api/events', { method: 'POST', body: eventDraft });
         const events = [...data.events, created].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setEventModal(false);
-        await save({ ...data, events }, '已创建');
+        setData(prev => ({ ...prev, events }));
+        setToast('已创建');
         setSelectedEventId(String(created.id));
       } catch (err) {
         if (err instanceof ApiError && err.isAuthError) {
@@ -68,7 +69,8 @@ export function useEventCRUD(
       const expenses = data.expenses.filter(e => e.eventId !== String(editEvent.id));
       setEventModal(false); setEditEvent(null);
       if (selectedEventId === String(editEvent.id)) setSelectedEventId(events.length > 0 ? String(events[0].id) : null);
-      await save({ ...data, events, expenses }, '已删除');
+      setData(prev => ({ ...prev, events, expenses }));
+      setToast('已删除');
     } catch (err) {
       if (err instanceof ApiError && err.isAuthError) {
         onAuthRequired(() => deleteEvent());
