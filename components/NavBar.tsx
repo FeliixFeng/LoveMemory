@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -13,9 +14,23 @@ const NAV_LINKS = [
 
 export function NavBar({ isAuthenticated, onSettings, onPin }: { isAuthenticated: boolean; onSettings?: () => void; onPin?: () => void }) {
   const pathname = usePathname();
+  const [hidden, setHidden] = useState(false);
+  const lastY = useRef(0);
+
+  useEffect(() => {
+    function onScroll() {
+      const y = window.scrollY;
+      if (y < 48) setHidden(false);
+      else if (y > lastY.current + 4) setHidden(true);
+      else if (y < lastY.current - 4) setHidden(false);
+      lastY.current = y;
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-40 bg-lm-bg/85 backdrop-blur-xl border-b border-lm-accent/10">
+    <nav className={`fixed top-0 left-0 right-0 z-40 bg-lm-bg/85 backdrop-blur-xl border-b border-lm-accent/10 transition-transform duration-300 ease-out ${hidden ? '-translate-y-full md:translate-y-0' : ''}`}>
       <div className="max-w-lg md:max-w-3xl lg:max-w-6xl mx-auto flex items-center px-4 py-2.5">
         {/* Desktop: logo + links (left-aligned) */}
         <div className="hidden md:flex items-center gap-2 min-w-0">
