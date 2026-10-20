@@ -25,8 +25,8 @@ html { color-scheme: light; scrollbar-gutter: stable; }
   --lm-blush: #F0C8A8;          /* 头像渐变暖粉端 */
 
   /* 字体栈 */
-  --lm-font-serif: "Noto Serif SC", "Songti SC", "STSong", serif;
-  --lm-font-display: "Playfair Display", "Times New Roman", serif;
+  --lm-font-serif: "Songti SC", "STSong", serif;
+  --lm-font-display: var(--font-playfair, "Playfair Display"), "Times New Roman", serif;
 }
 
 /* 把 token 暴露成 Tailwind 工具类：bg-lm-accent / text-lm-body/50 / font-serif-cn */
