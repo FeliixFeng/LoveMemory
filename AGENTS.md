@@ -88,10 +88,11 @@ npm run prisma:generate
 npm run typecheck
 
 # 2. 同步代码（排除项一个都不能少，尤其 data/ 和 .env.production）
+#    注意：根目录排除必须写成 /data（前导斜杠=只锚定传输根），写 data 会连 app/api/data/ 一起排掉
 rsync -az --delete \
   --rsync-path="sudo -u user rsync" \
   --exclude '.git' --exclude '.github' --exclude '.next' --exclude 'node_modules' \
-  --exclude 'data' --exclude 'public/uploads' \
+  --exclude '/data' --exclude 'public/uploads' \
   --exclude '.env.local' --exclude '.env.production' \
   --exclude '.DS_Store' --exclude '.idea' --exclude '.claude' \
   --exclude 'tsconfig.tsbuildinfo' \
@@ -235,6 +236,7 @@ token 通过 `@theme inline` 暴露成 Tailwind 工具类，直接当普通类�
 4. **Agent 环境启动**：若通过 WorkBuddy/CodeBuddy 的 shell 启动，`NODE_OPTIONS` 会注入 fs shim，导致 Next 建 `.next` 时报 `EEXIST`。用 `env -u NODE_OPTIONS npx next dev` 启动；用户自己终端里 `npm run dev` 不受影响。
 5. **dev 与 prod 不能同时跑**：`next dev` 和 `next build`/`start` 抢同一个 `.next` 目录，会写坏（症状：`Cannot find module './xxx.js'`）。起 prod 前先停 dev；坏了就 `rm -rf .next` 重建（2026-10-20 踩过）。
 6. ~~配色两套~~ 已统一（2026-10-19，token 见 UI 约定章）。
+7. **rsync 排除模式不锚定会误伤同名目录**（2026-10-20 踩过）：`--exclude 'data'`（无前导斜杠）按"任意层级匹配名为 data 的项"处理，`app/api/data/` 被连带排除，该目录 7月13日后从未同步，部署时远程 build 直接红。根目录排除一律写 `/data`。诊断法：远程文件 mtime 异常旧 = 它没被 rsync 碰过。
 
 ## 目录
 
