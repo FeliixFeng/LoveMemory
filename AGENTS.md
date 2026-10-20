@@ -45,6 +45,26 @@
 - 线上库原地不动，容器重启/重建都读同一份 bind mount 文件。
 - 图片不存在本地：本地和线上共用同一个 OSS bucket，**图片天然互通**。
 
+### 数据写路径契约（2026-10-20 收窄后，不要回退）
+
+**`POST /api/data` 只接受 settings 字段**（`SettingsPatchSchema`，strict）：`startDate / heroImage / customCovers / hiddenDefaultCovers / countdowns / loveQuotes`。传 `events / photos / expenses / wishes / capsules` 等一律 **400**——这是防删库的硬闸门，回归测试盯着（`test/api.test.js`）。
+
+各实体的增删改走**资源接口**：
+
+| 接口 | 用途 |
+|---|---|
+| `/api/events`、`/api/events/[id]` | 事件 CRUD（级联账单，照片脱钩保留） |
+| `/api/expenses/[id]` | 账单 |
+| `/api/wishes`、`/api/capsules` | 心愿 / 胶囊 |
+| `/api/upload` | 照片上传/删除（OSS + 缩略图） |
+| `PUT /api/photos/order` | 照片重排：**只更新 sortOrder，零删除** |
+
+数据层（`app/lib/app-data.ts`）只有 `writeSettings()` 一个批量写入口；旧的 `writeAppData`（`deleteMany({notIn})` 整份覆盖）已删除，**不要复活类似模式**。
+
+**前端数据流**：`app/(site)/layout.tsx`（server，`force-dynamic`）每请求 `readAppData()` 直出给 `AppDataProvider`（`hooks/useAppData.tsx`）；页面经 `useAppData()` 消费同一份 context。写操作 = 乐观 `setData` + 资源接口 / `saveSettings(patch)`，失败时 `loadData()` 回滚。切 tab 不重新拉数据。
+
+**Auth**：`APP_PIN` 启用 PIN；token 用 `APP_SECRET` HMAC 签名（90 天），缺省回退 PIN 并打一次警告。PIN 按 IP 限流：5 分钟内错 5 次锁 5 分钟（429 + Retry-After）。`test/auth.test.js` 覆盖。
+
 ## 开发
 
 ```bash
@@ -204,21 +224,26 @@ token 通过 `@theme inline` 暴露成 Tailwind 工具类，直接当普通类�
 2. **SQLite WAL**：拷贝数据库必须连 `-wal` / `-shm` 一起，只拷主文件会丢最近的写入。
 3. **`predev` 会删 `.next`**：在受限环境里可能被删除保护拦截，此时用 `npx next dev` 跳过 predev。
 4. **Agent 环境启动**：若通过 WorkBuddy/CodeBuddy 的 shell 启动，`NODE_OPTIONS` 会注入 fs shim，导致 Next 建 `.next` 时报 `EEXIST`。用 `env -u NODE_OPTIONS npx next dev` 启动；用户自己终端里 `npm run dev` 不受影响。
-5. **`CLAUDE.md` / `README.md` 里的 MySQL 描述已过期**，以本文件为准。
-6. **配色仍是两套**：4 个文件用新暖金（NavBar / BottomTabBar / EventPreviewCard / FloatingAddButton），其余 16 个文件仍是旧赤陶。统一方案见 `PLAN.md`，改之前不要随手加新的硬编码色值。
+5. **dev 与 prod 不能同时跑**：`next dev` 和 `next build`/`start` 抢同一个 `.next` 目录，会写坏（症状：`Cannot find module './xxx.js'`）。起 prod 前先停 dev；坏了就 `rm -rf .next` 重建（2026-10-20 踩过）。
+6. ~~配色两套~~ 已统一（2026-10-19，token 见 UI 约定章）。
 
 ## 目录
 
 ```
 app/(site)/     首页 / album / capsule / footprint / wishes / more
-app/api/        auth(PIN) data upload events expenses capsules wishes health
-app/lib/        app-data.ts（数据层）prisma.ts oss.ts auth.ts schemas.ts env.ts
-components/     UI（love-memory-client.tsx 是主客户端组件）
-components/ui/  Overlay（统一浮层）
-hooks/          useAppData / useEventCRUD / useExpenseCRUD / usePhotoUpload
+                layout.tsx（server）每请求 readAppData() 直出给 Provider
+                loading.tsx（tab 切换的骨架屏 + 心跳动画）
+app/api/        auth(PIN) data(upload收窄) upload events expenses capsules wishes photos/order health
+app/lib/        服务端/数据层：app-data.ts prisma.ts oss.ts auth.ts schemas.ts env.ts api-client.ts theme.ts
+lib/            客户端共享：types.ts constants.ts utils.ts（组件引用 ../lib/，与 app/lib/ 是两套，别合并）
+components/     UI（love-memory-client.tsx 是首页主客户端组件）
+components/ui/  Overlay（统一浮层：滚动锁/焦点陷阱/层级/sheet拖拽）
+hooks/          useAppData（Provider+context，布局级共享缓存）
+                useEventCRUD / useExpenseCRUD / usePhotoUpload
                 useScrollLock / useOverlayLayer
+test/           api.test.js auth.test.js（node --test，不依赖测试框架）
 prisma/         schema.prisma（provider = sqlite）
 data/           本地 SQLite（gitignore）
 scripts/        pull-prod-db.sh（部署脚本已删，手动四步见「部署」章）
-PLAN.md         分阶段优化计划
+PLAN.md         分阶段优化计划（阶段 0-4 已全部完成，历史记录）
 ```
