@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { THEME } from '../app/lib/theme';
+import { useAppData } from '../hooks/useAppData';
 import { Event } from '../lib/types';
 
 const CITY_TO_PROVINCE: Record<string, string> = {
@@ -189,12 +190,8 @@ function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<s
 }
 
 export function MapPage() {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch('/api/data', { cache: 'no-store' }).then(r => r.json()).then(d => setEvents(d.events || [])).finally(() => setLoading(false));
-  }, []);
+  const { data, loading } = useAppData();
+  const events = data.events;
 
   const excludedWords = ['家里', '待定', '内', '附近', '门口', '学校', '公司'];
   const visitedProvinces = new Set<string>();

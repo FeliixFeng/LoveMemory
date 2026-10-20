@@ -1,26 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Event, Photo, AppData } from '../lib/types';
+import { useState } from 'react';
+import { Photo } from '../lib/types';
 import { getEmoji, fmt } from '../lib/utils';
+import { useAppData } from '../hooks/useAppData';
 import { Lightbox } from './Lightbox';
 import { SkeletonPage } from './SkeletonCard';
 import { SafeImage } from './SafeImage';
 
 export function AlbumPage() {
-  const [data, setData] = useState<AppData | null>(null);
+  const { data, loading } = useAppData();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [viewPhoto, setViewPhoto] = useState<{ photos: Photo[]; index: number } | null>(null);
 
-  useEffect(() => {
-    fetch('/api/data', { cache: 'no-store' }).then(r => r.json()).then(d => {
-      const events = (d.events || []).sort((a: Event, b: Event) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      const photos = (d.photos || []).map((p: Photo) => ({ ...p, displayUrl: p.displayUrl || p.url, thumbUrl: p.thumbUrl || p.displayUrl || p.url }));
-      setData({ ...d, events, photos });
-    });
-  }, []);
-
-  if (!data) return <SkeletonPage />;
+  if (loading) return <SkeletonPage />;
 
   const eventsWithPhotos = data.events.filter(e => data.photos.some(p => p.eventId === String(e.id)));
   const standalonePhotos = data.photos.filter(p => !p.eventId);

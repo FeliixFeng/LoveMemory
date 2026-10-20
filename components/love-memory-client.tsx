@@ -181,7 +181,7 @@ export function LoveMemoryClient() {
             const swapped = [...eventPhotos];
             [swapped[from], swapped[to]] = [swapped[to], swapped[from]];
             const orderedUrls = swapped.map(p => p.url);
-            setData({ ...data, photos: [...otherPhotos, ...swapped] });
+            setData(prev => ({ ...prev, photos: [...otherPhotos, ...swapped] }));
             void apiFetch('/api/photos/order', {
               method: 'PUT',
               body: { eventId: events.eventDetailId, urls: orderedUrls }

@@ -7,6 +7,7 @@ import { BottomTabBar } from './BottomTabBar';
 import { FallingHearts } from './FallingHearts';
 import { PinModal } from './modals/PinModal';
 import { ErrorBoundary } from './ErrorBoundary';
+import { AppDataProvider } from '../hooks/useAppData';
 
 type AuthCtx = {
   token: string;
@@ -78,9 +79,11 @@ export function SiteLayoutClient({ children }: { children: ReactNode }) {
           setShowPin(true);
         }
       }} />
-      <ErrorBoundary>
-        {children}
-      </ErrorBoundary>
+      <AppDataProvider>
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
+      </AppDataProvider>
       <BottomTabBar />
       {floatingButton}
       {showPin && (

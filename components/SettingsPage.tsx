@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { AppData } from '../lib/types';
+import { useState } from 'react';
 import type { SettingsPatch } from '../app/lib/schemas';
 import { HERO_IMAGES } from '../lib/constants';
 import { useAuth } from './SiteLayoutClient';
+import { useAppData } from '../hooks/useAppData';
 import { fmt } from '../lib/utils';
 import { Toast } from './Toast';
 import { ConfirmDialog } from './modals/ConfirmDialog';
@@ -19,38 +19,22 @@ const TABS = [
 
 export function SettingsPage() {
   const { token, withAuth } = useAuth();
-  const [data, setData] = useState<AppData | null>(null);
-  const [toast, setToast] = useState('');
+  const { data, loading, toast, setToast, saveSettings, loadData } = useAppData();
   const [tab, setTab] = useState<'date' | 'cover' | 'quotes' | 'countdowns'>('date');
   const [newQuote, setNewQuote] = useState('');
   const [newCountdown, setNewCountdown] = useState({ label: '', date: '', emoji: '🎂' });
   const [confirm, setConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
-  useEffect(() => {
-    fetch('/api/data', { cache: 'no-store' }).then(r => r.json()).then(d => {
-      setData({ ...d, events: d.events || [], photos: d.photos || [], expenses: d.expenses || [], loveQuotes: d.loveQuotes || [], customCovers: d.customCovers || [], hiddenDefaultCovers: d.hiddenDefaultCovers || [], countdowns: d.countdowns || [] });
-    }).catch(() => setToast('加载失败'));
-  }, []);
-
-  useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 2000); return () => clearTimeout(t); }, [toast]);
-
   async function save(patch: SettingsPatch, msg?: string) {
-    if (!data) return;
-    const prev = data;
-    setData({ ...data, ...patch });
-    if (msg) setToast(msg);
     try {
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      const r = await fetch('/api/data', { method: 'POST', headers, body: JSON.stringify(patch) });
-      if (!r.ok) throw new Error();
+      await saveSettings(patch, msg);
     } catch {
-      setData(prev);
+      loadData();
       setToast('保存失败');
     }
   }
 
-  if (!data) return <div className="space-y-4"><div className="h-10 bg-lm-line/20 rounded-xl animate-pulse" /><div className="h-40 bg-lm-line/20 rounded-2xl animate-pulse" /></div>;
+  if (loading) return <div className="space-y-4"><div className="h-10 bg-lm-line/20 rounded-xl animate-pulse" /><div className="h-40 bg-lm-line/20 rounded-2xl animate-pulse" /></div>;
 
   const visibleDefaults = HERO_IMAGES.filter(u => !(data.hiddenDefaultCovers || []).includes(u));
   const hasHidden = (data.hiddenDefaultCovers || []).length > 0;
