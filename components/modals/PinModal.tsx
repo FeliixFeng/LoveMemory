@@ -11,7 +11,7 @@ export function PinModal({
   onClose: () => void;
 }) {
   const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
-  const [error, setError] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -22,21 +22,32 @@ export function PinModal({
 
   async function submit(pin: string) {
     setLoading(true);
-    setError(false);
+    setErrorMsg(null);
     try {
       const r = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pin })
       });
-      if (!r.ok) throw new Error();
+      if (r.status === 429) {
+        const retryAfter = Number(r.headers.get('Retry-After') || '60');
+        const body = await r.json().catch(() => null);
+        setErrorMsg(body?.error || `尝试次数过多，请 ${retryAfter} 秒后再试`);
+        return;
+      }
+      if (!r.ok) {
+        const body = await r.json().catch(() => null);
+        setErrorMsg(body?.error || 'PIN 码错误，请重试');
+        setDigits(['', '', '', '', '', '']);
+        focusInput(0);
+        return;
+      }
       const { token } = await r.json();
       onVerify(token);
     } catch {
-      setError(true);
+      setErrorMsg('网络异常，请重试');
       setDigits(['', '', '', '', '', '']);
       focusInput(0);
-      setTimeout(() => setError(false), 500);
     } finally {
       setLoading(false);
     }
@@ -84,7 +95,7 @@ export function PinModal({
     <Overlay
       onClose={onClose}
       layer="modal"
-      panelClassName={`w-full sm:max-w-sm bg-lm-bg rounded-t-2xl sm:rounded-2xl p-5 pb-[calc(1.25rem_+_env(safe-area-inset-bottom))] ${error ? 'animate-shake' : ''}`}
+      panelClassName={`w-full sm:max-w-sm bg-lm-bg rounded-t-2xl sm:rounded-2xl p-5 pb-[calc(1.25rem_+_env(safe-area-inset-bottom))] ${errorMsg ? 'animate-shake' : ''}`}
     >
         <div className="w-10 h-1 bg-amber-200 rounded-full mx-auto mb-4" />
         <h3
@@ -111,15 +122,15 @@ export function PinModal({
               onFocus={e => e.target.select()}
               disabled={loading}
               className={`w-11 h-13 text-center text-xl font-bold rounded-xl border-2 outline-none transition-colors
-                ${error ? 'border-red-400 bg-red-50 text-red-500' : d ? 'border-lm-accent bg-lm-bg text-lm-ink' : 'border-lm-line/60 bg-white text-lm-ink'}
+                ${errorMsg ? 'border-red-400 bg-red-50 text-red-500' : d ? 'border-lm-accent bg-lm-bg text-lm-ink' : 'border-lm-line/60 bg-white text-lm-ink'}
                 focus:border-lm-accent focus:bg-lm-bg
                 disabled:opacity-50`}
             />
           ))}
         </div>
 
-        {error && (
-          <p className="text-xs text-red-500 text-center mb-3">PIN 码错误，请重试</p>
+        {errorMsg && (
+          <p className="text-xs text-red-500 text-center mb-3">{errorMsg}</p>
         )}
 
         {loading && (

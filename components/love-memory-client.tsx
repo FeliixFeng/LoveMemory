@@ -109,7 +109,7 @@ export function LoveMemoryClient() {
         <span className="text-3xl mb-3 block">😥</span>
         <p className="text-sm text-lm-ink mb-1 font-bold">加载失败</p>
         <p className="text-xs text-lm-body/50 mb-4">网络连接似乎有问题</p>
-        <button onClick={() => { /* @ts-ignore */ }} className="px-5 py-2 bg-lm-accent-deep text-white rounded-xl text-sm font-medium active:scale-95 transition-transform">重新加载</button>
+        <button onClick={() => loadData()} className="px-5 py-2 bg-lm-accent-deep text-white rounded-xl text-sm font-medium active:scale-95 transition-transform">重新加载</button>
       </div>
     </main>
   );

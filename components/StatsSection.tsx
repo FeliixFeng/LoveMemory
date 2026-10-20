@@ -5,8 +5,8 @@ import { Event, Photo, Expense } from '../lib/types';
 import { calcTotalExpenses, formatCurrency } from '../lib/utils';
 
 function AnimatedNumber({ value, duration = 1000 }: { value: number; duration?: number }) {
-  const [display, setDisplay] = useState(0);
-  const ref = useRef<number>(0);
+  const [display, setDisplay] = useState(value);
+  const ref = useRef<number>(value);
 
   useEffect(() => {
     const start = ref.current;
@@ -18,12 +18,12 @@ function AnimatedNumber({ value, duration = 1000 }: { value: number; duration?: 
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplay(Math.round(start + diff * eased));
+      const current = progress >= 1 ? value : Math.round(start + diff * eased);
+      setDisplay(current);
+      ref.current = current;
 
       if (progress < 1) {
         requestAnimationFrame(animate);
-      } else {
-        ref.current = value;
       }
     }
 
