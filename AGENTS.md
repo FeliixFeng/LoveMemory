@@ -63,7 +63,7 @@
 
 **前端数据流**：`app/(site)/layout.tsx`（server，`force-dynamic`）每请求 `readAppData()` 直出给 `AppDataProvider`（`hooks/useAppData.tsx`）；页面经 `useAppData()` 消费同一份 context。写操作 = 乐观 `setData` + 资源接口 / `saveSettings(patch)`，失败时 `loadData()` 回滚。切 tab 不重新拉数据。
 
-**Auth**：`APP_PIN` 启用 PIN；token 用 `APP_SECRET` HMAC 签名（90 天），缺省回退 PIN 并打一次警告。PIN 按 IP 限流：5 分钟内错 5 次锁 5 分钟（429 + Retry-After）。`test/auth.test.js` 覆盖。
+**Auth**：`APP_PIN` 启用 PIN；token 用 `APP_SECRET` HMAC 签名（90 天），缺省回退 PIN 并打一次警告。PIN 按 IP 限流：5 分钟内错 5 次锁 5 分钟（429 + Retry-After）。前端 `PinModal` 透出服务端错误文案（含 429 的「尝试次数过多」与等待秒数），不是只抖一下。`test/auth.test.js` 覆盖。
 
 ## 开发
 
@@ -203,6 +203,15 @@ token 通过 `@theme inline` 暴露成 Tailwind 工具类，直接当普通类�
 - 悬浮按钮：`bottom-[calc(64px_+_env(safe-area-inset-bottom))]`
 - 浮层面板：`pb-[env(safe-area-inset-bottom)]`
 
+### 心愿 / 胶囊：URL 即 tab 状态（2026-10-20 起）
+
+`/wishes` 与 `/capsule` 渲染同一组件 `WishesCapsulesPage`，当前 tab **由 pathname 派生**（`pathname === '/capsule' ? 'capsules' : 'wishes'`），页内切换 = `router.push`。底部 tab 在 `/capsule` 时仍高亮「心愿」。不要改回组件内 `useState`——分享链接直达、刷新保持都会失效。
+
+### 导航与封面（有意为之，不要"修复"）
+
+- **手机端导航栏随滚动隐藏**：向下滚收起、向上滚回来、顶部常显；桌面端常显（没有底部 tab 兜底）
+- **封面 `max-h-[70dvh]`**：矮屏（笔记本 / 小屏手机）封面不再独占首屏，高屏维持原 aspect 比例
+
 ### 首页滚轮行为（有意为之，不要"修复"）
 
 封面与时间轴是一体的：**页面在顶部时**，整块 hero 接管垂直滚轮 → 时间轴横向滚动。
@@ -235,7 +244,8 @@ app/(site)/     首页 / album / capsule / footprint / wishes / more
                 loading.tsx（tab 切换的骨架屏 + 心跳动画）
 app/api/        auth(PIN) data(upload收窄) upload events expenses capsules wishes photos/order health
 app/lib/        服务端/数据层：app-data.ts prisma.ts oss.ts auth.ts schemas.ts env.ts api-client.ts theme.ts
-lib/            客户端共享：types.ts constants.ts utils.ts（组件引用 ../lib/，与 app/lib/ 是两套，别合并）
+lib/            客户端共享：types.ts constants.ts utils.ts map-data.ts（省市映射/城市坐标/省份全称）
+                （组件引用 ../lib/，与 app/lib/ 是两套，别合并）
 components/     UI（love-memory-client.tsx 是首页主客户端组件）
 components/ui/  Overlay（统一浮层：滚动锁/焦点陷阱/层级/sheet拖拽）
 hooks/          useAppData（Provider+context，布局级共享缓存）
