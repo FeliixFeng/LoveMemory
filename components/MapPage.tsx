@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { THEME } from '../app/lib/theme';
 import { useAppData } from '../hooks/useAppData';
 import { Event } from '../lib/types';
-import { CITY_TO_PROVINCE, CITY_COORDS } from '../lib/map-data';
+import { CITY_TO_PROVINCE, CITY_COORDS, PROVINCE_FULL_NAMES } from '../lib/map-data';
 
 function getProvinceFromCity(location: string): string | null {
   if (CITY_TO_PROVINCE[location]) return CITY_TO_PROVINCE[location];
@@ -22,6 +22,7 @@ function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<s
   const [ready, setReady] = useState(false);
   const [echarts, setEcharts] = useState<any>(null);
   const [EChartsComponent, setEChartsComponent] = useState<any>(null);
+  const [resetKey, setResetKey] = useState(0);
 
   useEffect(() => {
     Promise.all([
@@ -49,15 +50,30 @@ function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<s
     );
   }
 
+  const cityCountByProvince = new Map<string, Set<string>>();
+  visitedCities.forEach(({ city, province }) => {
+    if (!cityCountByProvince.has(province)) cityCountByProvince.set(province, new Set());
+    cityCountByProvince.get(province)!.add(city);
+  });
+  const provinceShortByFull = new Map(Object.entries(PROVINCE_FULL_NAMES).map(([short, full]) => [full, short]));
+
   const option = {
-    tooltip: { trigger: 'item', formatter: '{b}' },
+    tooltip: {
+      trigger: 'item',
+      formatter: (params: any) => {
+        if (params.seriesType === 'scatter') return params.name;
+        const short = provinceShortByFull.get(params.name) ?? params.name;
+        const count = cityCountByProvince.get(short)?.size ?? 0;
+        return count > 0 ? `${params.name} · 去过 ${count} 座城市` : params.name;
+      }
+    },
     geo: {
       map: 'china', roam: true, zoom: 1.2,
       label: { show: false },
       itemStyle: { areaColor: THEME.map.areaLight, borderColor: THEME.map.areaMid, borderWidth: 0.5 },
       emphasis: { label: { show: true, fontSize: 10, color: THEME.ink, textBorderColor: '#fff', textBorderWidth: 2 }, itemStyle: { areaColor: THEME.map.areaDeep } },
       regions: Array.from(visitedProvinces).map(p => ({
-        name: { '上海':'上海市','北京':'北京市','天津':'天津市','重庆':'重庆市','安徽':'安徽省','浙江':'浙江省','江苏':'江苏省','广东':'广东省','四川':'四川省','湖北':'湖北省','湖南':'湖南省','河南':'河南省','山东':'山东省','福建':'福建省','云南':'云南省','陕西':'陕西省','黑龙江':'黑龙江省','吉林':'吉林省','辽宁':'辽宁省','山西':'山西省','河北':'河北省','甘肃':'甘肃省','宁夏':'宁夏回族自治区','青海':'青海省','新疆':'新疆维吾尔自治区','广西':'广西壮族自治区','贵州':'贵州省','江西':'江西省','内蒙古':'内蒙古自治区','西藏':'西藏自治区','海南':'海南省','台湾':'台湾省' }[p] || p,
+        name: PROVINCE_FULL_NAMES[p] || p,
         label: { show: false },
         itemStyle: { areaColor: { type: 'linear', x: 0, y: 0, x2: 1, y2: 1, colorStops: [{ offset: 0, color: THEME.accent }, { offset: 1, color: THEME.accentDeep }] }, borderColor: THEME.accentDeep, borderWidth: 1 }
       }))
@@ -73,12 +89,25 @@ function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<s
         }).filter(Boolean);
       })(),
       label: { show: true, position: 'bottom', formatter: '{b}', fontSize: 9, color: THEME.ink, distance: 5 },
+      labelLayout: { hideOverlap: true },
       itemStyle: { color: THEME.accent, borderColor: '#fff', borderWidth: 2, shadowBlur: 6, shadowColor: 'rgba(204,146,102,0.5)' },
       emphasis: { scale: 1.5 }
     }]
   };
 
-  return <EChartsComponent option={option} style={{ height: '400px', width: '100%' }} />;
+  return (
+    <div className="relative">
+      <EChartsComponent key={resetKey} option={option} style={{ height: '400px', width: '100%' }} />
+      <button
+        type="button"
+        onClick={() => setResetKey(k => k + 1)}
+        className="absolute top-2 right-2 z-10 px-2.5 py-1.5 rounded-full bg-white/85 backdrop-blur-sm border border-lm-line/60 text-[11px] text-lm-body/70 shadow-sm active:scale-95 transition-transform"
+        title="回到初始视角"
+      >
+        🎯 归位
+      </button>
+    </div>
+  );
 }
 
 export function MapPage() {
