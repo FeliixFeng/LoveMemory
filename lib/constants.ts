@@ -1,11 +1,11 @@
-export const HERO_IMAGES = [
-  'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/hero/1.jpg?v=20260524',
-  'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/hero/2.jpg?v=20260524',
-  'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/hero/3.jpg?v=20260524',
-  'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/hero/4.jpg?v=20260524',
-  'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/hero/5.jpg?v=20260524',
-  'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/hero/6.jpg?v=20260524'
-];
+export type HeroSlide = { mobile: string; web: string };
+
+const HERO_BASE = 'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/hero';
+
+export const HERO_SLIDES: HeroSlide[] = [1, 2, 3, 4, 5, 6].map(n => ({
+  mobile: `${HERO_BASE}/hero${n}-mobile.jpg`,
+  web: `${HERO_BASE}/hero${n}-web.jpg`
+}));
 
 export const ICONS = [
   { id: 'heart', emoji: '💕', label: '心动' },

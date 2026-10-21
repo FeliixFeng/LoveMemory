@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { LoveQuote, Countdown } from '../lib/types';
+import { HeroSlide } from '../lib/constants';
 import { fmt } from '../lib/utils';
 import { SafeImage } from './SafeImage';
 
@@ -9,7 +10,7 @@ export function HeroSection({
   heroImages, animDays, nextDays, startDate, quotes, countdowns,
   onHeroUpload, heroRef, children
 }: {
-  heroImages: string[]; animDays: number; nextDays: number; startDate: string;
+  heroImages: (string | HeroSlide)[]; animDays: number; nextDays: number; startDate: string;
   quotes: LoveQuote[];
   countdowns: Countdown[];
   onHeroUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -27,7 +28,11 @@ export function HeroSection({
   }, [heroImages.length]);
 
   useEffect(() => {
-    heroImages.slice(0, 3).forEach(src => { const img = new Image(); img.src = src; });
+    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 767;
+    heroImages.slice(0, 3).forEach(s => {
+      const src = typeof s === 'string' ? s : (isMobile ? s.mobile : s.web);
+      const img = new Image(); img.src = src;
+    });
   }, [heroImages]);
 
   useEffect(() => {
@@ -58,16 +63,20 @@ export function HeroSection({
   return (
     <section className="relative rounded-3xl overflow-hidden shadow-lg aspect-[3/4] md:aspect-[4/3] lg:aspect-[2/1] max-h-[70dvh]" style={{ animation: 'slideUp 0.6s ease-out' }}>
       {/* Image layer - base */}
-      {heroImages.map((img, i) => (
-        <SafeImage
-          key={i} src={img} alt=""
-          fill
-          sizes="100vw"
-          priority={i === 0}
-          className="object-cover"
-          style={{ opacity: heroIdx === i ? 1 : 0, transition: 'opacity 1.5s' }}
-        />
-      ))}
+      {heroImages.map((img, i) => {
+        const style = { opacity: heroIdx === i ? 1 : 0, transition: 'opacity 1.5s' };
+        if (typeof img === 'string') {
+          return (
+            <SafeImage key={i} src={img} alt="" fill sizes="100vw" priority={i === 0} className="object-cover" style={style} />
+          );
+        }
+        return (
+          <picture key={i}>
+            <source media="(max-width: 767px)" srcSet={img.mobile} />
+            <SafeImage src={img.web} alt="" fill sizes="100vw" priority={i === 0} className="object-cover" style={style} />
+          </picture>
+        );
+      })}
 
       {/* Top shadow for controls */}
       <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-black/30 to-transparent z-[1]" />

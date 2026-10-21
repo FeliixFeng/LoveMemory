@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { SettingsPatch } from '../app/lib/schemas';
-import { HERO_IMAGES } from '../lib/constants';
+import { HERO_SLIDES, type HeroSlide } from '../lib/constants';
 import { useAuth } from './SiteLayoutClient';
 import { useAppData } from '../hooks/useAppData';
 import { fmt } from '../lib/utils';
@@ -36,7 +36,7 @@ export function SettingsPage() {
 
   if (loading) return <div className="space-y-4"><div className="h-10 bg-lm-line/20 rounded-xl animate-pulse" /><div className="h-40 bg-lm-line/20 rounded-2xl animate-pulse" /></div>;
 
-  const visibleDefaults = HERO_IMAGES.filter(u => !(data.hiddenDefaultCovers || []).includes(u));
+  const visibleDefaults: HeroSlide[] = HERO_SLIDES.filter(s => !(data.hiddenDefaultCovers || []).includes(s.web) && !(data.hiddenDefaultCovers || []).includes(s.mobile));
   const hasHidden = (data.hiddenDefaultCovers || []).length > 0;
 
   return (
@@ -158,11 +158,11 @@ export function SettingsPage() {
                 )}
               </div>
               <div className="grid grid-cols-3 gap-2">
-                {visibleDefaults.map((url, i) => (
+                {visibleDefaults.map((slide, i) => (
                   <div key={i} className="relative rounded-xl overflow-hidden aspect-[4/3] group shadow-sm">
-                    <SafeImage src={url} alt="" fill sizes="(max-width: 640px) 33vw, 200px" className="object-cover" />
+                    <SafeImage src={slide.web} alt="" fill sizes="(max-width: 640px) 33vw, 200px" className="object-cover" />
                     <button
-                      onClick={() => withAuth(() => void save({ hiddenDefaultCovers: [...(data.hiddenDefaultCovers || []), url] }, '已隐藏'))}
+                      onClick={() => withAuth(() => void save({ hiddenDefaultCovers: [...(data.hiddenDefaultCovers || []), slide.web] }, '已隐藏'))}
                       className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 backdrop-blur-sm text-white text-[10px] flex items-center justify-center opacity-70 md:opacity-0 md:group-hover:opacity-100 hover:bg-red-500 transition-all"
                     >×</button>
                   </div>

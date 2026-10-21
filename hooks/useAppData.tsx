@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Event, Photo, AppData } from '../lib/types';
-import { HERO_IMAGES } from '../lib/constants';
+import { HERO_SLIDES, type HeroSlide } from '../lib/constants';
 import { apiFetch } from '../app/lib/api-client';
 import type { SettingsPatch } from '../app/lib/schemas';
 
@@ -34,7 +34,7 @@ type AppDataContextValue = {
   saveSettings: (patch: SettingsPatch, msg?: string) => Promise<void>;
   days: number;
   nextDays: number;
-  heroImages: string[];
+  heroImages: (string | HeroSlide)[];
 };
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
@@ -75,8 +75,8 @@ export function AppDataProvider({ children, initialData }: { children: ReactNode
     if (nx.getTime() < n.getTime()) nx.setFullYear(n.getFullYear() + 1);
     return Math.ceil((nx.getTime() - n.getTime()) / 86400000);
   }, [data.startDate]);
-  const visibleDefaults = HERO_IMAGES.filter(u => !data.hiddenDefaultCovers.includes(u));
-  const heroImages = [...data.customCovers, ...visibleDefaults];
+  const visibleDefaults = HERO_SLIDES.filter(s => !data.hiddenDefaultCovers.includes(s.web) && !data.hiddenDefaultCovers.includes(s.mobile));
+  const heroImages: (string | HeroSlide)[] = [...data.customCovers, ...visibleDefaults];
 
   const value: AppDataContextValue = {
     data, setData, loading, loadError, toast, setToast,
