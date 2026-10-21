@@ -1,10 +1,8 @@
 export type HeroSlide = { mobile: string; web: string };
 
-const HERO_BASE = 'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/hero';
-
 export const HERO_SLIDES: HeroSlide[] = [1, 2, 3, 4, 5, 6].map(n => ({
-  mobile: `${HERO_BASE}/hero${n}-mobile.jpg`,
-  web: `${HERO_BASE}/hero${n}-web.jpg`
+  mobile: `/hero/hero${n}-mobile.jpg`,
+  web: `/hero/hero${n}-web.jpg`
 }));
 
 export const ICONS = [
