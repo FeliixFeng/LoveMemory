@@ -8,7 +8,7 @@
 
 - Next.js 15 App Router / React 18 / TypeScript
 - Prisma + **SQLite**（MySQL 已废弃，仅迁移时用过）
-- 阿里云 OSS 存图（`ali-oss` + `sharp` 生成 480x480 缩略图）
+- 阿里云 OSS 可选存图（`ali-oss`；未配置自动落盘 `public/uploads`），`sharp` 生成 480x480 缩略图
 - Tailwind CSS v4（PostCSS 构建，变量在 `app/globals.css`）
 
 ## 铁律
@@ -43,7 +43,17 @@
 
 - 部署只更新代码：rsync 排除 `data/`、`public/uploads/`、`.env.production`。
 - 线上库原地不动，容器重启/重建都读同一份 bind mount 文件。
-- 图片不存在本地：本地和线上共用同一个 OSS bucket，**图片天然互通**。
+- 照片互通：配置了 OSS 的实例共用一个 bucket；默认封面（`public/hero/`）随代码仓库走，不在 OSS。
+
+### 图片存储契约（2026-10-21 起）
+
+**默认资产进仓库，实例数据走宿主存储**——产品（含给别人部署）开箱即用，不依赖作者的云账号。
+
+- **默认封面随仓库分发**：`public/hero/hero{1-6}-{mobile,web}.jpg`（竖 4:5 / 横 16:9），`lib/constants.ts` 的 `HERO_SLIDES` 引用。OSS 上不存封面；缓存规则：路径永不复用，覆盖同名才补 `?v=YYYYMMDD`。
+- **上传落点契约**（`app/api/upload/route.ts`）：原图 `photos/<时间戳>_<随机>.<ext>`，缩略图 `thumbs/<同名>`（扁平）。配了 OSS → 桶内同结构；没配 → `public/uploads/` 同结构（Next 静态服务 `/uploads/*`，compose 卷 `./public/uploads` 持久化）。**桶根目录禁止落裸文件**——2026-10-21 已清理一代散图（含 7MB 未压缩原图）。
+- **压缩双保险**：客户端 `browser-image-compression`（≤1.5MB / 长边 2048；压缩失败会原样上传）；服务端 `capImageSize` 兜底 >2MB JPEG/WebP → 长边 2560 / 质量 80。
+- **删除顺序**：先删文件成功、再删库行（反序失败会留孤儿）；删除 key 用 URL 完整路径，不要 `basename`（会剥掉 `photos/` 前缀删错对象）。
+- 无 OSS 部署整站可用（浏览/事件/心愿/胶囊/账单/照片上传全功能），OSS 只是存储宿主选项。
 
 ### 数据写路径契约（2026-10-20 收窄后，不要回退）
 
@@ -56,7 +66,7 @@
 | `/api/events`、`/api/events/[id]` | 事件 CRUD（级联账单，照片脱钩保留） |
 | `/api/expenses/[id]` | 账单 |
 | `/api/wishes`、`/api/capsules` | 心愿 / 胶囊 |
-| `/api/upload` | 照片上传/删除（OSS + 缩略图） |
+| `/api/upload` | 照片上传/删除（photos/ 目录契约 + 缩略图，见「图片存储契约」） |
 | `PUT /api/photos/order` | 照片重排：**只更新 sortOrder，零删除** |
 
 数据层（`app/lib/app-data.ts`）只有 `writeSettings()` 一个批量写入口；旧的 `writeAppData`（`deleteMany({notIn})` 整份覆盖）已删除，**不要复活类似模式**。
@@ -255,6 +265,8 @@ hooks/          useAppData（Provider+context，布局级共享缓存）
                 useScrollLock / useOverlayLayer
 test/           api.test.js auth.test.js（node --test，不依赖测试框架）
 prisma/         schema.prisma（provider = sqlite）
+public/hero/    默认封面（双规格，随仓库分发）
+public/uploads/ 本地上传落盘（gitignore；配了 OSS 则不用）
 data/           本地 SQLite（gitignore）
 scripts/        pull-prod-db.sh（部署脚本已删，手动四步见「部署」章）
 PLAN.md         分阶段优化计划（阶段 0-4 已全部完成，历史记录）

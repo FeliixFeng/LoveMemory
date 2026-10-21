@@ -8,7 +8,7 @@
 
 - Next.js 15（App Router）+ React 18 + TypeScript
 - Prisma + **SQLite**
-- 阿里云 OSS 存图，`sharp` 生成缩略图
+- 图片：阿里云 OSS 可选（未配置自动落盘本地），`sharp` 生成缩略图
 - Tailwind CSS v4
 
 ## 本地运行
@@ -26,12 +26,17 @@ npm run build
 
 ```bash
 DATABASE_URL=file:../data/db.sqlite   # 相对 prisma/schema.prisma 解析 -> <repo>/data/db.sqlite
+APP_PIN=******                        # 访问 PIN
+APP_SECRET=...                        # 可选但建议：token 签名密钥；更换会使旧登录失效，需重输 PIN
+
+# 以下 OSS 四项可选：不配则上传图片落本地 public/uploads，整站可用
 OSS_REGION=oss-cn-wuhan-lr
 OSS_BUCKET=lovememory
 OSS_ACCESS_KEY_ID=...
 OSS_ACCESS_KEY_SECRET=...
 OSS_ENDPOINT=https://oss-cn-wuhan-lr.aliyuncs.com
-APP_PIN=******                        # 访问 PIN
+
+# UPLOAD_DIR=public/uploads           # 可选，本地上传目录
 ```
 
 ## 数据
@@ -40,6 +45,13 @@ APP_PIN=******                        # 访问 PIN
 - 本地：`data/db.sqlite`，内容是从线上拉的一次性快照，**之后不再同步**。
 - 本地测试随便改，不影响线上；需要更新的真实数据时手动跑 `./scripts/pull-prod-db.sh`。
 - 部署不传数据，只传代码。
+
+## 图片存储
+
+- 默认封面随仓库分发（`public/hero/`，竖 4:5 / 横 16:9 双规格），产品开箱即用，不依赖任何云
+- 上传契约：原图进 `photos/`、缩略图进 `thumbs/`；配了 OSS 进桶内同结构，没配落 `public/uploads` 同结构
+- 压缩双保险：客户端压到 ≤1.5MB，服务端对 >2MB JPEG/WebP 再兜底；删照片先删文件成功、再删库行
+- 完整契约与背景见 AGENTS.md「图片存储契约」
 
 ## 部署
 
@@ -64,6 +76,8 @@ app/lib/        数据层 app-data.ts、prisma.ts、oss.ts、auth.ts
 components/     UI 组件
 hooks/          数据与 CRUD hooks
 prisma/         schema.prisma
+public/hero/    默认封面（双规格，随仓库分发）
+public/uploads/ 本地上传落盘（gitignore；配了 OSS 则不用）
 data/           本地 SQLite（gitignore）
 scripts/        pull-prod-db.sh
 ```
