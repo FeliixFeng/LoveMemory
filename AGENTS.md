@@ -269,5 +269,6 @@ public/hero/    默认封面（双规格，随仓库分发）
 public/uploads/ 本地上传落盘（gitignore；配了 OSS 则不用）
 data/           本地 SQLite（gitignore）
 scripts/        pull-prod-db.sh（部署脚本已删，手动四步见「部署」章）
-PLAN.md         分阶段优化计划（阶段 0-4 已全部完成，历史记录）
+docs/           PLAN.md（优化计划，阶段 0-4 已完成） DESIGN-NOTES.md（设计评审/视觉方案）
+                screenshots/（README 配图）
 ```
