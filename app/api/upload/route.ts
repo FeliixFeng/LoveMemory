@@ -20,7 +20,21 @@ function buildThumbFilename(filename: string) {
 }
 
 async function ensureUploadDir() {
-  await fs.mkdir(uploadDir, { recursive: true });
+  await fs.mkdir(path.join(uploadDir, 'photos'), { recursive: true });
+  await fs.mkdir(path.join(uploadDir, 'thumbs'), { recursive: true });
+}
+
+// 服务端兜底：超过 2MB 的 JPEG/WebP 压到长边 2560 / 质量 80
+// （客户端 browser-image-compression 已压过，但压缩失败会原样上传，这里保底）
+async function capImageSize(buffer: Buffer, mimeType: string): Promise<Buffer> {
+  const LIMIT = 2 * 1024 * 1024;
+  if (buffer.length <= LIMIT) return buffer;
+  const resized = sharp(buffer)
+    .rotate()
+    .resize({ width: 2560, height: 2560, fit: 'inside', withoutEnlargement: true });
+  if (mimeType === 'image/jpeg') return resized.jpeg({ quality: 80, mozjpeg: true }).toBuffer();
+  if (mimeType === 'image/webp') return resized.webp({ quality: 80 }).toBuffer();
+  return buffer; // PNG/GIF 不重编码（避免改格式）
 }
 
 export async function POST(request: Request) {
@@ -42,7 +56,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '仅支持 JPG/PNG/GIF/WEBP 格式的图片' }, { status: 400 });
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
+    const rawBuffer = Buffer.from(await file.arrayBuffer());
+    const buffer = await capImageSize(rawBuffer, file.type);
     const filename = buildFilename(file.name);
     const thumbFilename = buildThumbFilename(filename);
 
@@ -54,14 +69,14 @@ export async function POST(request: Request) {
     let thumbUrl: string;
 
     if (getOssClient()) {
-      url = await uploadToOss(filename, buffer, file.type);
+      url = await uploadToOss(`photos/${filename}`, buffer, file.type);
       thumbUrl = await uploadToOss(thumbFilename, thumbBuffer, file.type);
     } else {
-      const filePath = path.join(uploadDir, filename);
+      const filePath = path.join(uploadDir, 'photos', filename);
       const thumbPath = path.join(uploadDir, thumbFilename);
       await fs.writeFile(filePath, buffer);
       await fs.writeFile(thumbPath, thumbBuffer);
-      url = `/uploads/${filename}`;
+      url = `/uploads/photos/${filename}`;
       thumbUrl = `/uploads/${thumbFilename}`;
     }
 
@@ -111,26 +126,27 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Invalid photo url' }, { status: 400 });
     }
 
-    const filename = path.basename(url);
-    const thumbFilename = buildThumbFilename(filename);
+    const pathname = new URL(url, 'http://placeholder.local').pathname;
+    const isLocalUrl = pathname.startsWith('/uploads/');
+    const relativePath = isLocalUrl ? pathname.slice('/uploads/'.length) : pathname.slice(1);
+    const baseName = path.posix.basename(relativePath);
+    const thumbPath = path.posix.join('thumbs', baseName);
+
+    if (isLocalUrl) {
+      await fs.unlink(path.join(uploadDir, relativePath)).catch((error) => {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      });
+      await fs.unlink(path.join(uploadDir, thumbPath)).catch((error) => {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      });
+    } else if (getOssClient()) {
+      await deleteFromOss(relativePath);
+      await deleteFromOss(thumbPath);
+    }
 
     await deletePhoto(url);
 
-    if (getOssClient()) {
-      await deleteFromOss(filename);
-      await deleteFromOss(thumbFilename);
-    } else {
-      const filePath = path.join(uploadDir, filename);
-      const thumbPath = path.join(uploadDir, thumbFilename);
-      await fs.unlink(filePath).catch((error) => {
-        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-      });
-      await fs.unlink(thumbPath).catch((error) => {
-        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-      });
-    }
-
-    return NextResponse.json({ success: true, filename });
+    return NextResponse.json({ success: true, filename: baseName });
   } catch (error) {
     console.error('Delete upload error:', error);
     return NextResponse.json({ error: 'Failed to delete photo file' }, { status: 500 });

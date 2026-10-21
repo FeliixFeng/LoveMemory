@@ -218,9 +218,10 @@ test('upload and delete route handlers manage original and thumbnail files', asy
     assert.equal(uploadBody.success, true);
     assert.equal(uploadBody.displayUrl, uploadBody.url);
     assert.notEqual(uploadBody.thumbUrl, uploadBody.displayUrl);
+    assert.match(uploadBody.url, /^\/uploads\/photos\//);
 
-    const uploadedFile = path.join(ctx.uploadDir, uploadBody.filename);
-    const thumbFile = path.join(ctx.uploadDir, path.basename(uploadBody.thumbUrl));
+    const uploadedFile = path.join(ctx.uploadDir, 'photos', uploadBody.filename);
+    const thumbFile = path.join(ctx.uploadDir, uploadBody.thumbUrl.replace(/^\/uploads\//, ''));
     await fs.access(uploadedFile);
     await fs.access(thumbFile);
 
