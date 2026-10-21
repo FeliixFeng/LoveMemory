@@ -4,6 +4,21 @@
 
 > 开发规范、数据策略、部署方式以 **[AGENTS.md](./AGENTS.md)** 为准，本文件只做概览。
 
+## 界面
+
+<table>
+<tr>
+<td align="center"><img src="docs/screenshots/home-mobile.jpg" width="260" alt="首页（手机）"><br><sub>首页 · 纪念日时间轴</sub></td>
+<td align="center"><img src="docs/screenshots/album-mobile.jpg" width="260" alt="相册"><br><sub>相册 · 按事件分组</sub></td>
+<td align="center"><img src="docs/screenshots/wishes-mobile.jpg" width="260" alt="心愿"><br><sub>心愿 / 时光胶囊</sub></td>
+<td align="center"><img src="docs/screenshots/footprint-mobile.jpg" width="260" alt="足迹"><br><sub>足迹地图</sub></td>
+</tr>
+</table>
+
+桌面端封面自动切换横版（16:9），手机端用竖版（4:5）：
+
+![桌面首页](docs/screenshots/home-desktop.jpg)
+
 ## Stack
 
 - Next.js 15（App Router）+ React 18 + TypeScript
