@@ -88,56 +88,77 @@ export function EventDetail({
       onClose={onClose}
       layer="sheet"
       labelledBy="event-detail-title"
-      panelClassName="w-full sm:max-w-lg max-h-[85dvh] bg-lm-bg rounded-t-2xl sm:rounded-2xl overflow-y-auto pb-[env(safe-area-inset-bottom)]"
+      panelClassName="w-full sm:max-w-lg max-h-[85dvh] bg-lm-bg rounded-t-2xl sm:rounded-2xl overflow-y-auto pb-[env(safe-area-inset-bottom)] sm:shadow-2xl"
     >
         {/* Header */}
-        <div className="sticky top-0 bg-lm-bg/95 backdrop-blur-sm z-10 px-5 py-4 border-b border-lm-line/30">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+        <div className="sticky top-0 bg-lm-bg/92 backdrop-blur-xl z-10 px-5 py-4 border-b border-lm-line/40">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 min-w-0">
               <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 shadow-sm"
+                className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0"
                 style={{
-                  background: 'linear-gradient(135deg, var(--lm-accent), var(--lm-accent-deep))',
-                  boxShadow: '0 2px 8px rgba(173,124,87,0.25)'
+                  background: 'linear-gradient(140deg, rgba(204,146,102,0.22), rgba(173,124,87,0.12))',
+                  border: '1px solid rgba(173,124,87,0.18)',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.8)'
                 }}
               >
                 {getEmoji(event.icon)}
               </div>
-              <div>
-                <h2 id="event-detail-title" className="text-base font-bold text-lm-ink" style={{ fontFamily: 'var(--lm-font-serif)' }}>
+              <div className="min-w-0">
+                <h2 id="event-detail-title" className="text-[17px] font-bold text-lm-ink font-serif-cn truncate leading-tight">
                   {event.title || '未命名事件'}
                 </h2>
-                <div className="flex items-center gap-2 text-[11px] text-lm-body/50">
-                  <span>{fmt(event.date)}</span>
-                  {event.location && <span>· 📍 {event.location}</span>}
-                  {event.mood && <span>· {getMoodEmoji(event.mood)}</span>}
+                <div className="flex items-center gap-1.5 mt-1 text-[11px] text-lm-body/50 min-w-0">
+                  <span className="shrink-0 tabular-nums">{fmt(event.date)}</span>
+                  {event.location && (
+                    <>
+                      <span className="text-lm-body/25">·</span>
+                      <span className="truncate">📍 {event.location}</span>
+                    </>
+                  )}
+                  {event.mood && <span className="shrink-0">{getMoodEmoji(event.mood)}</span>}
                 </div>
               </div>
             </div>
-            <div className="flex gap-2">
-              <button onClick={onEdit} className="px-3 py-1.5 text-xs rounded-lg bg-gradient-to-r from-lm-accent/10 to-lm-accent-deep/10 text-lm-accent-deep hover:from-lm-accent/20 hover:to-lm-accent-deep/20 transition-colors font-medium">编辑</button>
-              <button onClick={onClose} className="w-10 h-10 -mr-2 rounded-full flex items-center justify-center text-lm-body/50 hover:bg-lm-line/30 transition-colors">✕</button>
+            <div className="flex items-center gap-1 shrink-0 -mr-1">
+              <button
+                onClick={onEdit}
+                className="px-3 h-8 text-[11px] rounded-full bg-lm-accent/15 text-lm-accent-deep hover:bg-lm-accent/25 transition-colors font-medium"
+              >
+                编辑
+              </button>
+              <button
+                onClick={onClose}
+                aria-label="关闭"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-lm-body/40 hover:text-lm-body hover:bg-lm-line/40 transition-colors"
+              >
+                ✕
+              </button>
             </div>
           </div>
         </div>
 
-        <div className="p-4 space-y-5">
+        <div className="p-4 space-y-6">
           {/* Description */}
           {event.desc && (
-            <p className="text-sm text-lm-body/80 leading-relaxed">{event.desc}</p>
+            <p className="text-sm text-lm-body/75 leading-relaxed">{event.desc}</p>
           )}
 
           {/* Photos */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold text-lm-ink">
-                照片 {photos.length > 0 && <span className="text-lm-body/40 font-normal">({photos.length})</span>}
+            <div className="flex items-baseline justify-between mb-2.5">
+              <h3 className="text-[13px] font-bold text-lm-ink tracking-wide">
+                照片
+                <span className="ml-1.5 text-[11px] font-normal text-lm-body/40 tabular-nums">{photos.length}</span>
               </h3>
+              {photos.length > 1 && (
+                <span className="text-[10px] text-lm-body/30">悬停可调整顺序</span>
+              )}
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-1.5">
               {photos.map((p, i) => (
-                <div key={p.url} className="relative aspect-[4/5] rounded-xl overflow-hidden bg-lm-line/20 group cursor-pointer">
+                <div key={p.url} className="relative aspect-square rounded-xl overflow-hidden bg-lm-line/20 group">
                   <SafeImage
                     src={p.thumbUrl || p.displayUrl || p.url}
                     alt=""
@@ -146,33 +167,39 @@ export function EventDetail({
                     className="object-cover"
                     onClick={() => onViewPhoto(photos, i)}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent md:opacity-0 md:group-hover:opacity-100 transition-opacity" />
-                  {/* Move left */}
-                  {i > 0 && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onReorderPhotos(i, i - 1); }}
-                      className="absolute bottom-1.5 left-1.5 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm text-white text-sm flex items-center justify-center opacity-60 md:opacity-0 md:group-hover:opacity-100 hover:bg-lm-accent-deep transition-all"
-                    >
-                      ‹
-                    </button>
-                  )}
-                  {/* Move right */}
-                  {i < photos.length - 1 && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onReorderPhotos(i, i + 1); }}
-                      className="absolute bottom-1.5 right-1.5 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm text-white text-sm flex items-center justify-center opacity-60 md:opacity-0 md:group-hover:opacity-100 hover:bg-lm-accent-deep transition-all"
-                    >
-                      ›
-                    </button>
-                  )}
+
                   {/* Delete */}
                   <button
                     onClick={(e) => { e.stopPropagation(); onDeletePhoto(p); }}
                     disabled={deleting === p.url}
-                    className="absolute top-1.5 right-1.5 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm text-white text-xs flex items-center justify-center opacity-70 md:opacity-40 md:group-hover:opacity-100 hover:!bg-red-500 transition-all disabled:opacity-50"
+                    aria-label="删除照片"
+                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/45 backdrop-blur-sm text-white text-[10px] flex items-center justify-center opacity-60 md:opacity-0 md:group-hover:opacity-100 hover:!bg-red-500/90 transition-all disabled:opacity-50"
                   >
-                    {deleting === p.url ? '...' : '✕'}
+                    {deleting === p.url ? '·' : '✕'}
                   </button>
+
+                  {/* Reorder: 两个箭头收进一颗药丸，别让格子长满按钮 */}
+                  {photos.length > 1 && (
+                    <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 flex items-stretch rounded-full bg-black/45 backdrop-blur-sm overflow-hidden opacity-70 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onReorderPhotos(i, i - 1); }}
+                        disabled={i === 0}
+                        aria-label="前移"
+                        className="w-6 h-6 text-white text-[11px] flex items-center justify-center hover:bg-white/20 disabled:opacity-25 transition-colors"
+                      >
+                        ‹
+                      </button>
+                      <span className="w-px bg-white/20" />
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onReorderPhotos(i, i + 1); }}
+                        disabled={i === photos.length - 1}
+                        aria-label="后移"
+                        className="w-6 h-6 text-white text-[11px] flex items-center justify-center hover:bg-white/20 disabled:opacity-25 transition-colors"
+                      >
+                        ›
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
 
@@ -180,14 +207,14 @@ export function EventDetail({
               <button
                 onClick={onAddPhoto}
                 disabled={uploading}
-                className="aspect-[4/5] rounded-xl border-2 border-dashed border-lm-line flex flex-col items-center justify-center gap-1 text-lm-body/40 hover:border-lm-accent hover:text-lm-accent transition-colors disabled:opacity-50 relative overflow-hidden"
+                className="aspect-square rounded-xl border border-dashed border-lm-line bg-lm-line/15 flex flex-col items-center justify-center gap-1 text-lm-body/40 hover:border-lm-accent hover:text-lm-accent hover:bg-lm-accent/10 transition-colors disabled:opacity-50 relative overflow-hidden"
               >
                 {uploading && (
                   <div className="absolute bottom-0 left-0 right-0 h-1 bg-lm-line">
                     <div className="h-full bg-lm-accent transition-[width] duration-300" style={{ width: `${uploadProgress}%` }} />
                   </div>
                 )}
-                <span className="text-2xl">{uploading ? '⏳' : '+'}</span>
+                <span className="text-xl leading-none">{uploading ? '⏳' : '+'}</span>
                 <span className="text-[10px]">{uploading ? `${uploadProgress}%` : '添加照片'}</span>
               </button>
             </div>
@@ -195,13 +222,16 @@ export function EventDetail({
 
           {/* Expenses */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold text-lm-ink">
-                账单 {total > 0 && <span className="text-lm-accent font-normal">({formatCurrency(total)})</span>}
+            <div className="flex items-baseline justify-between mb-2.5">
+              <h3 className="text-[13px] font-bold text-lm-ink tracking-wide">
+                账单
+                <span className="ml-1.5 text-[11px] font-normal text-lm-accent tabular-nums">
+                  {total > 0 ? formatCurrency(total) : '0'}
+                </span>
               </h3>
               <button
                 onClick={() => setShowAddExpense(true)}
-                className="px-3 py-1 text-xs rounded-lg bg-gradient-to-r from-lm-accent to-lm-accent-deep text-white shadow-sm"
+                className="px-3 h-7 text-[11px] rounded-full bg-lm-accent/15 text-lm-accent-deep font-medium hover:bg-lm-accent/25 transition-colors"
               >
                 + 添加
               </button>

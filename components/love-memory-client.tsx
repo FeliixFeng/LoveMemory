@@ -20,17 +20,44 @@ import { useEventCRUD } from '../hooks/useEventCRUD';
 import { useExpenseCRUD } from '../hooks/useExpenseCRUD';
 import { apiFetch } from '../app/lib/api-client';
 
-function useAnimatedNum(target: number) {
+/* 数字滚动。三个坑，缺一个就会「卡在 0」：
+   1. 起始值要从 ref 读，且 **ref 只在动画结束时才更新** —— 否则动画被
+      打断（StrictMode 双跑、target 变化）后重启时 diff 已经是 0，直接
+      return，数字就永远停在上一帧（常见是 0）。
+   2. `diff === 0` 也要 `setVal(target)` 兜底，不能只 return。
+   3. 用 rAF 而不是 setInterval：切到后台标签页时 setInterval 会被节流，
+      动画拖很久才落到终值。 */
+function useAnimatedNum(target: number, duration = 900) {
   const [val, setVal] = useState(0);
-  const prev = useRef(0);
+  const fromRef = useRef(0);
+  const rafRef = useRef<number | null>(null);
+
   useEffect(() => {
-    const start = prev.current, diff = target - start;
-    if (diff === 0) return;
-    let step = 0;
-    const t = setInterval(() => { step++; setVal(Math.round(start + diff * (step / 30))); if (step >= 30) { setVal(target); clearInterval(t); } }, 30);
-    prev.current = target;
-    return () => clearInterval(t);
-  }, [target]);
+    const from = fromRef.current;
+    if (from === target) {
+      setVal(target);
+      return;
+    }
+
+    const t0 = performance.now();
+    function tick(now: number) {
+      const p = Math.min((now - t0) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      if (p >= 1) {
+        setVal(target);
+        fromRef.current = target;
+      } else {
+        setVal(Math.round(from + (target - from) * eased));
+        rafRef.current = requestAnimationFrame(tick);
+      }
+    }
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    };
+  }, [target, duration]);
+
   return val;
 }
 
