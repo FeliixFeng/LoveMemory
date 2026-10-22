@@ -120,6 +120,40 @@ curl -fsS https://lovexin.felixfeng.online/api/health
 > `ssh ali1 'echo "APP_SECRET=$(openssl rand -hex 32)" >> /data/app/love-memory/.env.production'`
 > 不配也能跑（回退用 PIN 签名并打告警），但配上后 PIN 泄露不会波及已签发 token。注意：配好后旧 token 全部失效，用户需重输一次 PIN。
 
+### 备份与回滚（2026-10-22 补）
+
+**部署前必须备份**，三份快照 + 一个镜像标签，成本几十秒：
+
+```bash
+TS=$(date +%Y%m%d-%H%M%S)
+ssh ali1 "
+  set -e; mkdir -p /data/backups; cd /data/app/love-memory
+  tar czf /data/backups/lm-src-\$TS.tar.gz --exclude=node_modules --exclude=.next --exclude=data --exclude=public/uploads .
+  tar czf /data/backups/lm-data-\$TS.tar.gz data            # WAL 三个文件必须一起，否则丢最近写入
+  tar czf /data/backups/lm-uploads-\$TS.tar.gz public/uploads
+  docker tag love-memory-app:latest love-memory-app:rollback-\$TS
+"
+```
+
+**rsync 先 `-n` 空跑一遍**，确认「将被删除」清单里只有构建产物和过期文件，再去掉 `n` 真跑。`--delete` 配错排除项是唯一能一次性毁掉线上数据的操作。
+
+回滚分三档，按出问题的层次选：
+
+```bash
+# 1) 代码（改错文案、某页白屏）
+ssh ali1 'cd /data/app/love-memory && tar xzf /data/backups/lm-src-<TS>.tar.gz && docker-compose up -d --build'
+
+# 2) 镜像（新镜像起不来，要最快恢复）
+ssh ali1 'cd /data/app/love-memory && docker tag love-memory-app:rollback-<TS> love-memory-app:latest && docker-compose up -d --no-build'
+
+# 3) 数据（误删事件/照片）—— 会丢掉备份点之后的所有写入，先确认再执行
+ssh ali1 'cd /data/app/love-memory && docker-compose stop && rm -rf data && tar xzf /data/backups/lm-data-<TS>.tar.gz && docker-compose start'
+```
+
+**禁忌**：`docker-compose down -v`（删数据卷）、`docker image prune -a` / `docker system prune -a`（波及同机其他项目）、不带排除项的 `rsync --delete`、在 `/data/app/love-memory` 之外执行 compose 命令。
+
+> `docker compose`（空格、插件形式）**在这台机器上不可用**，只有连字符的 `docker-compose`（`/usr/local/bin/docker-compose`，v2.24.1 独立版）。别照着别处的文档写成空格形式。
+
 ### 服务器事实
 
 - `ssh ali1` → `root@47.121.181.198`（2核2G，云盘 40G）
