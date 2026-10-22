@@ -20,7 +20,7 @@ export const ICONS = [
   { id: 'movie', emoji: '🎬', label: '电影' },
   { id: 'restaurant', emoji: '🕯️', label: '烛光' },
   { id: 'anniversary', emoji: '💝', label: '周年' },
-  { id: 'camping', emoji: '⛺', label: '露营' },
+  { id: 'camping', emoji: '⛺️', label: '露营' },
   { id: 'fireworks', emoji: '🎆', label: '跨年' },
   { id: 'travel', emoji: '🧳', label: '出游' },
   { id: 'flower', emoji: '🌹', label: '鲜花' },

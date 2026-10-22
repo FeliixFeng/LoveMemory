@@ -74,6 +74,92 @@ body {
   transform: translateY(-1px);
 }
 
+/* 轻玻璃面板：卡片/浮层用。靠「亮边 + 内高光 + 顶部渐变」立住材质，
+   不完全依赖背景内容，所以放在纯色底上也不会糊成一片。 */
+.lm-glass-panel {
+  background:
+    linear-gradient(152deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.50) 48%, rgba(255,250,245,0.58) 100%);
+  backdrop-filter: blur(18px) saturate(1.35);
+  -webkit-backdrop-filter: blur(18px) saturate(1.35);
+  border: 1px solid rgba(255,255,255,0.85);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.95),
+    inset 0 -1px 0 rgba(173,124,87,0.05),
+    0 12px 32px -16px rgba(120,78,48,0.22),
+    0 1px 3px rgba(120,78,48,0.04);
+}
+
+/* 顶栏 / 底栏玻璃：内容从下面滑过去时才有明显的磨砂感 */
+.lm-glass-bar-top {
+  background: linear-gradient(180deg, rgba(255,252,248,0.76), rgba(251,248,244,0.56));
+  backdrop-filter: blur(22px) saturate(1.5);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  border-bottom: 1px solid rgba(255,255,255,0.7);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 6px 20px -16px rgba(120,78,48,0.35);
+}
+
+.lm-glass-bar-bottom {
+  background: linear-gradient(0deg, rgba(255,252,248,0.78), rgba(251,248,244,0.58));
+  backdrop-filter: blur(22px) saturate(1.5);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  border-top: 1px solid rgba(255,255,255,0.7);
+  box-shadow: inset 0 -1px 0 rgba(255,255,255,0.9), 0 -6px 20px -16px rgba(120,78,48,0.35);
+}
+
+/* 选中态玻璃胶囊：导航栏 / 底栏共用。
+   在浅色底上，「玻璃」只能靠三件事立住：顶部的镜面高光、由上到下
+   由白转暖的厚度渐变、以及底部一道内阴影。只靠加白会变成塑料。 */
+.lm-glass-pill {
+  position: relative;
+  overflow: hidden;
+  /* 三层：左上镜面光 + 斜向高光 + 由白转暖的厚度渐变。
+     全部画在背景层，不压文字（伪元素会盖住 emoji）。 */
+  background:
+    radial-gradient(62% 58% at 26% 8%, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 72%),
+    linear-gradient(112deg,
+      rgba(255,255,255,0) 24%,
+      rgba(255,255,255,0.72) 41%,
+      rgba(255,255,255,0) 58%),
+    linear-gradient(180deg,
+      rgba(255,255,255,1) 0%,
+      rgba(255,254,252,0.94) 42%,
+      rgba(255,249,243,0.93) 76%,
+      rgba(252,238,227,0.94) 100%);
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,1),
+    inset 0 -1px 0 rgba(255,255,255,0.7),
+    inset 0 -5px 7px -6px rgba(173,124,87,0.22),
+    0 0 0 1px rgba(204,146,102,0.20),
+    0 1px 2px rgba(120,78,48,0.10),
+    0 4px 10px -6px rgba(120,78,48,0.34);
+}
+
+/* 小玻璃片：卡片里的轻按钮（翻开回忆 / 相册入口） */
+.lm-glass-chip {
+  background: linear-gradient(150deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.52) 100%);
+  border: 1px solid rgba(255,255,255,0.95);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,1),
+    0 1px 3px rgba(120,78,48,0.10);
+  transition: background-color 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
+}
+.lm-glass-chip:hover {
+  background: linear-gradient(150deg, rgba(255,255,255,1) 0%, rgba(255,248,241,0.82) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,1),
+    0 2px 8px -2px rgba(173,124,87,0.28),
+    0 0 12px -2px rgba(204,146,102,0.24);
+}
+
+/* 卡片左栏：一层极淡的暖纸色。左侧文字、右侧照片，用这点色差把两者分开 */
+@media (min-width: 768px) {
+  .lm-paper-panel {
+    background: linear-gradient(178deg, rgba(255,255,255,0.62) 0%, rgba(255,250,244,0.26) 48%, rgba(249,234,220,0.40) 100%);
+  }
+}
+
 .lm-btn {
   background: linear-gradient(135deg, var(--lm-accent-deep), var(--lm-accent));
   color: #fff;
@@ -100,6 +186,12 @@ body {
 @keyframes heartbeat {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.18); }
+}
+
+/* 选中节点的呼吸光晕：幅度很小，只负责「我在选中」的信号 */
+@keyframes lm-breathe {
+  0%, 100% { opacity: 0.6; transform: scale(0.93); }
+  50% { opacity: 1; transform: scale(1.05); }
 }
 
 .animate-fall { animation: fall linear infinite; will-change: transform, opacity; }

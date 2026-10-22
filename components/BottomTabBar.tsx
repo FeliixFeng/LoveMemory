@@ -15,7 +15,7 @@ export function BottomTabBar() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-lm-bg/90 backdrop-blur-sm border-t border-lm-accent/10 pb-[env(safe-area-inset-bottom)]">
+    <nav className="lm-glass-bar-bottom fixed bottom-0 left-0 right-0 z-40 md:hidden pb-[env(safe-area-inset-bottom)]">
       <div className="flex justify-around items-center h-14 max-w-lg mx-auto">
         {TABS.map(tab => {
           const active = pathname === tab.href || (tab.href === '/wishes' && pathname === '/capsule');
@@ -23,10 +23,16 @@ export function BottomTabBar() {
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${active ? 'text-lm-accent' : 'text-lm-ink-strong/40'}`}
+              className={`relative flex flex-col items-center justify-center gap-1 flex-1 h-full transition-colors duration-300 ${active ? 'text-lm-accent-deep' : 'text-lm-ink-strong/40'}`}
             >
-              <span className="text-base leading-none">{tab.icon}</span>
-              <span className="text-[10px] leading-none">{tab.label}</span>
+              <span
+                className={`flex items-center justify-center w-10 h-[26px] rounded-full transition-all duration-300 ${
+                  active ? 'lm-glass-pill' : ''
+                }`}
+              >
+                <span className={`text-base leading-none transition-transform duration-300 ${active ? 'scale-110' : ''}`}>{tab.icon}</span>
+              </span>
+              <span className={`text-[10px] leading-none transition-all duration-300 ${active ? 'font-semibold' : ''}`}>{tab.label}</span>
             </Link>
           );
         })}
