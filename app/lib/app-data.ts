@@ -72,7 +72,9 @@ function toEvent(item: EventWithRelations): Event {
     icon: item.icon,
     location: item.location || '',
     mood: item.mood || '',
-    coverPhoto: item.coverPhoto || ''
+    coverPhoto: item.coverPhoto || '',
+    wishId: item.wishId ?? null,
+    capsuleId: item.capsuleId ?? null
   };
 }
 
@@ -111,14 +113,24 @@ function toWish(item: WishRow): Wish {
   };
 }
 
-function toCapsule(item: CapsuleRow): Capsule {
+/* 未到解锁日，正文根本不下发 —— 以前只是前端用日期把字遮住，
+   F12 里 content 一览无余，而「封存」本该是服务端的事。 */
+function todayStr(): string {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function toCapsule(item: CapsuleRow, today: string): Capsule {
+  const locked = !!item.unlockDate && item.unlockDate > today;
   return {
     id: item.id,
     title: item.title,
-    content: item.content,
+    content: locked ? '' : item.content,
     emoji: item.emoji,
     unlockDate: item.unlockDate,
-    isOpened: item.isOpened
+    isOpened: item.isOpened,
+    locked
   };
 }
 
@@ -162,7 +174,7 @@ export async function readAppData(): Promise<AppData> {
     expenses: allExpenses,
     loveQuotes: loveQuotes.map(item => ({ id: item.id, content: item.content })),
     wishes: wishes.map(toWish),
-    capsules: capsules.map(toCapsule)
+    capsules: capsules.map(c => toCapsule(c, todayStr()))
   };
 }
 
@@ -256,13 +268,18 @@ export async function createEvent(event: Partial<Event> & { id: string }): Promi
     data: {
       id: event.id, title: event.title || '', date: event.date || '', description: event.desc || '',
       icon: event.icon || 'heart', location: event.location || '', mood: event.mood || '',
-      coverPhoto: event.coverPhoto || '', sortOrder: event.sortOrder ?? count
+      coverPhoto: event.coverPhoto || '', sortOrder: event.sortOrder ?? count,
+      wishId: event.wishId ?? null,
+      capsuleId: event.capsuleId ?? null
     }
   });
 
   return {
     id: event.id, title: event.title || '', date: event.date || '', desc: event.desc || '',
-    icon: event.icon || 'heart', location: event.location || '', mood: event.mood || '', coverPhoto: event.coverPhoto || ''
+    icon: event.icon || 'heart', location: event.location || '', mood: event.mood || '',
+    coverPhoto: event.coverPhoto || '',
+    wishId: event.wishId ?? null,
+    capsuleId: event.capsuleId ?? null
   };
 }
 
@@ -332,7 +349,7 @@ export async function createCapsule(data: { title: string; content?: string; emo
   const created = await prisma.capsule.create({
     data: { title: data.title, content: data.content || '', emoji: data.emoji || '💌', unlockDate: data.unlockDate || '' }
   });
-  return toCapsule(created);
+  return toCapsule(created, todayStr());
 }
 
 export async function updateCapsule(id: number, data: Partial<Capsule>): Promise<Capsule> {
@@ -346,7 +363,7 @@ export async function updateCapsule(id: number, data: Partial<Capsule>): Promise
       ...(data.isOpened !== undefined && { isOpened: data.isOpened })
     }
   });
-  return toCapsule(updated);
+  return toCapsule(updated, todayStr());
 }
 
 export async function deleteCapsule(id: number): Promise<void> {

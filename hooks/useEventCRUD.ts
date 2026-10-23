@@ -3,13 +3,25 @@
 import { useState } from 'react';
 import { Event, AppData } from '../lib/types';
 import { EventDraft } from '../components/EventModal';
-import { apiFetch, ApiError } from '../app/lib/api-client';
+import { apiFetch } from '../app/lib/api-client';
+import type { MutateOptions } from './useAppData';
+
+type Mutate = <T>(
+  optimistic: (prev: AppData) => AppData,
+  request: () => Promise<T>,
+  opts?: MutateOptions<T>
+) => Promise<T | null>;
+
+function sortByDateDesc(events: Event[]): Event[] {
+  return events.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
 
 export function useEventCRUD(
   data: AppData,
   setData: (updater: (prev: AppData) => AppData) => void,
+  mutate: Mutate,
   setToast: (msg: string) => void,
-  onAuthRequired: (op: () => void) => void
+  onAuthRequired: (op: () => void | Promise<void>) => void
 ) {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [eventDetailId, setEventDetailId] = useState<string | null>(null);
@@ -38,45 +50,58 @@ export function useEventCRUD(
     if (!eventDraft.title || !eventDraft.date) { setToast('请填写标题和日期'); return; }
 
     if (editEvent) {
-      const events = data.events.map(e => e.id === editEvent.id ? { ...e, ...eventDraft } : e);
-      const sorted = events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      setEventModal(false); setEditEvent(null);
-      setData(prev => ({ ...prev, events }));
-      setToast('已保存');
-    } else {
-      try {
-        const { event: created } = await apiFetch<{ event: Event }>('/api/events', { method: 'POST', body: eventDraft });
-        const events = [...data.events, created].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        setEventModal(false);
-        setData(prev => ({ ...prev, events }));
-        setToast('已创建');
-        setSelectedEventId(String(created.id));
-      } catch (err) {
-        if (err instanceof ApiError && err.isAuthError) {
-          onAuthRequired(() => saveEvent());
-        } else {
-          setToast('创建失败');
+      /* 这里原来只有 setData，没有 PUT：改完看着像保存了，刷新就回原样 */
+      const target = editEvent;
+      const draft = eventDraft;
+      const res = await mutate(
+        prev => ({
+          ...prev,
+          events: sortByDateDesc(prev.events.map(e => (e.id === target.id ? { ...e, ...draft } : e)))
+        }),
+        () => apiFetch(`/api/events/${target.id}`, { method: 'PUT', body: draft }),
+        { successMsg: '已保存', errorMsg: '保存失败', onAuthRequired }
+      );
+      if (res !== null) { setEventModal(false); setEditEvent(null); }
+      return;
+    }
+
+    const res = await mutate<{ event: Event }>(
+      prev => prev,
+      () => apiFetch<{ event: Event }>('/api/events', { method: 'POST', body: eventDraft }),
+      {
+        successMsg: '已创建',
+        errorMsg: '创建失败',
+        onAuthRequired,
+        onSuccess: ({ event }) => {
+          setData(prev => ({ ...prev, events: sortByDateDesc([...prev.events, event]) }));
+          setSelectedEventId(String(event.id));
         }
       }
-    }
+    );
+
+    if (res !== null) { setEventModal(false); setEditEvent(null); }
   }
 
   async function deleteEvent() {
     if (!editEvent) return;
-    try {
-      await apiFetch(`/api/events/${editEvent.id}`, { method: 'DELETE' });
-      const events = data.events.filter(e => e.id !== editEvent.id);
-      const expenses = data.expenses.filter(e => e.eventId !== String(editEvent.id));
-      setEventModal(false); setEditEvent(null);
-      if (selectedEventId === String(editEvent.id)) setSelectedEventId(events.length > 0 ? String(events[0].id) : null);
-      setData(prev => ({ ...prev, events, expenses }));
-      setToast('已删除');
-    } catch (err) {
-      if (err instanceof ApiError && err.isAuthError) {
-        onAuthRequired(() => deleteEvent());
-      } else {
-        setToast('删除失败');
-      }
+    const target = editEvent;
+    const res = await mutate(
+      prev => ({
+        ...prev,
+        events: prev.events.filter(e => e.id !== target.id),
+        expenses: prev.expenses.filter(e => e.eventId !== String(target.id)),
+        /* 服务端是 SetNull：照片留下，只是脱离事件，不是一起删掉 */
+        photos: prev.photos.map(p => (p.eventId === String(target.id) ? { ...p, eventId: null } : p))
+      }),
+      () => apiFetch(`/api/events/${target.id}`, { method: 'DELETE' }),
+      { successMsg: '已删除', errorMsg: '删除失败', onAuthRequired }
+    );
+
+    if (res !== null) {
+      const rest = data.events.filter(e => e.id !== target.id);
+      setEventModal(false);
+      setEditEvent(null);
+      if (selectedEventId === String(target.id)) setSelectedEventId(rest.length > 0 ? String(rest[0].id) : null);
     }
   }
 

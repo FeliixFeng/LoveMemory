@@ -63,7 +63,7 @@ function useAnimatedNum(target: number, duration = 900) {
 
 export function LoveMemoryClient() {
   const { tokenRef, setShowPin, pendingOp, withAuth, setFloatingButton } = useAuth();
-  const { data, setData, loading, loadError, toast, setToast, loadData, saveSettings, days, nextDays, heroImages } = useAppData();
+  const { data, setData, mutate, loading, loadError, toast, setToast, loadData, saveSettings, days, nextDays, heroImages } = useAppData();
   const [confirm, setConfirm] = useState<{ title: string; message: string; danger?: boolean; onConfirm: () => void } | null>(null);
 
   const animDays = useAnimatedNum(days);
@@ -74,8 +74,8 @@ export function LoveMemoryClient() {
   };
 
   const photos = usePhotoUpload(data, setData, saveSettings, setToast, onAuthRequired);
-  const events = useEventCRUD(data, setData, setToast, onAuthRequired);
-  const expenses = useExpenseCRUD(data, setData, setToast, onAuthRequired);
+  const events = useEventCRUD(data, setData, mutate, setToast, onAuthRequired);
+  const expenses = useExpenseCRUD(data, setData, mutate, onAuthRequired);
 
   const heroRef = useRef<HTMLInputElement>(null);
   const timelineScrollRef = useRef<HTMLDivElement>(null);
@@ -188,7 +188,7 @@ export function LoveMemoryClient() {
         <EventModal
           editEvent={events.editEvent} draft={events.eventDraft} setDraft={events.setEventDraft}
           onSave={() => void events.saveEvent()}
-          onDelete={() => setConfirm({ title: '确认删除事件', message: '删除事件将同时删除关联的照片和账单，确定要删除吗？', onConfirm: () => { void events.deleteEvent(); setConfirm(null); } })}
+          onDelete={() => setConfirm({ title: '确认删除事件', message: '事件会删除，账单会一起删掉；照片会保留在相册的「其他照片」里，不会丢失。确定吗？', onConfirm: () => { void events.deleteEvent(); setConfirm(null); } })}
           onClose={() => events.setEventModal(false)}
         />
       )}

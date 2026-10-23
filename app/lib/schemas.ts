@@ -8,7 +8,10 @@ export const CreateEventSchema = z.object({
   icon: z.string().max(64).default('heart'),
   location: z.string().max(500).default(''),
   mood: z.string().max(100).default(''),
-  coverPhoto: z.string().max(500).default('')
+  coverPhoto: z.string().max(500).default(''),
+  /* 来源：由一个愿望 / 一封胶囊产生，用来建立双向链接 */
+  wishId: z.number().int().positive().nullable().optional(),
+  capsuleId: z.number().int().positive().nullable().optional()
 });
 
 export const UpdateEventSchema = z.object({

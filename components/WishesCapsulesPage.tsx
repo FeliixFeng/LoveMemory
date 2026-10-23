@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Wish, Capsule } from '../lib/types';
+import { Wish, Capsule, Event } from '../lib/types';
 import { useAuth } from './SiteLayoutClient';
+import { useAppData } from '../hooks/useAppData';
+import { apiFetch } from '../app/lib/api-client';
 import { FallingHearts } from './FallingHearts';
 import { SkeletonCard } from './SkeletonCard';
 import { ConfirmDialog } from './modals/ConfirmDialog';
@@ -14,108 +16,140 @@ const CAPSULE_EMOJI_OPTIONS = ['💌', '💝', '🎁', '🌸', '💕', '🌹', '
 type Tab = 'wishes' | 'capsules';
 
 export function WishesCapsulesPage() {
-  const { token, withAuth } = useAuth();
+  const { withAuth, pendingOp, setShowPin } = useAuth();
+  const { data, setData, mutate, loading } = useAppData();
   const router = useRouter();
   const pathname = usePathname();
   const tab: Tab = pathname === '/capsule' ? 'capsules' : 'wishes';
-  const [loading, setLoading] = useState(true);
 
-  // Wishes state
-  const [wishes, setWishes] = useState<Wish[]>([]);
+  /* 愿望和胶囊现在都读 AppDataProvider，不再各自 fetch 一份
+     —— 否则在心愿页勾掉一个，首页统计和别处永远不知道 */
+  const wishes = data.wishes;
+  const capsules = data.capsules;
+
   const [showAddWish, setShowAddWish] = useState(false);
   const [newWish, setNewWish] = useState({ title: '', description: '', emoji: '💝' });
   const [showHearts, setShowHearts] = useState(false);
 
-  // Capsules state
-  const [capsules, setCapsules] = useState<Capsule[]>([]);
   const [showAddCapsule, setShowAddCapsule] = useState(false);
   const [newCapsule, setNewCapsule] = useState({ title: '', content: '', emoji: '💌', unlockDate: '' });
   const [openCapsuleId, setOpenCapsuleId] = useState<number | null>(null);
+  const [openedIds, setOpenedIds] = useState<number[]>([]);
 
-  // Shared
   const [confirm, setConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
-  useEffect(() => {
-    Promise.all([
-      fetch('/api/wishes').then(r => r.json()),
-      fetch('/api/capsules').then(r => r.json())
-    ]).then(([w, c]) => {
-      setWishes(Array.isArray(w) ? w : []);
-      setCapsules(Array.isArray(c) ? c : []);
-    }).finally(() => setLoading(false));
-  }, []);
+  const onAuthRequired = (op: () => void | Promise<void>) => {
+    pendingOp.current = op;
+    setShowPin(true);
+  };
 
-  // --- Wish functions ---
+  const hasMemory = (wishId?: number, capsuleId?: number) =>
+    data.events.some(e => (wishId != null && e.wishId === wishId) || (capsuleId != null && e.capsuleId === capsuleId));
+
+  /* 把一次「愿望达成」或「开启胶囊」落成一条真实回忆，并回填来源，
+     这样首页时间轴、相册、统计里才看得到 —— 以前这两张表是死胡同 */
+  async function createMemoryFrom(source: { title: string; desc?: string; wishId?: number; capsuleId?: number }): Promise<void> {
+    await mutate<{ event: Event }>(
+      prev => prev,
+      () => apiFetch<{ event: Event }>('/api/events', {
+        method: 'POST',
+        body: {
+          title: source.title,
+          date: new Date().toISOString().slice(0, 10),
+          desc: source.desc || '',
+          icon: source.wishId != null ? 'gift' : 'anniversary',
+          location: '',
+          mood: '',
+          coverPhoto: '',
+          wishId: source.wishId ?? null,
+          capsuleId: source.capsuleId ?? null
+        }
+      }),
+      {
+        successMsg: '已记成回忆，去首页补张照片吧',
+        errorMsg: '创建失败',
+        onAuthRequired,
+        onSuccess: ({ event }) => {
+          setData(prev => ({ ...prev, events: [event, ...prev.events] }));
+        }
+      }
+    );
+  }
+
+  // --- Wish ---
   async function createWish() {
     if (!newWish.title.trim()) return;
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const r = await fetch('/api/wishes', { method: 'POST', headers, body: JSON.stringify(newWish) });
-    if (r.ok) {
-      const { wish } = await r.json();
-      setWishes(prev => [...prev, wish]);
+    const res = await mutate<{ wish: Wish }>(
+      prev => prev,
+      () => apiFetch<{ wish: Wish }>('/api/wishes', { method: 'POST', body: newWish }),
+      {
+        errorMsg: '创建失败',
+        onAuthRequired,
+        onSuccess: ({ wish }) => setData(prev => ({ ...prev, wishes: [...prev.wishes, wish] }))
+      }
+    );
+    if (res !== null) {
       setNewWish({ title: '', description: '', emoji: '💝' });
       setShowAddWish(false);
     }
   }
 
   async function toggleWish(wish: Wish) {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const r = await fetch(`/api/wishes/${wish.id}`, {
-      method: 'PUT', headers,
-      body: JSON.stringify({ isCompleted: !wish.isCompleted, completedAt: !wish.isCompleted ? new Date().toISOString() : null })
-    });
-    if (r.ok) {
-      const { wish: updated } = await r.json();
-      setWishes(prev => prev.map(w => w.id === wish.id ? updated : w));
-      if (!wish.isCompleted) {
-        setShowHearts(true);
-        setTimeout(() => setShowHearts(false), 3000);
-      }
+    const next = !wish.isCompleted;
+    const completedAt = next ? new Date().toISOString() : null;
+    const res = await mutate(
+      prev => ({
+        ...prev,
+        wishes: prev.wishes.map(w => (w.id === wish.id ? { ...w, isCompleted: next, completedAt } : w))
+      }),
+      () => apiFetch(`/api/wishes/${wish.id}`, { method: 'PUT', body: { isCompleted: next, completedAt } }),
+      { errorMsg: '更新失败', onAuthRequired }
+    );
+    if (res !== null && next) {
+      setShowHearts(true);
+      setTimeout(() => setShowHearts(false), 3000);
     }
   }
 
   async function deleteWish(id: number) {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const r = await fetch(`/api/wishes/${id}`, { method: 'DELETE', headers });
-    if (r.ok) setWishes(prev => prev.filter(w => w.id !== id));
+    await mutate(
+      prev => ({ ...prev, wishes: prev.wishes.filter(w => w.id !== id) }),
+      () => apiFetch(`/api/wishes/${id}`, { method: 'DELETE' }),
+      { errorMsg: '删除失败', onAuthRequired }
+    );
   }
 
-  // --- Capsule functions ---
+  // --- Capsule ---
   async function createCapsule() {
     if (!newCapsule.title.trim() || !newCapsule.unlockDate) return;
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const r = await fetch('/api/capsules', { method: 'POST', headers, body: JSON.stringify(newCapsule) });
-    if (r.ok) {
-      const { capsule } = await r.json();
-      setCapsules(prev => [capsule, ...prev]);
+    const res = await mutate<{ capsule: Capsule }>(
+      prev => prev,
+      () => apiFetch<{ capsule: Capsule }>('/api/capsules', { method: 'POST', body: newCapsule }),
+      {
+        errorMsg: '封存失败',
+        onAuthRequired,
+        onSuccess: ({ capsule }) => setData(prev => ({ ...prev, capsules: [capsule, ...prev.capsules] }))
+      }
+    );
+    if (res !== null) {
       setNewCapsule({ title: '', content: '', emoji: '💌', unlockDate: '' });
       setShowAddCapsule(false);
     }
   }
 
-  async function openCapsule(capsule: Capsule) {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const r = await fetch(`/api/capsules/${capsule.id}`, {
-      method: 'PUT', headers,
-      body: JSON.stringify({ isOpened: true })
-    });
-    if (r.ok) {
-      const { capsule: updated } = await r.json();
-      setCapsules(prev => prev.map(c => c.id === capsule.id ? updated : c));
-      setOpenCapsuleId(capsule.id);
-    }
+  /* 解锁由服务端判定：未到日期，正文根本没下发，前端拿不到也没什么可遮的 */
+  function openCapsule(capsule: Capsule) {
+    if (capsule.locked) return;
+    setOpenCapsuleId(capsule.id);
+    setOpenedIds(prev => (prev.includes(capsule.id) ? prev : [...prev, capsule.id]));
   }
 
   async function deleteCapsule(id: number) {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const r = await fetch(`/api/capsules/${id}`, { method: 'DELETE', headers });
-    if (r.ok) setCapsules(prev => prev.filter(c => c.id !== id));
+    await mutate(
+      prev => ({ ...prev, capsules: prev.capsules.filter(c => c.id !== id) }),
+      () => apiFetch(`/api/capsules/${id}`, { method: 'DELETE' }),
+      { errorMsg: '删除失败', onAuthRequired }
+    );
   }
 
   function getDaysLeft(unlockDate: string): number {
@@ -137,26 +171,31 @@ export function WishesCapsulesPage() {
         <ConfirmDialog title={confirm.title} message={confirm.message} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(null)} />
       )}
 
-      {/* Capsule open modal */}
-      {openCapsuleId && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-          <div className="absolute inset-0 bg-black/30 modal-backdrop" onClick={() => setOpenCapsuleId(null)} />
-          <div className="relative w-full sm:max-w-md bg-lm-bg rounded-t-2xl sm:rounded-2xl p-6 modal-content">
-            {(() => {
-              const c = capsules.find(x => x.id === openCapsuleId);
-              if (!c) return null;
-              return (
-                <div className="text-center space-y-4">
-                  <span className="text-5xl">{c.emoji}</span>
-                  <h2 className="text-lg font-bold text-lm-ink" style={{ fontFamily: 'var(--lm-font-serif)' }}>{c.title}</h2>
-                  <p className="text-sm text-lm-body/80 whitespace-pre-wrap">{c.content}</p>
-                  <button onClick={() => setOpenCapsuleId(null)} className="w-full py-3 bg-gradient-to-r from-lm-accent to-lm-accent-deep text-white rounded-xl font-medium">关闭</button>
-                </div>
-              );
-            })()}
+      {openCapsuleId !== null && (() => {
+        const c = capsules.find(x => x.id === openCapsuleId);
+        if (!c) return null;
+        return (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+            <div className="absolute inset-0 bg-black/30 modal-backdrop" onClick={() => setOpenCapsuleId(null)} />
+            <div className="relative w-full sm:max-w-md bg-lm-bg rounded-t-2xl sm:rounded-2xl p-6 modal-content">
+              <div className="text-center space-y-4">
+                <span className="text-5xl">{c.emoji}</span>
+                <h2 className="text-lg font-bold text-lm-ink" style={{ fontFamily: 'var(--lm-font-serif)' }}>{c.title}</h2>
+                <p className="text-sm text-lm-body/80 whitespace-pre-wrap">{c.content}</p>
+                {!hasMemory(undefined, c.id) && (
+                  <button
+                    onClick={() => withAuth(() => createMemoryFrom({ title: c.title, desc: c.content, capsuleId: c.id }))}
+                    className="w-full py-2.5 rounded-xl border border-lm-accent/40 text-lm-accent-deep text-xs font-medium bg-white/50"
+                  >
+                    把这一刻记成回忆
+                  </button>
+                )}
+                <button onClick={() => setOpenCapsuleId(null)} className="w-full py-3 bg-gradient-to-r from-lm-accent to-lm-accent-deep text-white rounded-xl font-medium">关闭</button>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Page header + Tab */}
       <div className="flex items-center justify-between">
@@ -186,7 +225,6 @@ export function WishesCapsulesPage() {
       {/* ===== WISHES TAB ===== */}
       {tab === 'wishes' && (
         <>
-          {/* Add wish form */}
           {showAddWish && (
             <div className="lm-card rounded-2xl p-4 space-y-3">
               <div className="flex gap-2">
@@ -219,7 +257,6 @@ export function WishesCapsulesPage() {
             </div>
           )}
 
-          {/* Pending wishes */}
           {pendingWishes.length > 0 && (
             <div className="space-y-2">
               <h2 className="text-xs text-lm-body/40 font-medium px-1">想一起做的事</h2>
@@ -244,25 +281,34 @@ export function WishesCapsulesPage() {
             </div>
           )}
 
-          {/* Completed wishes */}
           {completedWishes.length > 0 && (
             <div className="space-y-2">
               <h2 className="text-xs text-lm-body/40 font-medium px-1">已完成 ✓</h2>
               <div className="stagger space-y-2">
                 {completedWishes.map(wish => (
-                  <div key={wish.id} className="lm-card rounded-2xl p-4 flex items-center gap-3 opacity-60">
-                    <button
-                      onClick={() => withAuth(() => toggleWish(wish))}
-                      className="w-10 h-10 rounded-xl bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center text-lg shrink-0 active:scale-95 transition-transform"
-                    >✓</button>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-bold text-lm-ink line-through">{wish.title}</h3>
-                      {wish.description && <p className="text-[11px] text-lm-body/50 mt-0.5 truncate">{wish.description}</p>}
+                  <div key={wish.id} className="lm-card rounded-2xl p-4 opacity-60">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => withAuth(() => toggleWish(wish))}
+                        className="w-10 h-10 rounded-xl bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center text-lg shrink-0 active:scale-95 transition-transform"
+                      >✓</button>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-bold text-lm-ink line-through">{wish.title}</h3>
+                        {wish.description && <p className="text-[11px] text-lm-body/50 mt-0.5 truncate">{wish.description}</p>}
+                      </div>
+                      <button
+                        onClick={() => withAuth(() => setConfirm({ title: '确认删除', message: '确定要删除这个愿望吗？', onConfirm: () => deleteWish(wish.id) }))}
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-xs text-lm-body/20 hover:text-red-400 hover:bg-red-50 transition-colors shrink-0"
+                      >×</button>
                     </div>
-                    <button
-                      onClick={() => withAuth(() => setConfirm({ title: '确认删除', message: '确定要删除这个愿望吗？', onConfirm: () => deleteWish(wish.id) }))}
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-xs text-lm-body/20 hover:text-red-400 hover:bg-red-50 transition-colors shrink-0"
-                    >×</button>
+                    {!hasMemory(wish.id) && (
+                      <button
+                        onClick={() => withAuth(() => createMemoryFrom({ title: wish.title, desc: wish.description, wishId: wish.id }))}
+                        className="mt-2.5 w-full py-2 rounded-xl border border-lm-accent/30 text-lm-accent-deep text-[11px] font-medium bg-white/50 active:scale-[0.99] transition-transform"
+                      >
+                        记成回忆
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -282,7 +328,6 @@ export function WishesCapsulesPage() {
       {/* ===== CAPSULES TAB ===== */}
       {tab === 'capsules' && (
         <>
-          {/* Add capsule form */}
           {showAddCapsule && (
             <div className="lm-card rounded-2xl p-4 space-y-3">
               <div className="flex gap-2">
@@ -324,7 +369,6 @@ export function WishesCapsulesPage() {
             </div>
           )}
 
-          {/* Capsule grid */}
           {capsules.length === 0 && !showAddCapsule ? (
             <div className="flex flex-col items-center justify-center py-16">
               <span className="text-4xl mb-3">💌</span>
@@ -335,17 +379,18 @@ export function WishesCapsulesPage() {
             <div className="grid grid-cols-2 gap-3 stagger">
               {capsules.map(capsule => {
                 const daysLeft = getDaysLeft(capsule.unlockDate);
-                const canOpen = daysLeft <= 0 || capsule.isOpened;
+                const canOpen = !capsule.locked;
+                const opened = openedIds.includes(capsule.id) || capsule.isOpened;
                 return (
                   <div
                     key={capsule.id}
                     className={`lm-card rounded-2xl p-4 text-center space-y-2 ${canOpen ? 'cursor-pointer hover:shadow-md' : ''} transition-shadow`}
-                    onClick={() => canOpen && withAuth(() => openCapsule(capsule))}
+                    onClick={() => openCapsule(capsule)}
                   >
                     <span className="text-3xl">{capsule.emoji}</span>
                     <h3 className="text-sm font-bold text-lm-ink truncate" style={{ fontFamily: 'var(--lm-font-serif)' }}>{capsule.title}</h3>
                     {canOpen ? (
-                      <p className="text-xs text-emerald-500 font-medium">{capsule.isOpened ? '已打开' : '可打开'}</p>
+                      <p className="text-xs text-emerald-500 font-medium">{opened ? '已打开' : '可打开'}</p>
                     ) : (
                       <div>
                         <p className="text-lg font-bold text-lm-accent-deep" style={{ fontFamily: 'var(--lm-font-display)' }}>{daysLeft}</p>

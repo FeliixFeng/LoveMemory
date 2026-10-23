@@ -8,6 +8,9 @@ export type Event = {
   mood: string;
   coverPhoto: string;
   sortOrder?: number;
+  /* 来源：这条回忆由一个愿望完成、或一封胶囊开启产生 */
+  wishId?: number | null;
+  capsuleId?: number | null;
 };
 
 export type Photo = {
@@ -58,6 +61,8 @@ export type Capsule = {
   emoji: string;
   unlockDate: string;
   isOpened: boolean;
+  /* 服务端按解锁日判定：未解锁时 content 为空串，locked 为 true */
+  locked?: boolean;
 };
 
 export type AppData = {

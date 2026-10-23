@@ -1,9 +1,9 @@
 'use client';
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Event, Photo, AppData } from '../lib/types';
 import { HERO_SLIDES, type HeroSlide } from '../lib/constants';
-import { apiFetch } from '../app/lib/api-client';
+import { apiFetch, ApiError } from '../app/lib/api-client';
 import type { SettingsPatch } from '../app/lib/schemas';
 
 const EMPTY_DATA: AppData = {
@@ -23,9 +23,23 @@ function normalizeAppData(d: Partial<AppData>): AppData {
   };
 }
 
+export type MutateOptions<T> = {
+  successMsg?: string;
+  errorMsg?: string;
+  /* 401 时由调用方弹 PIN，验完自动重放同一次变更 */
+  onAuthRequired?: (op: () => void | Promise<void>) => void;
+  onSuccess?: (result: T) => void;
+};
+
 type AppDataContextValue = {
   data: AppData;
   setData: (updater: (prev: AppData) => AppData) => void;
+  /* 统一的写路径：乐观更新 → 请求 → 失败回滚 + 提示 → 401 弹 PIN 后重放 */
+  mutate: <T>(
+    optimistic: (prev: AppData) => AppData,
+    request: () => Promise<T>,
+    opts?: MutateOptions<T>
+  ) => Promise<T | null>;
   loading: boolean;
   loadError: boolean;
   toast: string;
@@ -45,6 +59,36 @@ export function AppDataProvider({ children, initialData }: { children: ReactNode
   const [loadError, setLoadError] = useState(false);
   const [toast, setToast] = useState('');
 
+  /* 快照要用「调用那一刻」的 data，不能等 React 批处理 */
+  const dataRef = useRef(data);
+  dataRef.current = data;
+
+  const mutate = useCallback(async function mutate<T>(
+    optimistic: (prev: AppData) => AppData,
+    request: () => Promise<T>,
+    opts: MutateOptions<T> = {}
+  ): Promise<T | null> {
+    const snapshot = dataRef.current;
+    setData(optimistic);
+
+    try {
+      const result = await request();
+      if (opts.successMsg) setToast(opts.successMsg);
+      opts.onSuccess?.(result);
+      return result;
+    } catch (err) {
+      setData(() => snapshot);
+
+      if (err instanceof ApiError && err.isAuthError && opts.onAuthRequired) {
+        opts.onAuthRequired(() => { void mutate(optimistic, request, opts); });
+        return null;
+      }
+
+      setToast(opts.errorMsg || (err instanceof Error ? err.message : '操作失败'));
+      return null;
+    }
+  }, []);
+
   function loadData(retryCount = 0) {
     setLoadError(false);
     fetch('/api/data', { cache: 'no-store' })
@@ -63,9 +107,11 @@ export function AppDataProvider({ children, initialData }: { children: ReactNode
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 2000); return () => clearTimeout(t); }, [toast]);
 
   async function saveSettings(patch: SettingsPatch, msg?: string): Promise<void> {
-    setData(prev => ({ ...prev, ...patch }));
-    if (msg) setToast(msg);
-    await apiFetch('/api/data', { method: 'POST', body: patch });
+    await mutate(
+      prev => ({ ...prev, ...patch }),
+      () => apiFetch('/api/data', { method: 'POST', body: patch }),
+      { successMsg: msg, errorMsg: '保存失败' }
+    );
   }
 
   const days = useMemo(() => data.startDate ? Math.max(0, Math.floor((Date.now() - new Date(`${data.startDate}T00:00:00`).getTime()) / 86400000)) : 0, [data.startDate]);
@@ -79,7 +125,7 @@ export function AppDataProvider({ children, initialData }: { children: ReactNode
   const heroImages: (string | HeroSlide)[] = [...data.customCovers, ...visibleDefaults];
 
   const value: AppDataContextValue = {
-    data, setData, loading, loadError, toast, setToast,
+    data, setData, mutate, loading, loadError, toast, setToast,
     loadData, saveSettings, days, nextDays, heroImages
   };
 

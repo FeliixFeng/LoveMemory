@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server.js';
 import { readAppData, updateEvent, deleteEvent } from '../../../lib/app-data.ts';
 import { checkRequestAuth } from '../../../lib/auth.ts';
+import { UpdateEventSchema } from '../../../lib/schemas.ts';
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -26,7 +27,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params;
     const body = await request.json();
-    await updateEvent(id, body);
+    const parsed = UpdateEventSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+    }
+    await updateEvent(id, parsed.data);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Update event error:', error);

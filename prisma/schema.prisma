@@ -31,8 +31,14 @@ model Event {
   sortOrder   Int      @default(0) @map("sort_order")
   createdAt   DateTime @default(now()) @map("created_at")
 
+  // 来源：一条回忆可以由一个愿望完成、或一封胶囊开启产生
+  wishId    Int? @unique @map("wish_id")
+  capsuleId Int? @unique @map("capsule_id")
+
   photos   Photo[]
   expenses Expense[]
+  wish     Wish?    @relation(fields: [wishId], references: [id], onDelete: SetNull)
+  capsule  Capsule? @relation(fields: [capsuleId], references: [id], onDelete: SetNull)
 
   @@map("events")
 }
@@ -87,6 +93,8 @@ model Wish {
   sortOrder   Int      @default(0) @map("sort_order")
   createdAt   DateTime @default(now()) @map("created_at")
 
+  event Event?
+
   @@map("wishes")
 }
 
@@ -98,6 +106,8 @@ model Capsule {
   unlockDate String   @map("unlock_date")
   isOpened   Boolean  @default(false) @map("is_opened")
   createdAt  DateTime @default(now()) @map("created_at")
+
+  event Event?
 
   @@map("capsules")
 }
