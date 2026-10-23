@@ -2,6 +2,7 @@
 
 import { Event } from '../lib/types';
 import { ICONS, MOODS } from '../lib/constants';
+import { resolvePlace } from '../lib/place';
 import { Overlay } from './ui/Overlay';
 
 export type EventDraft = {
@@ -23,6 +24,8 @@ export function EventModal({
   onDelete: () => void;
   onClose: () => void;
 }) {
+  const resolved = resolvePlace(draft.location);
+
   return (
     <Overlay
       onClose={onClose}
@@ -103,6 +106,19 @@ export function EventModal({
                 className="flex-1 min-w-0 bg-transparent text-sm text-lm-ink outline-none placeholder:text-lm-body/25"
               />
             </label>
+            {/* 地点不用多填一栏：写「武汉 江汉路」自动归到武汉，写「家里」就老实说上不了图 */}
+            {draft.location.trim() && (
+              <div className="flex items-center gap-2 px-3.5 py-1.5 text-[10px]">
+                {resolved ? (
+                  <>
+                    <span className="text-lm-accent-deep/70">📍 {resolved.city} · {resolved.province}</span>
+                    <span className="text-lm-body/30">会出现在足迹地图</span>
+                  </>
+                ) : (
+                  <span className="text-lm-body/35">识别不出城市，这条不会上地图</span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Mood picker */}

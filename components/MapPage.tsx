@@ -1,21 +1,10 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { THEME } from '../app/lib/theme';
 import { useAppData } from '../hooks/useAppData';
-import { Event } from '../lib/types';
-import { CITY_TO_PROVINCE, CITY_COORDS, PROVINCE_FULL_NAMES } from '../lib/map-data';
-
-function getProvinceFromCity(location: string): string | null {
-  if (CITY_TO_PROVINCE[location]) return CITY_TO_PROVINCE[location];
-  for (const [city, province] of Object.entries(CITY_TO_PROVINCE)) {
-    if (location.includes(city)) return province;
-  }
-  for (const [city, province] of Object.entries(CITY_TO_PROVINCE)) {
-    if (location.split(/[,，、\s]+/).some(part => part.includes(city))) return province;
-  }
-  return null;
-}
+import { CITY_COORDS, PROVINCE_FULL_NAMES } from '../lib/map-data';
+import { resolvePlace, type ResolvedPlace } from '../lib/place';
 
 // Lazy load the ECharts map component
 function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<string>; visitedCities: { city: string; province: string }[] }) {
@@ -64,7 +53,7 @@ function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<s
         if (params.seriesType === 'scatter') return params.name;
         const short = provinceShortByFull.get(params.name) ?? params.name;
         const count = cityCountByProvince.get(short)?.size ?? 0;
-        return count > 0 ? `${params.name} · 去过 ${count} 座城市` : params.name;
+        return count > 0 ? `${params.name} · 去过 ${count} 个地方` : params.name;
       }
     },
     geo: {
@@ -112,22 +101,19 @@ function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<s
 
 export function MapPage() {
   const { data, loading } = useAppData();
-  const events = data.events;
 
-  const excludedWords = ['家里', '待定', '内', '附近', '门口', '学校', '公司'];
-  const visitedProvinces = new Set<string>();
-  const visitedCities: { city: string; province: string }[] = [];
+  /* 只认 resolvePlace 的结果：能定位的才上图。
+     「家里」「公司」这类解析不出的，不再靠黑名单硬塞，也不会丢 pin */
+  const resolved = data.events
+    .map(e => resolvePlace(e.location))
+    .filter((p): p is ResolvedPlace => p !== null);
 
-  events.forEach(e => {
-    if (!e.location || excludedWords.some(w => e.location.includes(w))) return;
-    const province = getProvinceFromCity(e.location);
-    if (province) {
-      visitedProvinces.add(province);
-      visitedCities.push({ city: e.location, province });
-    }
-  });
+  const visitedProvinces = new Set(resolved.map(p => p.province));
+  const visitedCities = [...new Map(
+    resolved.map(p => [p.city, { city: p.city, province: p.province }])
+  ).values()];
 
-  const uniqueCities = [...new Set(visitedCities.map(c => c.city))];
+  const uniqueCities = visitedCities.map(c => c.city);
   if (loading) return <div className="space-y-4"><div className="h-64 bg-lm-line/20 rounded-2xl animate-pulse" /></div>;
 
   return (
@@ -139,12 +125,12 @@ export function MapPage() {
       <div className="lm-card rounded-2xl px-4 py-3">
         <div className="flex justify-center gap-6 text-xs text-lm-body/55">
           <div className="flex items-center gap-1.5"><span>📍</span><span className="font-bold text-lm-ink">{visitedProvinces.size}</span><span>个省份</span></div>
-          <div className="flex items-center gap-1.5"><span>🏙️</span><span className="font-bold text-lm-ink">{uniqueCities.length}</span><span>座城市</span></div>
+          <div className="flex items-center gap-1.5"><span>🏙️</span><span className="font-bold text-lm-ink">{uniqueCities.length}</span><span>个地方</span></div>
         </div>
       </div>
       {uniqueCities.length > 0 && (
         <div className="lm-card rounded-2xl p-4">
-          <h3 className="text-sm font-bold text-lm-ink mb-3">📍 去过的城市</h3>
+          <h3 className="text-sm font-bold text-lm-ink mb-3">📍 去过的地方</h3>
           <div className="flex flex-wrap gap-2">
             {uniqueCities.map(city => (<span key={city} className="px-3 py-1.5 rounded-full bg-gradient-to-r from-lm-accent/10 to-lm-accent-deep/10 text-xs text-lm-accent-deep font-medium">{city}</span>))}
           </div>

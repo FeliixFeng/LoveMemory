@@ -3,6 +3,7 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { Event, Photo, Expense } from '../lib/types';
 import { calcTotalExpenses } from '../lib/utils';
+import { collectPlaces } from '../lib/place';
 
 /* 数字滚动：首屏从 0 数上去，值变化时从当前值继续数。
    ref 只在动画结束时落定 —— 中途被打断不会把起点写成终点，
@@ -69,15 +70,16 @@ export const StatsSection = memo(function StatsSection({
   days: number;
 }) {
   const totalExpenses = calcTotalExpenses(expenses);
-  // 地点不是城市 —— 家里、公司、某个山头都算
-  const places = new Set(events.filter(e => e.location).map(e => e.location));
+  /* 与足迹页同一口径：能定位的归到城市（「武汉 江汉路」并入「武汉」），
+     定位不了的保留原文（家里、某个山头也算一个地方） */
+  const places = collectPlaces(events.map(e => e.location));
 
   const hasSpent = totalExpenses > 0;
 
   const nodes: Record<string, React.ReactNode> = {
     events: <AnimatedNumber value={events.length} duration={800} />,
     photos: <AnimatedNumber value={photos.length} duration={900} />,
-    places: <AnimatedNumber value={places.size} duration={700} />,
+    places: <AnimatedNumber value={places.length} duration={700} />,
     // 没有账单时退回天数，第四格不留空
     spent: hasSpent
       ? (
