@@ -31,6 +31,7 @@ build/
 # Runtime data
 data/*.json
 !data/.gitkeep
+data/backups/
 tsconfig.tsbuildinfo
 prisma/data/
 db.sqlite

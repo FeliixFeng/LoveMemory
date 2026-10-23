@@ -71,7 +71,15 @@
 
 数据层（`app/lib/app-data.ts`）只有 `writeSettings()` 一个批量写入口；旧的 `writeAppData`（`deleteMany({notIn})` 整份覆盖）已删除，**不要复活类似模式**。
 
-**前端数据流**：`app/(site)/layout.tsx`（server，`force-dynamic`）每请求 `readAppData()` 直出给 `AppDataProvider`（`hooks/useAppData.tsx`）；页面经 `useAppData()` 消费同一份 context。写操作 = 乐观 `setData` + 资源接口 / `saveSettings(patch)`，失败时 `loadData()` 回滚。切 tab 不重新拉数据。
+**前端数据流**：`app/(site)/layout.tsx`（server，`force-dynamic`）每请求 `readAppData()` 直出给 `AppDataProvider`（`hooks/useAppData.tsx`）；页面经 `useAppData()` 消费同一份 context。切 tab 不重新拉数据。
+
+**写操作一律走 `mutate(optimistic, request, opts)`**（`hooks/useAppData.tsx`）：乐观改本地 → 发资源接口 → 失败用快照回滚 + toast → 401 弹 PIN 后自动重放同一次变更。不要在 hook 里各写一套 try/catch —— `useEventCRUD` 的编辑分支就是因为漏了 PUT，改完看着保存成功、刷新回原样。
+
+**胶囊封存在服务端**（2026-10-23）：`readAppData()` 按 `unlockDate` 把未解锁胶囊的 `content` 置空、`locked: true`。`/api/data` 和 `/api/capsules` 都走这里，所以只改一个路由不够。前端只认 `locked`，不要自己拿日期算。
+
+**地点只有一处解析**（2026-10-23）：所有地点计算走 `lib/place.ts` 的 `resolvePlace / placeLabel / collectPlaces`。不要再写 `location.includes(city)` 或 `excludedWords` 黑名单 —— 首页统计、足迹地图、事件弹窗三处曾经各算各的，同一个「武汉 江汉路」得出三种结果。解析不出的（家里 / 待定 / 海边）不上地图，但 `placeLabel` 会保留原文，仍然算一个「地方」。
+
+**来源链接**：`Event.wishId` / `Event.capsuleId`（可空、唯一）。愿望完成或胶囊开启后由前端调 `POST /api/events` 带上来源，一条来源只能对应一条回忆。
 
 **Auth**：`APP_PIN` 启用 PIN；token 用 `APP_SECRET` HMAC 签名（90 天），缺省回退 PIN 并打一次警告。PIN 按 IP 限流：5 分钟内错 5 次锁 5 分钟（429 + Retry-After）。前端 `PinModal` 透出服务端错误文案（含 429 的「尝试次数过多」与等待秒数），不是只抖一下。`test/auth.test.js` 覆盖。
 
@@ -108,13 +116,20 @@ rsync -az --delete \
   --exclude 'tsconfig.tsbuildinfo' \
   ./ ali1:/data/app/love-memory/
 
-# 3. 远程构建并重启（用连字符形式，这台机器提供的是 docker-compose）
+# 3. 数据库迁移（只在 schema 有变更时需要；幂等，可重复跑）
+#    在宿主机用 python3 直连挂载目录 —— 容器是 node:20，没有 node:sqlite
+#    加列向后兼容，旧容器在迁移期间照常服务
+ssh ali1 'cd /data/app/love-memory && python3 scripts/migrate.py'
+
+# 4. 远程构建并重启（用连字符形式，这台机器提供的是 docker-compose）
 ssh ali1 'cd /data/app/love-memory && docker-compose up -d --build'
 
-# 4. 健康检查（容器内 3000 + 外网域名，两边都要过）
+# 5. 健康检查（容器内 3000 + 外网域名，两边都要过）
 ssh ali1 'curl -fsS --retry 10 --retry-delay 3 http://127.0.0.1:3000/api/health'
 curl -fsS https://lovexin.felixfeng.online/api/health
 ```
+
+> **schema 变更清单（2026-10-23）**：`events` 加了 `wish_id` / `capsule_id` 两列和唯一索引，由 `scripts/migrate.py` 负责。**跳过这一步，新代码一查事件就 500**（Prisma 会 select 不存在的列）。本地用 `prisma db push` 即可；服务器上没有 prisma CLI，且容器是 Node 20（无 `node:sqlite`），所以用宿主机的 python3 直连 `/data/app/love-memory/data/data.sqlite`。
 
 > **APP_SECRET（2026-10-20 新增）**：token 签名密钥已从 PIN 独立出来。rsync 不传 `.env.production`，所以**首次部署这批代码前**要手动给服务器补一行（随机长字符串，只执行这一次）：
 > `ssh ali1 'echo "APP_SECRET=$(openssl rand -hex 32)" >> /data/app/love-memory/.env.production'`
