@@ -6,6 +6,7 @@ import { BottomTabBar } from './BottomTabBar';
 import { PinModal } from './modals/PinModal';
 import { ErrorBoundary } from './ErrorBoundary';
 import { AppDataProvider, useAppData } from '../hooks/useAppData';
+import { SideOrnaments } from './SideOrnaments';
 
 type AuthCtx = {
   token: string;
@@ -79,6 +80,7 @@ export function SiteLayoutClient({ children, initialData }: { children: ReactNod
         <ErrorBoundary>
           {children}
         </ErrorBoundary>
+        <SideOrnaments />
       </AppDataProvider>
       <BottomTabBar />
       {floatingButton}

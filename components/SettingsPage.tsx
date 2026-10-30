@@ -11,10 +11,10 @@ import { ConfirmDialog } from './modals/ConfirmDialog';
 import { SafeImage } from './SafeImage';
 
 const TABS = [
-  { key: 'date' as const, label: '纪念日', icon: '📅' },
-  { key: 'cover' as const, label: '封面', icon: '🖼' },
-  { key: 'quotes' as const, label: '语录', icon: '💬' },
-  { key: 'countdowns' as const, label: '倒计时', icon: '⏰' },
+  { key: 'date' as const, label: '纪念日' },
+  { key: 'cover' as const, label: '封面' },
+  { key: 'quotes' as const, label: '语录' },
+  { key: 'countdowns' as const, label: '倒计时' },
 ];
 
 export function SettingsPage() {
@@ -40,7 +40,7 @@ export function SettingsPage() {
   const hasHidden = (data.hiddenDefaultCovers || []).length > 0;
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto w-full max-w-2xl space-y-4">
       <Toast message={toast} />
 
       {confirm && (
@@ -52,21 +52,22 @@ export function SettingsPage() {
         />
       )}
 
-      {/* Page header */}
-      <div className="flex items-center gap-2">
-        <span className="text-xl">⚙️</span>
-        <h1 className="text-lg font-bold text-lm-ink" style={{ fontFamily: 'var(--lm-font-serif)' }}>设置</h1>
+      {/* Page header —— 与首页统计栏同款编辑感小标（短横线 + 字距英文） */}
+      <div className="flex items-center gap-2.5 pt-1">
+        <span aria-hidden className="w-5 h-px bg-lm-accent/60" />
+        <span className="text-[10px] tracking-[0.35em] uppercase text-lm-accent font-display">SETTINGS</span>
+        <h1 className="ml-auto text-lg font-bold text-lm-ink font-serif-cn">设置</h1>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs —— 选中态与导航玻璃胶囊同一语言，不用重渐变块 */}
       <div className="flex gap-1.5 p-1 lm-card rounded-2xl">
         {TABS.map(t => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex-1 py-2.5 text-xs rounded-xl transition-all ${tab === t.key ? 'bg-gradient-to-r from-lm-accent to-lm-accent-deep text-white font-semibold shadow-sm' : 'text-lm-body/40 hover:text-lm-body/60 hover:bg-lm-line/20'}`}
+            className={`flex-1 py-2.5 text-xs rounded-xl transition-all ${tab === t.key ? 'lm-glass-pill text-lm-accent-deep font-semibold' : 'text-lm-body/40 hover:text-lm-body/60 hover:bg-lm-line/20'}`}
           >
-            {t.icon} {t.label}
+            {t.label}
           </button>
         ))}
       </div>
@@ -75,11 +76,10 @@ export function SettingsPage() {
       {tab === 'date' && (
         <div className="space-y-4">
           <div className="lm-card rounded-2xl p-5 space-y-4">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-lg">👤</span>
-              <h2 className="text-sm font-bold text-lm-ink">我们的名字</h2>
+            <div className="flex items-baseline gap-2">
+              <h2 className="text-sm font-bold text-lm-ink font-serif-cn">我们的名字</h2>
+              <span className="text-[10px] text-lm-body/40">显示在导航栏，留空显示 OUR STORY</span>
             </div>
-            <p className="text-[11px] text-lm-body/45 -mt-2">显示在导航栏标题下方（如「敏 · 芮」），留空则显示 OUR STORY</p>
             <div className="grid grid-cols-2 gap-2">
               {['第一位', '第二位'].map((label, i) => (
                 <input
@@ -100,16 +100,11 @@ export function SettingsPage() {
           </div>
 
           <div className="lm-card rounded-2xl p-5 space-y-4">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-lg">📅</span>
-              <h2 className="text-sm font-bold text-lm-ink">在一起的日子</h2>
-            </div>
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-100">
-              <span className="text-2xl">💕</span>
-              <div>
-                <p className="text-xs text-lm-body/50">起始日期</p>
-                <p className="text-base font-bold text-lm-ink" style={{ fontFamily: 'var(--lm-font-serif)' }}>{fmt(data.startDate)}</p>
-              </div>
+            <h2 className="text-sm font-bold text-lm-ink font-serif-cn">在一起的日子</h2>
+            <div className="flex items-baseline gap-2">
+              <span className="text-[10px] tracking-[0.2em] uppercase text-lm-body/50 font-display">Since</span>
+              <span aria-hidden className="flex-1 border-b border-dotted border-lm-line/80" />
+              <span className="text-base font-bold text-lm-ink font-serif-cn">{fmt(data.startDate)}</span>
             </div>
             <input
               type="date"
@@ -127,7 +122,6 @@ export function SettingsPage() {
           {data.customCovers.length > 0 && (
             <div className="lm-card rounded-2xl p-4 space-y-3">
               <div className="flex items-center gap-2">
-                <span className="text-base">🖼</span>
                 <p className="text-xs font-medium text-lm-body/60">我的封面</p>
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -177,7 +171,6 @@ export function SettingsPage() {
             <div className="lm-card rounded-2xl p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-base">🎨</span>
                   <p className="text-xs font-medium text-lm-body/60">默认封面</p>
                 </div>
                 {hasHidden && (
@@ -204,10 +197,7 @@ export function SettingsPage() {
       {tab === 'quotes' && (
         <div className="space-y-3">
           <div className="lm-card rounded-2xl p-4 space-y-3">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-base">💬</span>
-              <p className="text-xs font-medium text-lm-body/60">添加新语录</p>
-            </div>
+            <p className="text-xs font-medium text-lm-body/60">添加新语录</p>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -232,7 +222,6 @@ export function SettingsPage() {
 
           {data.loveQuotes.length === 0 ? (
             <div className="lm-card rounded-2xl p-8 text-center">
-              <span className="text-3xl mb-2 block">💬</span>
               <p className="text-xs text-lm-body/30">暂无语录</p>
             </div>
           ) : (
@@ -253,10 +242,7 @@ export function SettingsPage() {
       {tab === 'countdowns' && (
         <div className="space-y-3">
           <div className="lm-card rounded-2xl p-4 space-y-3">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-base">⏰</span>
-              <p className="text-xs font-medium text-lm-body/60">添加倒计时</p>
-            </div>
+            <p className="text-xs font-medium text-lm-body/60">添加倒计时</p>
             <div className="flex gap-2">
               <select
                 value={newCountdown.emoji}
@@ -297,7 +283,6 @@ export function SettingsPage() {
 
           {(data.countdowns || []).length === 0 ? (
             <div className="lm-card rounded-2xl p-8 text-center">
-              <span className="text-3xl mb-2 block">⏰</span>
               <p className="text-xs text-lm-body/30">暂无倒计时</p>
             </div>
           ) : (
