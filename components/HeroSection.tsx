@@ -96,34 +96,34 @@ export function HeroSection({
         </div>
       </div>
 
-      {/* Countdown card - top right —— 与时间轴节点同语言的白磨砂玻璃 */}
+      {/* Countdown card - top right —— 高透明玻璃：底色压到很淡、白字带影保证可读 */}
       {nextDays > 0 && (
         <div className="absolute top-3 right-3 z-10">
           <div
-            className="px-3 py-2 rounded-2xl text-center border border-white/25"
+            className="px-3 py-2 rounded-2xl text-center border border-white/20"
             style={{
               minWidth: '72px',
-              background: 'linear-gradient(140deg, rgba(255,255,255,0.30), rgba(255,255,255,0.10) 50%, rgba(255,240,228,0.18))',
-              backdropFilter: 'blur(16px) saturate(1.5)',
-              WebkitBackdropFilter: 'blur(16px) saturate(1.5)',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.45), 0 2px 12px rgba(0,0,0,0.15)'
+              background: 'linear-gradient(140deg, rgba(255,255,255,0.16), rgba(255,255,255,0.05) 50%, rgba(255,240,228,0.10))',
+              backdropFilter: 'blur(12px) saturate(1.4)',
+              WebkitBackdropFilter: 'blur(12px) saturate(1.4)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.35), 0 2px 10px rgba(0,0,0,0.12)'
             }}
           >
             {countdowns.length > 0 ? (
               <>
-                <div className="text-[10px] mb-0.5">{countdowns[countdownIdx]?.emoji || '💝'} <span className="text-lm-body/70">{countdowns[countdownIdx]?.label || ''}</span></div>
-                <div className="text-lg font-bold text-lm-ink leading-none" style={{ fontFamily: 'var(--lm-font-display)' }}>
+                <div className="text-[10px] mb-0.5">{countdowns[countdownIdx]?.emoji || '💝'} <span className="text-white/75">{countdowns[countdownIdx]?.label || ''}</span></div>
+                <div className="text-lg font-bold text-white leading-none" style={{ fontFamily: 'var(--lm-font-display)', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
                   {countdownDays[countdownIdx] === Infinity ? '--' : countdownDays[countdownIdx]}
                 </div>
-                <div className="text-[9px] text-lm-body/55 mt-0.5">天后</div>
+                <div className="text-[9px] text-white/60 mt-0.5">天后</div>
               </>
             ) : (
               <>
-                <div className="text-[10px] text-lm-body/70 mb-0.5">💝 纪念日</div>
-                <div className="text-lg font-bold text-lm-ink leading-none" style={{ fontFamily: 'var(--lm-font-display)' }}>
+                <div className="text-[10px] text-white/75 mb-0.5">💝 纪念日</div>
+                <div className="text-lg font-bold text-white leading-none" style={{ fontFamily: 'var(--lm-font-display)', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
                   {nextDays}
                 </div>
-                <div className="text-[9px] text-lm-body/55 mt-0.5">天后</div>
+                <div className="text-[9px] text-white/60 mt-0.5">天后</div>
               </>
             )}
           </div>
