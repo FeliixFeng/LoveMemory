@@ -7,6 +7,7 @@ import { useAppData } from '../hooks/useAppData';
 import { Lightbox } from './Lightbox';
 import { SkeletonPage } from './SkeletonCard';
 import { SafeImage } from './SafeImage';
+import { PageHeader } from './PageHeader';
 
 export function AlbumPage() {
   const { data, loading } = useAppData();
@@ -20,7 +21,7 @@ export function AlbumPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-bold text-lm-ink" style={{ fontFamily: 'var(--lm-font-serif)' }}>📷 相册</h1>
+      <PageHeader label="ALBUM" title="相册" />
 
       {eventsWithPhotos.length === 0 && standalonePhotos.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16">

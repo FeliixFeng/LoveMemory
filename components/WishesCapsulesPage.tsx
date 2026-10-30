@@ -9,6 +9,7 @@ import { apiFetch } from '../app/lib/api-client';
 import { FallingHearts } from './FallingHearts';
 import { SkeletonCard } from './SkeletonCard';
 import { ConfirmDialog } from './modals/ConfirmDialog';
+import { PageHeader } from './PageHeader';
 
 const WISH_EMOJI_OPTIONS = ['💝', '🌸', '✈️', '🎬', '🍽️', '🏔️', '🎵', '📚', '🎁', '💍'];
 const CAPSULE_EMOJI_OPTIONS = ['💌', '💝', '🎁', '🌸', '💕', '🌹', '✨', '🎂'];
@@ -198,11 +199,13 @@ export function WishesCapsulesPage() {
       })()}
 
       {/* Page header + Tab */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-bold text-lm-ink" style={{ fontFamily: 'var(--lm-font-serif)' }}>💝 心愿</h1>
+      <div className="flex items-center">
+        <div className="flex-1 min-w-0">
+          <PageHeader label={tab === 'wishes' ? 'WISHES' : 'CAPSULES'} title="心愿" />
+        </div>
         <button
           onClick={() => withAuth(() => tab === 'wishes' ? setShowAddWish(true) : setShowAddCapsule(true))}
-          className="px-3 py-1.5 bg-gradient-to-r from-lm-accent to-lm-accent-deep text-white rounded-xl text-xs font-medium active:scale-95 transition-transform"
+          className="ml-3 shrink-0 px-3 py-1.5 bg-gradient-to-r from-lm-accent to-lm-accent-deep text-white rounded-xl text-xs font-medium active:scale-95 transition-transform"
         >+ {tab === 'wishes' ? '添加' : '写信'}</button>
       </div>
 

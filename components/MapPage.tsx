@@ -5,6 +5,7 @@ import { THEME } from '../app/lib/theme';
 import { useAppData } from '../hooks/useAppData';
 import { CITY_COORDS, PROVINCE_FULL_NAMES } from '../lib/map-data';
 import { resolvePlace, type ResolvedPlace } from '../lib/place';
+import { PageHeader } from './PageHeader';
 
 // Lazy load the ECharts map component
 function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<string>; visitedCities: { city: string; province: string }[] }) {
@@ -118,7 +119,7 @@ export function MapPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-bold text-lm-ink" style={{ fontFamily: 'var(--lm-font-serif)' }}>🗺️ 足迹</h1>
+      <PageHeader label="FOOTPRINT" title="足迹" />
       <div className="lm-card rounded-2xl overflow-hidden">
         <MapChart visitedProvinces={visitedProvinces} visitedCities={visitedCities} />
       </div>

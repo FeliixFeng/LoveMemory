@@ -9,6 +9,7 @@ import { fmt } from '../lib/utils';
 import { Toast } from './Toast';
 import { ConfirmDialog } from './modals/ConfirmDialog';
 import { SafeImage } from './SafeImage';
+import { PageHeader } from './PageHeader';
 
 const TABS = [
   { key: 'date' as const, label: '纪念日' },
@@ -52,12 +53,8 @@ export function SettingsPage() {
         />
       )}
 
-      {/* Page header —— 与首页统计栏同款编辑感小标（短横线 + 字距英文） */}
-      <div className="flex items-center gap-2.5 pt-1">
-        <span aria-hidden className="w-5 h-px bg-lm-accent/60" />
-        <span className="text-[10px] tracking-[0.35em] uppercase text-lm-accent font-display">SETTINGS</span>
-        <h1 className="ml-auto text-lg font-bold text-lm-ink font-serif-cn">设置</h1>
-      </div>
+      {/* Page header */}
+      <PageHeader label="SETTINGS" title="设置" />
 
       {/* Tabs —— 选中态与导航玻璃胶囊同一语言，不用重渐变块 */}
       <div className="flex gap-1.5 p-1 lm-card rounded-2xl">
