@@ -10,6 +10,7 @@ export const DEFAULT_APP_DATA: AppData = {
   heroImage: '',
   customCovers: [],
   hiddenDefaultCovers: [],
+  coupleNames: [],
   events: [],
   photos: [],
   expenses: [],
@@ -168,6 +169,7 @@ export async function readAppData(): Promise<AppData> {
     heroImage: settings?.heroImage || '',
     customCovers: parseJsonArray(settings?.customCovers, []),
     hiddenDefaultCovers: parseJsonArray(settings?.hiddenDefaultCovers, []),
+    coupleNames: parseJsonArray(settings?.coupleNames, []),
     countdowns: parseJsonArray(settings?.countdowns, []),
     events: events.map(toEvent),
     photos: allPhotos,
@@ -186,6 +188,7 @@ export async function writeSettings(patch: SettingsPatch): Promise<void> {
   if (patch.heroImage !== undefined) settingsData.heroImage = patch.heroImage;
   if (patch.customCovers !== undefined) settingsData.customCovers = JSON.stringify(patch.customCovers);
   if (patch.hiddenDefaultCovers !== undefined) settingsData.hiddenDefaultCovers = JSON.stringify(patch.hiddenDefaultCovers);
+  if (patch.coupleNames !== undefined) settingsData.coupleNames = JSON.stringify(patch.coupleNames);
   if (patch.countdowns !== undefined) settingsData.countdowns = JSON.stringify(patch.countdowns);
 
   const hasSettingsPatch = Object.keys(settingsData).length > 0;
@@ -201,6 +204,7 @@ export async function writeSettings(patch: SettingsPatch): Promise<void> {
           heroImage: patch.heroImage || '',
           customCovers: JSON.stringify(patch.customCovers || []),
           hiddenDefaultCovers: JSON.stringify(patch.hiddenDefaultCovers || []),
+          coupleNames: JSON.stringify(patch.coupleNames || []),
           countdowns: JSON.stringify(patch.countdowns || [])
         },
         update: settingsData

@@ -12,10 +12,13 @@ const NAV_LINKS = [
   { href: '/more', label: '更多', icon: '⋯' },
 ];
 
-export function NavBar({ isAuthenticated, onSettings, onPin }: { isAuthenticated: boolean; onSettings?: () => void; onPin?: () => void }) {
+export function NavBar({ isAuthenticated, onSettings, onPin, coupleNames }: { isAuthenticated: boolean; onSettings?: () => void; onPin?: () => void; coupleNames?: string[] }) {
   const pathname = usePathname();
   const [hidden, setHidden] = useState(false);
   const lastY = useRef(0);
+
+  /* 设置里填了名字就显示「敏 · 芮」，没填回退 OUR STORY */
+  const namesLabel = (coupleNames || []).filter(Boolean).join(' · ');
 
   useEffect(() => {
     function onScroll() {
@@ -37,6 +40,9 @@ export function NavBar({ isAuthenticated, onSettings, onPin }: { isAuthenticated
           <Link href="/" className="shrink-0">
             <span className="text-base font-bold text-gradient font-serif-cn">珍藏回忆</span>
           </Link>
+          {namesLabel && (
+            <span className="text-[10px] tracking-[0.18em] text-lm-accent/80 font-display shrink-0">{namesLabel}</span>
+          )}
           <span className="w-px h-4 bg-lm-accent/40" />
           <div className="flex items-center gap-0.5">
             {NAV_LINKS.map(link => {
@@ -62,7 +68,7 @@ export function NavBar({ isAuthenticated, onSettings, onPin }: { isAuthenticated
           <Link href="/">
             <span className="text-lg font-bold text-gradient font-serif-cn">珍藏回忆</span>
           </Link>
-          <span className="text-[8px] text-lm-accent tracking-[0.3em] uppercase font-display">OUR STORY</span>
+          <span className="text-[8px] text-lm-accent tracking-[0.3em] uppercase font-display">{namesLabel || 'OUR STORY'}</span>
         </div>
 
         {/* Desktop: spacer */}

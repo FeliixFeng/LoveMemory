@@ -70,6 +70,8 @@ export type AppData = {
   heroImage: string;
   customCovers: string[];
   hiddenDefaultCovers: string[];
+  /* 双方名字（1-2 个，留空则 UI 回退 OUR STORY） */
+  coupleNames: string[];
   events: Event[];
   photos: Photo[];
   expenses: Expense[];

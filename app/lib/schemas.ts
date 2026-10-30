@@ -68,6 +68,7 @@ export const SettingsPatchSchema = z.object({
   heroImage: z.string().max(500).optional(),
   customCovers: z.array(z.string().max(500)).max(100).optional(),
   hiddenDefaultCovers: z.array(z.string().max(500)).max(500).optional(),
+  coupleNames: z.array(z.string().max(20)).max(2).optional(),
   countdowns: z.array(z.object({
     id: z.number(),
     label: z.string().max(100),

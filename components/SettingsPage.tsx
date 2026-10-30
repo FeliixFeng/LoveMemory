@@ -73,24 +73,51 @@ export function SettingsPage() {
 
       {/* Date tab */}
       {tab === 'date' && (
-        <div className="lm-card rounded-2xl p-5 space-y-4">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-lg">📅</span>
-            <h2 className="text-sm font-bold text-lm-ink">在一起的日子</h2>
-          </div>
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-100">
-            <span className="text-2xl">💕</span>
-            <div>
-              <p className="text-xs text-lm-body/50">起始日期</p>
-              <p className="text-base font-bold text-lm-ink" style={{ fontFamily: 'var(--lm-font-serif)' }}>{fmt(data.startDate)}</p>
+        <div className="space-y-4">
+          <div className="lm-card rounded-2xl p-5 space-y-4">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-lg">👤</span>
+              <h2 className="text-sm font-bold text-lm-ink">我们的名字</h2>
+            </div>
+            <p className="text-[11px] text-lm-body/45 -mt-2">显示在导航栏标题下方（如「敏 · 芮」），留空则显示 OUR STORY</p>
+            <div className="grid grid-cols-2 gap-2">
+              {['第一位', '第二位'].map((label, i) => (
+                <input
+                  key={i}
+                  type="text"
+                  value={data.coupleNames[i] || ''}
+                  onChange={e => {
+                    const next = [...(data.coupleNames || [])];
+                    next[i] = e.target.value;
+                    withAuth(() => void save({ coupleNames: next.filter(Boolean) }));
+                  }}
+                  placeholder={label}
+                  maxLength={20}
+                  className="bg-white border border-lm-line/60 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-lm-accent transition-colors"
+                />
+              ))}
             </div>
           </div>
-          <input
-            type="date"
-            value={data.startDate}
-            onChange={e => withAuth(() => void save({ startDate: e.target.value }, '已保存'))}
-            className="w-full bg-white border border-lm-line/60 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-lm-accent transition-colors"
-          />
+
+          <div className="lm-card rounded-2xl p-5 space-y-4">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-lg">📅</span>
+              <h2 className="text-sm font-bold text-lm-ink">在一起的日子</h2>
+            </div>
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-100">
+              <span className="text-2xl">💕</span>
+              <div>
+                <p className="text-xs text-lm-body/50">起始日期</p>
+                <p className="text-base font-bold text-lm-ink" style={{ fontFamily: 'var(--lm-font-serif)' }}>{fmt(data.startDate)}</p>
+              </div>
+            </div>
+            <input
+              type="date"
+              value={data.startDate}
+              onChange={e => withAuth(() => void save({ startDate: e.target.value }, '已保存'))}
+              className="w-full bg-white border border-lm-line/60 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-lm-accent transition-colors"
+            />
+          </div>
         </div>
       )}
 

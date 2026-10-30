@@ -7,7 +7,7 @@ import { BottomTabBar } from './BottomTabBar';
 import { FallingHearts } from './FallingHearts';
 import { PinModal } from './modals/PinModal';
 import { ErrorBoundary } from './ErrorBoundary';
-import { AppDataProvider } from '../hooks/useAppData';
+import { AppDataProvider, useAppData } from '../hooks/useAppData';
 
 type AuthCtx = {
   token: string;
@@ -70,16 +70,16 @@ export function SiteLayoutClient({ children, initialData }: { children: ReactNod
   return (
     <AuthContext.Provider value={{ token, tokenRef, showPin, setShowPin, pendingOp, withAuth, onPinVerified, floatingButton, setFloatingButton }}>
       {pathname === '/' && <FallingHearts />}
-      <NavBar isAuthenticated={!!token} onPin={() => {
-        if (token) {
-          setToken('');
-          tokenRef.current = '';
-          try { localStorage.removeItem('lm_token'); } catch {}
-        } else {
-          setShowPin(true);
-        }
-      }} />
       <AppDataProvider initialData={initialData}>
+        <NavBarWithData isAuthenticated={!!token} onPin={() => {
+          if (token) {
+            setToken('');
+            tokenRef.current = '';
+            try { localStorage.removeItem('lm_token'); } catch {}
+          } else {
+            setShowPin(true);
+          }
+        }} />
         <ErrorBoundary>
           {children}
         </ErrorBoundary>
@@ -94,4 +94,10 @@ export function SiteLayoutClient({ children, initialData }: { children: ReactNod
       )}
     </AuthContext.Provider>
   );
+}
+
+/* NavBar 原本在 AppDataProvider 外层拿不到数据；挪进 Provider 后用薄壳把名字喂给它 */
+function NavBarWithData(props: { isAuthenticated: boolean; onPin: () => void }) {
+  const { data } = useAppData();
+  return <NavBar {...props} coupleNames={data.coupleNames} />;
 }

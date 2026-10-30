@@ -37,7 +37,7 @@ def has_column(table: str, column: str) -> bool:
     return any(row[1] == column for row in cur.fetchall())
 
 
-before = {"wish": has_column("events", "wish_id"), "capsule": has_column("events", "capsule_id")}
+before = {"wish": has_column("events", "wish_id"), "capsule": has_column("events", "capsule_id"), "names": has_column("settings", "couple_names")}
 
 if not before["wish"]:
     cur.execute(
@@ -49,14 +49,16 @@ if not before["capsule"]:
         'ALTER TABLE "events" ADD COLUMN "capsule_id" INTEGER '
         'REFERENCES "capsules" ("id") ON DELETE SET NULL ON UPDATE CASCADE'
     )
+if not before["names"]:
+    cur.execute('ALTER TABLE "settings" ADD COLUMN "couple_names" TEXT NOT NULL DEFAULT \'[]\'')
 
 cur.execute('CREATE UNIQUE INDEX IF NOT EXISTS "events_wish_id_key" ON "events"("wish_id")')
 cur.execute('CREATE UNIQUE INDEX IF NOT EXISTS "events_capsule_id_key" ON "events"("capsule_id")')
 con.commit()
 
-after = {"wish": has_column("events", "wish_id"), "capsule": has_column("events", "capsule_id")}
+after = {"wish": has_column("events", "wish_id"), "capsule": has_column("events", "capsule_id"), "names": has_column("settings", "couple_names")}
 cur.execute("SELECT COUNT(*) FROM events")
 events = cur.fetchone()[0]
 con.close()
 
-print(json.dumps({"ok": after["wish"] and after["capsule"], "path": path, "before": before, "after": after, "events": events}, ensure_ascii=False))
+print(json.dumps({"ok": after["wish"] and after["capsule"] and after["names"], "path": path, "before": before, "after": after, "events": events}, ensure_ascii=False))
