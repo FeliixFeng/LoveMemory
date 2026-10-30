@@ -81,6 +81,14 @@ export function HeroSection({
       {/* Top shadow for controls */}
       <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-black/30 to-transparent z-[1]" />
 
+      {/* 文字区暗斑：只在中央文字块后面聚焦压一层，不整图压暗。
+          亮封面（日落/雪山）上没有这层，白字会直接蒸发在高光里 */}
+      <div
+        aria-hidden
+        className="absolute inset-0 z-[2]"
+        style={{ background: 'radial-gradient(ellipse 62% 48% at 50% 33%, rgba(0,0,0,0.40), rgba(0,0,0,0.16) 55%, transparent 78%)' }}
+      />
+
       {/* Top status indicator */}
       <div className="absolute top-3 left-3 z-10">
         <div className="px-2 py-0.5 rounded-full bg-black/25 text-[9px] text-emerald-400 font-medium tracking-wide" style={{ fontFamily: 'var(--lm-font-display)' }}>
@@ -115,20 +123,20 @@ export function HeroSection({
 
       {/* Info overlay - upper center */}
       <div className="absolute inset-0 flex flex-col items-center text-white text-center z-[4] px-6 pointer-events-none pt-[35%] md:pt-[15%]">
-        <span className="text-sm font-medium text-white/90 tracking-[0.3em] uppercase" style={{ fontFamily: 'var(--lm-font-display)' }}>TOGETHER FOR</span>
+        <span className="text-sm font-medium text-white/90 tracking-[0.3em] uppercase" style={{ fontFamily: 'var(--lm-font-display)', textShadow: '0 1px 10px rgba(0,0,0,0.45)' }}>TOGETHER FOR</span>
         <div className="flex items-baseline mt-1">
-          <span className="text-6xl md:text-7xl font-bold leading-none" style={{ fontFamily: 'var(--lm-font-serif)', textShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>{animDays}</span>
-          <span className="text-xl font-light italic opacity-60 ml-2 mb-1" style={{ fontFamily: 'var(--lm-font-display)' }}>Days</span>
+          <span className="text-6xl md:text-7xl font-bold leading-none" style={{ fontFamily: 'var(--lm-font-serif)', textShadow: '0 2px 14px rgba(0,0,0,0.55), 0 0 40px rgba(0,0,0,0.25)' }}>{animDays}</span>
+          <span className="text-xl font-light italic opacity-70 ml-2 mb-1" style={{ fontFamily: 'var(--lm-font-display)', textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>Days</span>
         </div>
         {quotes.length > 0 && (
           <p
-            className="text-[11px] text-white/70 italic mt-2"
-            style={{ fontFamily: 'var(--lm-font-serif)', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
+            className="text-[11px] text-white/85 italic mt-2"
+            style={{ fontFamily: 'var(--lm-font-serif)', textShadow: '0 2px 10px rgba(0,0,0,0.6)' }}
           >
             "{quotes[quoteIdx]?.content}"
           </p>
         )}
-        <div className="flex items-center gap-3 mt-2 text-sm text-white/90">
+        <div className="flex items-center gap-3 mt-2 text-sm text-white/90" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.5)' }}>
           <span>📅 {fmt(startDate)}</span><span>·</span><span>⏰ 下次 {nextDays} 天</span>
         </div>
       </div>

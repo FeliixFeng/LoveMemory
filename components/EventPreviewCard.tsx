@@ -185,26 +185,28 @@ export const EventPreviewCard = memo(function EventPreviewCard({
             </div>
 
             {/* 描述：左边一道暖色渐隐竖线，做成引文的样子。
-                移动端这块吃掉多余高度并把文字垂直居中——否则短描述下面会留一条空洞。 */}
+                移动端这块吃掉多余高度并把文字垂直居中——否则短描述下面会留一条空洞。
+                没写描述就整块不渲染，空白本身就是留白，不挂占位句 */}
             <div className="relative mt-2 md:mt-2.5 flex-1 md:flex-none min-w-0 flex items-center md:items-start">
-              <div className={`relative w-full min-w-0 ${event.desc ? 'pl-2.5 md:pl-3' : ''}`}>
-                {event.desc && (
+              {event.desc && (
+                <div className="relative w-full min-w-0 pl-2.5 md:pl-3">
                   <span aria-hidden className="absolute left-0 top-[3px] bottom-[3px] w-[2px] rounded-full bg-gradient-to-b from-lm-accent/60 via-lm-accent/25 to-transparent" />
-                )}
-                <p className="text-xs md:text-[13px] leading-[1.75] text-lm-body/70 line-clamp-2 md:line-clamp-3">
-                  {event.desc || <span className="text-lm-body/30">还没有写描述，点右上角 ✎ 补一句</span>}
-                </p>
-              </div>
+                  <p className="text-xs md:text-[13px] leading-[1.75] text-lm-body/70 line-clamp-2 md:line-clamp-3">
+                    {event.desc}
+                  </p>
+                </div>
+              )}
             </div>
 
-            {/* 桌面端信息栏：标签 · 点线 · 值，像一张手写标签，比四宫格更耐看 */}
+            {/* 桌面端信息栏：标签 · 点线 · 值，像一张手写标签。
+                只列有值的行——空值行（破折号）会让首页读起来像未填完的表单 */}
             <dl className="hidden md:flex flex-col gap-[10px] mt-auto pt-4 border-t border-lm-line/60">
-              {([
-                ['Date', fmt(event.date)],
-                ['Place', event.location || '—'],
-                ['Photos', `${n} 张`],
-                ['Spent', total > 0 ? formatCurrency(total) : '—']
-              ] as const).map(([k, v]) => (
+              {[
+                { k: 'Date', v: fmt(event.date) },
+                ...(event.location ? [{ k: 'Place', v: event.location }] : []),
+                { k: 'Photos', v: `${n} 张` },
+                ...(total > 0 ? [{ k: 'Spent', v: formatCurrency(total) }] : [])
+              ].map(({ k, v }) => (
                 <div key={k} className="flex items-baseline gap-2 min-w-0">
                   <dt className="shrink-0 text-[9.5px] leading-none tracking-[0.2em] uppercase text-lm-body/50 font-display">{k}</dt>
                   <span aria-hidden className="flex-1 min-w-2 border-b border-dotted border-lm-line/80" />
@@ -213,18 +215,19 @@ export const EventPreviewCard = memo(function EventPreviewCard({
               ))}
             </dl>
 
-            {/* 底部：移动端一行元信息 / 桌面端玻璃按钮 */}
+            {/* 底部：移动端一行元信息（有内容才渲染；卡片高度由左栏 min-h 兜底，不受影响）/ 桌面端玻璃按钮 */}
             <div className="mt-auto md:mt-3 shrink-0">
-              {/* 常驻一行：有没有花费都占位，卡片高度才稳定 */}
-              <div className="flex items-center gap-2 md:hidden text-[10.5px] text-lm-body/55 tabular-nums">
-                <span>{n > 0 ? `${n} 张照片` : '暂无照片'}</span>
-                {total > 0 && (
-                  <>
-                    <span aria-hidden className="w-[3px] h-[3px] rounded-full bg-lm-body/30" />
-                    <span>{formatCurrency(total)}</span>
-                  </>
-                )}
-              </div>
+              {(n > 0 || total > 0) && (
+                <div className="flex items-center gap-2 md:hidden text-[10.5px] text-lm-body/55 tabular-nums">
+                  {n > 0 && <span>{n} 张照片</span>}
+                  {total > 0 && (
+                    <>
+                      {n > 0 && <span aria-hidden className="w-[3px] h-[3px] rounded-full bg-lm-body/30" />}
+                      <span>{formatCurrency(total)}</span>
+                    </>
+                  )}
+                </div>
+              )}
 
               <div className="hidden md:flex items-center justify-end">
                 <button
