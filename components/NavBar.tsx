@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { HomeIcon, CameraIcon, MapIcon, HeartIcon, MoreIcon } from './NavIcons';
 
 const NAV_LINKS = [
-  { href: '/', label: '首页', icon: '🏠' },
-  { href: '/album', label: '相册', icon: '📷' },
-  { href: '/footprint', label: '足迹', icon: '🗺️' },
-  { href: '/wishes', label: '心愿', icon: '💝' },
-  { href: '/more', label: '更多', icon: '⋯' },
+  { href: '/', label: '首页', Icon: HomeIcon },
+  { href: '/album', label: '相册', Icon: CameraIcon },
+  { href: '/footprint', label: '足迹', Icon: MapIcon },
+  { href: '/wishes', label: '心愿', Icon: HeartIcon },
+  { href: '/more', label: '更多', Icon: MoreIcon },
 ];
 
 export function NavBar({ isAuthenticated, onSettings, onPin, coupleNames }: { isAuthenticated: boolean; onSettings?: () => void; onPin?: () => void; coupleNames?: string[] }) {
@@ -55,7 +56,7 @@ export function NavBar({ isAuthenticated, onSettings, onPin, coupleNames }: { is
                     ? 'lm-glass-pill text-lm-accent-deep font-semibold'
                     : 'text-lm-ink-strong/40 hover:text-lm-ink-strong/65 hover:bg-white/55'}`}
                 >
-                  <span className={`text-sm leading-none transition-transform duration-300 ${active ? 'scale-110' : ''}`}>{link.icon}</span>
+                  <link.Icon className={`w-4 h-4 leading-none transition-transform duration-300 ${active ? 'scale-110' : ''}`} />
                   {link.label}
                 </Link>
               );

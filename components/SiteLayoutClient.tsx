@@ -1,10 +1,8 @@
 'use client';
 
 import { createContext, useContext, useState, useRef, useCallback, type ReactNode } from 'react';
-import { usePathname } from 'next/navigation';
 import { NavBar } from './NavBar';
 import { BottomTabBar } from './BottomTabBar';
-import { FallingHearts } from './FallingHearts';
 import { PinModal } from './modals/PinModal';
 import { ErrorBoundary } from './ErrorBoundary';
 import { AppDataProvider, useAppData } from '../hooks/useAppData';
@@ -38,7 +36,6 @@ export function useAuth() {
 }
 
 export function SiteLayoutClient({ children, initialData }: { children: ReactNode; initialData?: import('../lib/types').AppData }) {
-  const pathname = usePathname();
   const [floatingButton, setFloatingButton] = useState<ReactNode>(null);
   const [token, setToken] = useState(() => {
     if (typeof window === 'undefined') return '';
@@ -69,7 +66,6 @@ export function SiteLayoutClient({ children, initialData }: { children: ReactNod
 
   return (
     <AuthContext.Provider value={{ token, tokenRef, showPin, setShowPin, pendingOp, withAuth, onPinVerified, floatingButton, setFloatingButton }}>
-      {pathname === '/' && <FallingHearts />}
       <AppDataProvider initialData={initialData}>
         <NavBarWithData isAuthenticated={!!token} onPin={() => {
           if (token) {

@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { HomeIcon, CameraIcon, MapIcon, HeartIcon, MoreIcon } from './NavIcons';
 
 const TABS = [
-  { href: '/', icon: '🏠', label: '首页' },
-  { href: '/album', icon: '📷', label: '相册' },
-  { href: '/footprint', icon: '🗺️', label: '足迹' },
-  { href: '/wishes', icon: '💝', label: '心愿' },
-  { href: '/more', icon: '⋯', label: '更多' },
+  { href: '/', Icon: HomeIcon, label: '首页' },
+  { href: '/album', Icon: CameraIcon, label: '相册' },
+  { href: '/footprint', Icon: MapIcon, label: '足迹' },
+  { href: '/wishes', Icon: HeartIcon, label: '心愿' },
+  { href: '/more', Icon: MoreIcon, label: '更多' },
 ];
 
 export function BottomTabBar() {
@@ -30,7 +31,7 @@ export function BottomTabBar() {
                   active ? 'lm-glass-pill' : ''
                 }`}
               >
-                <span className={`text-base leading-none transition-transform duration-300 ${active ? 'scale-110' : ''}`}>{tab.icon}</span>
+                <tab.Icon className={`w-[18px] h-[18px] leading-none transition-transform duration-300 ${active ? 'scale-110' : ''}`} />
               </span>
               <span className={`text-[10px] leading-none transition-all duration-300 ${active ? 'font-semibold' : ''}`}>{tab.label}</span>
             </Link>
