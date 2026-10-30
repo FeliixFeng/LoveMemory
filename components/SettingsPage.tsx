@@ -40,7 +40,7 @@ export function SettingsPage() {
   const hasHidden = (data.hiddenDefaultCovers || []).length > 0;
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-4">
+    <div className="space-y-4">
       <Toast message={toast} />
 
       {confirm && (
@@ -72,9 +72,9 @@ export function SettingsPage() {
         ))}
       </div>
 
-      {/* Date tab */}
+      {/* Date tab —— 桌面端两张卡并排吃满容器宽度 */}
       {tab === 'date' && (
-        <div className="space-y-4">
+        <div className="space-y-4 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
           <div className="lm-card rounded-2xl p-5 space-y-4">
             <div className="flex items-baseline gap-2">
               <h2 className="text-sm font-bold text-lm-ink font-serif-cn">我们的名字</h2>
@@ -124,7 +124,7 @@ export function SettingsPage() {
               <div className="flex items-center gap-2">
                 <p className="text-xs font-medium text-lm-body/60">我的封面</p>
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
                 {data.customCovers.map((url, i) => (
                   <div key={i} className="relative rounded-xl overflow-hidden aspect-[4/3] group shadow-sm">
                     <SafeImage src={url} alt="" fill sizes="(max-width: 640px) 33vw, 200px" className="object-cover" />
@@ -177,7 +177,7 @@ export function SettingsPage() {
                   <button onClick={() => withAuth(() => void save({ hiddenDefaultCovers: [] }, '已恢复默认'))} className="text-[10px] text-lm-accent hover:underline">恢复全部默认</button>
                 )}
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
                 {visibleDefaults.map((slide, i) => (
                   <div key={i} className="relative rounded-xl overflow-hidden aspect-[4/3] group shadow-sm">
                     <SafeImage src={slide.web} alt="" fill sizes="(max-width: 640px) 33vw, 200px" className="object-cover" />
