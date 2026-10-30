@@ -10,6 +10,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV DATABASE_URL=file:/app/db/data.sqlite
+# binaries.prisma.sh 国内拉不动（2026-10-30 部署时 schema 变更导致缓存失效暴露），走 npmmirror 镜像
+ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
 RUN npx prisma generate
 RUN npm run build
 
