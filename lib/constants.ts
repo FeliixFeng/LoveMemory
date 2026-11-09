@@ -5,6 +5,10 @@ export const HERO_SLIDES: HeroSlide[] = [1, 2, 3, 4, 5, 6].map(n => ({
   web: `/hero/hero${n}-web.jpg`
 }));
 
+/* 事件类别图标 —— 内容资产，用户建事件时挑选。
+   2026-11-09 精简：删掉语义重复且从未用过的 park/travel/couple（20→17）；
+   换掉两个渲染丑的：🎆 是不透明暗紫方块 → 🎇 仙女棒，🕯️ 又小又怪 → 🥂。
+   只改 emoji/label 不动 id，老数据零迁移。 */
 export const ICONS = [
   { id: 'heart', emoji: '💕', label: '心动' },
   { id: 'airplane', emoji: '✈️', label: '旅行' },
@@ -16,16 +20,13 @@ export const ICONS = [
   { id: 'cake', emoji: '🎂', label: '生日' },
   { id: 'music', emoji: '🎵', label: '音乐' },
   { id: 'food', emoji: '🍽️', label: '美食' },
-  { id: 'park', emoji: '🌳', label: '公园' },
   { id: 'movie', emoji: '🎬', label: '电影' },
-  { id: 'restaurant', emoji: '🕯️', label: '烛光' },
+  { id: 'restaurant', emoji: '🥂', label: '约会' },
   { id: 'anniversary', emoji: '💝', label: '周年' },
   { id: 'camping', emoji: '⛺️', label: '露营' },
-  { id: 'fireworks', emoji: '🎆', label: '跨年' },
-  { id: 'travel', emoji: '🧳', label: '出游' },
+  { id: 'fireworks', emoji: '🎇', label: '跨年' },
   { id: 'flower', emoji: '🌹', label: '鲜花' },
   { id: 'photo', emoji: '📸', label: '回忆' },
-  { id: 'couple', emoji: '💑', label: '情侣' },
 ];
 
 export const ICON_MAP: Record<string, string> = {
