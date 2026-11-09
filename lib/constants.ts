@@ -6,13 +6,12 @@ export const HERO_SLIDES: HeroSlide[] = [1, 2, 3, 4, 5, 6].map(n => ({
 }));
 
 /* 事件类别图标 —— 内容资产，用户建事件时挑选。
-   2026-11-09 精简：删掉语义重复且从未用过的 park/travel/couple（20→17）；
-   换掉两个渲染丑的：🎆 是不透明暗紫方块 → 🎇 仙女棒，🕯️ 又小又怪 → 🥂。
-   只改 emoji/label 不动 id，老数据零迁移。 */
+   2026-11-09 精简：删语义重复且从未用过的 park/travel/couple，再删最泛的 house（20→16，
+   选择器 grid-cols-8 正好 8+8 两排齐）；换掉两个渲染丑的：🎆 暗紫方块 → 🎇，
+   🕯️ 又小又怪 → 🥂。只改 emoji/label 不动 id，老数据零迁移。 */
 export const ICONS = [
   { id: 'heart', emoji: '💕', label: '心动' },
   { id: 'airplane', emoji: '✈️', label: '旅行' },
-  { id: 'house', emoji: '🏠', label: '日常' },
   { id: 'ring', emoji: '💍', label: '纪念' },
   { id: 'camera', emoji: '📷', label: '照片' },
   { id: 'star', emoji: '⭐', label: '特别' },
@@ -38,13 +37,13 @@ export const ICON_MAP: Record<string, string> = {
   'ph-star': 'star'
 };
 
+/* 心情 —— 2026-11-09 精简到 5 个（删从未用过的 peaceful/grateful），
+   保证移动端一排放得下不折行；怀旧 🥺 换 🥲（🥺 是恳求脸，语义不贴）。 */
 export const MOODS = [
   { id: 'happy', emoji: '😊', label: '开心' },
   { id: 'excited', emoji: '🤩', label: '兴奋' },
   { id: 'romantic', emoji: '🥰', label: '浪漫' },
-  { id: 'peaceful', emoji: '😌', label: '平静' },
-  { id: 'nostalgic', emoji: '🥺', label: '怀旧' },
-  { id: 'grateful', emoji: '🙏', label: '感恩' },
+  { id: 'nostalgic', emoji: '🥲', label: '怀旧' },
   { id: 'loved', emoji: '😍', label: '被爱' },
 ];
 

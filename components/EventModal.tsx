@@ -120,7 +120,7 @@ export function EventModal({
           {/* 图标选择 —— 按需展开，紧凑小格 */}
           {iconOpen && (
             <div className="mt-3 p-3 rounded-2xl bg-white/55 border border-lm-line/50 animate-[fadeIn_0.18s_ease-out]">
-              <div className="grid grid-cols-9 gap-1.5">
+              <div className="grid grid-cols-8 gap-1.5">
                 {ICONS.map(ic => {
                   const on = draft.icon === ic.id;
                   return (
@@ -208,7 +208,7 @@ export function EventModal({
           {/* 心情 —— 细 chips，选中 accent 实底 */}
           <div className="mt-5">
             <SectionLabel>心情</SectionLabel>
-            <div className="mt-2 flex gap-1.5 flex-wrap">
+            <div className="mt-2 flex gap-1 flex-wrap">
               {MOODS.map(m => {
                 const on = draft.mood === m.id;
                 return (
@@ -216,13 +216,14 @@ export function EventModal({
                     key={m.id}
                     onClick={() => setDraft(d => ({ ...d, mood: d.mood === m.id ? '' : m.id }))}
                     aria-pressed={on}
-                    className={`px-2.5 h-7 rounded-full text-[11px] transition-all ${
+                    className={`inline-flex items-center gap-1 pl-1 pr-1.5 h-7 rounded-full text-[10px] whitespace-nowrap transition-all ${
                       on
                         ? 'bg-gradient-to-r from-lm-accent to-lm-accent-deep text-white font-medium shadow-[0_2px_8px_rgba(173,124,87,0.25)]'
                         : 'bg-white/55 text-lm-body/65 border border-lm-line/40 hover:bg-white hover:text-lm-ink'
                     }`}
                   >
-                    {m.emoji} {m.label}
+                    <span className="text-[13px] leading-none">{m.emoji}</span>
+                    {m.label}
                   </button>
                 );
               })}
