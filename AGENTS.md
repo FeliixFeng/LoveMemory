@@ -49,7 +49,7 @@
 
 **默认资产进仓库，实例数据走宿主存储**——产品（含给别人部署）开箱即用，不依赖作者的云账号。
 
-- **默认封面随仓库分发**：`public/hero/hero{1-6}-{mobile,web}.jpg`（竖 4:5 / 横 16:9），`lib/constants.ts` 的 `HERO_SLIDES` 引用。OSS 上不存封面；缓存规则：路径永不复用，覆盖同名才补 `?v=YYYYMMDD`。
+- **默认封面随仓库分发**：`public/hero/hero{1-6}-{mobile,web}.jpg`（竖 1536×2730 9:16 / 横 2730×1536 16:9），`lib/constants.ts` 的 `HERO_SLIDES` 引用。OSS 上不存封面；缓存规则：路径永不复用，覆盖同名才补 `?v=YYYYMMDD`。
 - **上传落点契约**（`app/api/upload/route.ts`）：原图 `photos/<时间戳>_<随机>.<ext>`，缩略图 `thumbs/<同名>`（扁平）。配了 OSS → 桶内同结构；没配 → `public/uploads/` 同结构（Next 静态服务 `/uploads/*`，compose 卷 `./public/uploads` 持久化）。**桶根目录禁止落裸文件**——2026-10-21 已清理一代散图（含 7MB 未压缩原图）。
 - **压缩双保险**：客户端 `browser-image-compression`（≤1.5MB / 长边 2048；压缩失败会原样上传）；服务端 `capImageSize` 兜底 >2MB JPEG/WebP → 长边 2560 / 质量 80。
 - **删除顺序**：先删文件成功、再删库行（反序失败会留孤儿）；删除 key 用 URL 完整路径，不要 `basename`（会剥掉 `photos/` 前缀删错对象）。
@@ -270,7 +270,9 @@ token 通过 `@theme inline` 暴露成 Tailwind 工具类，直接当普通类�
 ### 导航与封面（有意为之，不要"修复"）
 
 - **手机端导航栏随滚动隐藏**：向下滚收起、向上滚回来、顶部常显；桌面端常显（没有底部 tab 兜底）
-- **封面 `max-h-[70dvh]`**：矮屏（笔记本 / 小屏手机）封面不再独占首屏，高屏维持原 aspect 比例
+- **封面高度由视口决定，不要用 `aspect-ratio`**（2026-11-09 定）：`HeroSection.tsx` 用 `h-[clamp(...,svh,...)]` 三档（移动 / md / lg），宽度恒 100%。以前用 `aspect-[3/4] md:aspect-[4/3] lg:aspect-[2/1]` 配 `max-h-[70dvh]`，高度触顶后浏览器会按比例**反算宽度**，导致约 460–760px 视口区间封面比下面的事件卡片窄、两者不再同步缩放。**别加回 `aspect-*` 或 `max-h`**。
+- **封面内文字定位不能用百分比 `pt-[..%]`**：`padding` 百分比按**宽度**算，封面改成高度驱动后定位会漂（曾把 `2871` 推到时间线上）。用固定值 `pt-10 md:pt-8`。
+- 选 `svh` 不选 `dvh`：`dvh` 随手机浏览器地址栏收缩变化，封面会来回跳。
 
 ### 首页滚轮行为（有意为之，不要"修复"）
 
@@ -292,11 +294,12 @@ token 通过 `@theme inline` 暴露成 Tailwind 工具类，直接当普通类�
 1. **端口已统一 3000**（2026-10-19 起）：本地与服务器 compose 都是 `3000:3000`，nginx upstream 是 `127.0.0.1:3000`。历史上的 `3001` 是因为 `ali1-new-api` 占着 3000，该服务已移除，**全机无 3001 残留，不要再引入**（改端口要同时改 compose + nginx 两处）。
 2. **SQLite WAL**：拷贝数据库必须连 `-wal` / `-shm` 一起，只拷主文件会丢最近的写入。
 3. **`predev` 会删 `.next`**：在受限环境里可能被删除保护拦截，此时用 `npx next dev` 跳过 predev。
-4. **Agent 环境启动**：若通过 WorkBuddy/CodeBuddy 的 shell 启动，`NODE_OPTIONS` 会注入 fs shim，导致 Next 建 `.next` 时报 `EEXIST`。用 `env -u NODE_OPTIONS npx next dev` 启动；用户自己终端里 `npm run dev` 不受影响。
+4. **Agent 环境启动 / 构建**：若通过 WorkBuddy/CodeBuddy 的 shell 启动，`NODE_OPTIONS` 会注入 fs shim，`next dev` 建 `.next` 时报 `EEXIST`，`next build` 则到处写 `.next` 时断在 `write EPIPE`（2026-11-09 重踩，连试三次沙箱内外都一样）。一律 `env -u NODE_OPTIONS npm run build` / `env -u NODE_OPTIONS npx next dev`；用户自己终端里不受影响。
 5. **dev 与 prod 不能同时跑**：`next dev` 和 `next build`/`start` 抢同一个 `.next` 目录，会写坏（症状：`Cannot find module './xxx.js'`）。起 prod 前先停 dev；坏了就 `rm -rf .next` 重建（2026-10-20 踩过）。
 6. ~~配色两套~~ 已统一（2026-10-19，token 见 UI 约定章）。
 7. **rsync 排除模式不锚定会误伤同名目录**（2026-10-20 踩过）：`--exclude 'data'`（无前导斜杠）按"任意层级匹配名为 data 的项"处理，`app/api/data/` 被连带排除，该目录 7月13日后从未同步，部署时远程 build 直接红。根目录排除一律写 `/data`。诊断法：远程文件 mtime 异常旧 = 它没被 rsync 碰过。
 8. **服务器拉不动 binaries.prisma.sh**（2026-10-30 踩过）：`npx prisma generate` 在 docker build 里下载引擎二进制超时挂掉。之前能过全靠 docker 层缓存，schema 一变缓存失效就暴露。已根治：Dockerfile 里 `ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma`。构建红在 prisma generate 一步先想这条。
+9. **`next start` 不热更新**（2026-11-09 栽过）：本地起生产模式看效果时，改完源码必须重新 `build` + 重启进程，否则浏览器看到的一直是旧构建（症状：源码明明改了、页面毫无变化、服务端返回的 CSS/类名是旧的）。排查顺序：先确认端口跑的是 `dev` 还是 `start`，再 grep `.next` 产物里有没有新类名。想边改边看就用 `dev`。
 
 ## 目录
 
