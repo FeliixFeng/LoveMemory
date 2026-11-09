@@ -61,7 +61,7 @@ export function HeroSection({
   }, [countdowns]);
 
   return (
-    <section className="relative rounded-3xl overflow-hidden shadow-lg aspect-[3/4] md:aspect-[4/3] lg:aspect-[2/1] max-h-[70dvh]" style={{ animation: 'slideUp 0.6s ease-out' }}>
+    <section className="relative rounded-3xl overflow-hidden shadow-lg aspect-[3/4] md:aspect-[4/3] lg:aspect-[2/1]" style={{ animation: 'slideUp 0.6s ease-out' }}>
       {/* Image layer - base */}
       {heroImages.map((img, i) => {
         const style = { opacity: heroIdx === i ? 1 : 0, transition: 'opacity 1.5s' };
