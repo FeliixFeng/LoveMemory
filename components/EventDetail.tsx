@@ -9,6 +9,7 @@ import { SafeImage } from './SafeImage';
 import { Overlay } from './ui/Overlay';
 import { EventBadge } from './EventBadge';
 import { PinIcon } from './NavIcons';
+import { SectionLabel } from './SectionLabel';
 
 export function EventDetail({
   event, photos, expenses, onClose, onEdit, onAddPhoto, onDeletePhoto, onReorderPhotos, onAddExpense, onDeleteExpense, onViewPhoto, uploading, uploadProgress, deleting
@@ -90,7 +91,7 @@ export function EventDetail({
       onClose={onClose}
       layer="sheet"
       labelledBy="event-detail-title"
-      panelClassName="w-full sm:max-w-lg max-h-[85dvh] bg-lm-bg rounded-t-2xl sm:rounded-2xl overflow-y-auto pb-[env(safe-area-inset-bottom)] sm:shadow-2xl"
+      panelClassName="w-full sm:max-w-2xl max-h-[85dvh] bg-lm-bg rounded-t-2xl sm:rounded-2xl overflow-y-auto pb-[env(safe-area-inset-bottom)] sm:shadow-2xl"
     >
         {/* Header */}
         <div className="sticky top-0 bg-lm-bg/92 backdrop-blur-xl z-10 px-5 py-4 border-b border-lm-line/40">
@@ -119,7 +120,7 @@ export function EventDetail({
             <div className="flex items-center gap-1 shrink-0 -mr-1">
               <button
                 onClick={onEdit}
-                className="px-3 h-8 text-[11px] rounded-full bg-lm-accent/15 text-lm-accent-deep hover:bg-lm-accent/25 transition-colors font-medium"
+                className="lm-glass-chip px-3 h-8 text-[11px] rounded-full text-lm-accent-deep hover:text-lm-ink transition-colors font-medium"
               >
                 编辑
               </button>
@@ -128,25 +129,29 @@ export function EventDetail({
                 aria-label="关闭"
                 className="w-8 h-8 rounded-full flex items-center justify-center text-lm-body/40 hover:text-lm-body hover:bg-lm-line/40 transition-colors"
               >
-                ✕
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
+                </svg>
               </button>
             </div>
           </div>
         </div>
 
-        <div className="p-4 space-y-6">
+        <div className="p-4">
           {/* Description */}
           {event.desc && (
-            <p className="text-sm text-lm-body/75 leading-relaxed">{event.desc}</p>
+            <p className="text-sm text-lm-body/75 leading-relaxed mb-6">{event.desc}</p>
           )}
 
+          {/* 照片 / 账单 —— 桌面两列吃掉加宽，移动端维持上下堆 */}
+          <div className="space-y-6 sm:grid sm:grid-cols-2 sm:gap-x-7 sm:gap-y-6 sm:space-y-0 sm:items-start">
           {/* Photos */}
           <div>
             <div className="flex items-baseline justify-between mb-2.5">
-              <h3 className="text-[13px] font-bold text-lm-ink tracking-wide">
-                照片
-                <span className="ml-1.5 text-[11px] font-normal text-lm-body/40 tabular-nums">{photos.length}</span>
-              </h3>
+              <span className="inline-flex items-center gap-2">
+                <SectionLabel>照片</SectionLabel>
+                <span className="text-[11px] text-lm-body/40 tabular-nums">{photos.length}</span>
+              </span>
               {photos.length > 1 && (
                 <span className="text-[10px] text-lm-body/30">悬停可调整顺序</span>
               )}
@@ -225,15 +230,15 @@ export function EventDetail({
           {/* Expenses */}
           <div>
             <div className="flex items-baseline justify-between mb-2.5">
-              <h3 className="text-[13px] font-bold text-lm-ink tracking-wide">
-                账单
-                <span className="ml-1.5 text-[11px] font-normal text-lm-accent tabular-nums">
+              <span className="inline-flex items-center gap-2">
+                <SectionLabel>账单</SectionLabel>
+                <span className="text-[11px] text-lm-accent tabular-nums font-medium">
                   {total > 0 ? formatCurrency(total) : '0'}
                 </span>
-              </h3>
+              </span>
               <button
                 onClick={() => setShowAddExpense(true)}
-                className="px-3 h-7 text-[11px] rounded-full bg-lm-accent/15 text-lm-accent-deep font-medium hover:bg-lm-accent/25 transition-colors"
+                className="lm-glass-chip px-3 h-7 text-[11px] rounded-full text-lm-accent-deep font-medium hover:text-lm-ink transition-colors"
               >
                 + 添加
               </button>
@@ -313,6 +318,7 @@ export function EventDetail({
                 </div>
               </div>
             )}
+          </div>
           </div>
         </div>
     </Overlay>

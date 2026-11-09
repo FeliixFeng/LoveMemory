@@ -7,6 +7,7 @@ import { resolvePlace } from '../lib/place';
 import { Overlay } from './ui/Overlay';
 import { PinIcon } from './NavIcons';
 import { EventBadge } from './EventBadge';
+import { SectionLabel } from './SectionLabel';
 
 export type EventDraft = {
   title: string;
@@ -16,16 +17,6 @@ export type EventDraft = {
   location: string;
   mood: string;
 };
-
-/** 区块小标：短横线 + 字距中文，页头语言的降级版 */
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="flex items-center gap-2">
-      <span aria-hidden className="w-4 h-px bg-lm-accent/60" />
-      <span className="text-[10px] tracking-[0.25em] text-lm-body/55">{children}</span>
-    </span>
-  );
-}
 
 export function EventModal({
   editEvent, draft, setDraft, onSave, onDelete, onClose
