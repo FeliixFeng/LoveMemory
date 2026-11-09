@@ -13,7 +13,7 @@ const MAX_MOBILE = 3;
 const MAX_DESKTOP = 7;
 
 /* 照片面板固定高度 —— 1/2/3 张的卡片不再一张高一张矮 */
-const PANEL_H = 'h-[172px] md:h-[300px]';
+const PANEL_H = 'h-[146px] md:h-[272px]';
 
 /* 类名必须是字面量，否则 Tailwind 扫不到 */
 const MD_COLS: Record<number, string> = {
@@ -132,10 +132,10 @@ export const EventPreviewCard = memo(function EventPreviewCard({
       onTouchEnd={handleTouchEnd}
     >
       <article className="lm-glass-panel rounded-3xl overflow-hidden">
-        <div className="flex flex-col md:flex-row md:h-[300px]">
+        <div className="flex flex-col md:flex-row md:h-[272px]">
 
           {/* 左：文字栏 */}
-          <div className="lm-paper-panel relative flex flex-col p-4 md:p-5 min-h-[156px] md:min-h-0 md:w-[40%] md:shrink-0 md:overflow-hidden md:border-r md:border-lm-line/50">
+          <div className="lm-paper-panel relative flex flex-col px-4 py-3 md:p-4 min-h-[118px] md:min-h-0 md:w-[40%] md:shrink-0 md:overflow-hidden md:border-r md:border-lm-line/50">
             {/* 一层暖光打在玻璃上，让左栏不是死白 */}
             <span
               aria-hidden
@@ -181,9 +181,9 @@ export const EventPreviewCard = memo(function EventPreviewCard({
             </div>
 
             {/* 标题 —— emoji 装进暖底徽章，不再裸挂 */}
-            <div className="flex items-center gap-2.5 mt-2.5 md:mt-3.5 min-w-0 shrink-0">
+            <div className="flex items-center gap-2.5 mt-2 md:mt-2.5 min-w-0 shrink-0">
               <EventBadge emoji={getEmoji(event.icon)} className="md:w-7 md:h-7 md:text-[15px] md:rounded-[10px]" />
-              <h3 className="text-[17px] md:text-[26px] font-bold text-lm-ink truncate font-serif-cn leading-[1.2] tracking-tight">
+              <h3 className="text-[17px] md:text-[23px] font-bold text-lm-ink truncate font-serif-cn leading-[1.2] tracking-tight">
                 {event.title || '未命名事件'}
               </h3>
               {event.mood && <span className="text-sm shrink-0 leading-none">{getMoodEmoji(event.mood)}</span>}
@@ -192,11 +192,11 @@ export const EventPreviewCard = memo(function EventPreviewCard({
             {/* 描述：左边一道暖色渐隐竖线，做成引文的样子。
                 移动端这块吃掉多余高度并把文字垂直居中——否则短描述下面会留一条空洞。
                 没写描述就整块不渲染，空白本身就是留白，不挂占位句 */}
-            <div className="relative mt-2 md:mt-2.5 flex-1 md:flex-none min-w-0 flex items-center md:items-start">
+            <div className="relative mt-1.5 md:mt-2 flex-1 md:flex-none min-w-0 flex items-center md:items-start">
               {event.desc && (
                 <div className="relative w-full min-w-0 pl-2.5 md:pl-3">
                   <span aria-hidden className="absolute left-0 top-[3px] bottom-[3px] w-[2px] rounded-full bg-gradient-to-b from-lm-accent/60 via-lm-accent/25 to-transparent" />
-                  <p className="text-xs md:text-[13px] leading-[1.75] text-lm-body/70 line-clamp-2 md:line-clamp-3">
+                  <p className="text-xs md:text-[13px] leading-[1.55] md:leading-[1.75] text-lm-body/70 line-clamp-2 md:line-clamp-2">
                     {event.desc}
                   </p>
                 </div>
@@ -205,7 +205,7 @@ export const EventPreviewCard = memo(function EventPreviewCard({
 
             {/* 桌面端信息栏：标签 · 点线 · 值，像一张手写标签。
                 只列有值的行——空值行（破折号）会让首页读起来像未填完的表单 */}
-            <dl className="hidden md:flex flex-col gap-[10px] mt-auto pt-4 border-t border-lm-line/60">
+            <dl className="hidden md:flex flex-col gap-[7px] mt-auto pt-3 border-t border-lm-line/60">
               {[
                 { k: 'Date', v: fmt(event.date) },
                 ...(event.location ? [{ k: 'Place', v: event.location }] : []),

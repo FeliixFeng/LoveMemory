@@ -61,7 +61,7 @@ export function HeroSection({
   }, [countdowns]);
 
   return (
-    <section className="relative rounded-3xl overflow-hidden shadow-lg aspect-[3/4] md:aspect-[4/3] lg:aspect-[2/1]" style={{ animation: 'slideUp 0.6s ease-out' }}>
+    <section className="relative rounded-3xl overflow-hidden shadow-lg h-[clamp(360px,50svh,420px)] md:h-[clamp(350px,46svh,430px)] lg:h-[clamp(430px,52svh,500px)]" style={{ animation: 'slideUp 0.6s ease-out' }}>
       {/* Image layer - base */}
       {heroImages.map((img, i) => {
         const style = { opacity: heroIdx === i ? 1 : 0, transition: 'opacity 1.5s' };
@@ -98,11 +98,10 @@ export function HeroSection({
 
       {/* Countdown card - top right —— 高透明玻璃：底色压到很淡、白字带影保证可读 */}
       {nextDays > 0 && (
-        <div className="absolute top-3 right-3 z-10">
+        <div className="absolute top-2.5 right-2.5 md:top-3 md:right-3 z-10">
           <div
-            className="px-3 py-2 rounded-2xl text-center border border-white/20"
+            className="px-2.5 py-1.5 md:px-3 md:py-2 rounded-2xl text-center border border-white/20 min-w-[64px] md:min-w-[72px]"
             style={{
-              minWidth: '72px',
               background: 'linear-gradient(140deg, rgba(255,255,255,0.16), rgba(255,255,255,0.05) 50%, rgba(255,240,228,0.10))',
               backdropFilter: 'blur(12px) saturate(1.4)',
               WebkitBackdropFilter: 'blur(12px) saturate(1.4)',
@@ -111,8 +110,8 @@ export function HeroSection({
           >
             {countdowns.length > 0 ? (
               <>
-                <div className="text-[10px] mb-0.5">{countdowns[countdownIdx]?.emoji || '💝'} <span className="text-white/75">{countdowns[countdownIdx]?.label || ''}</span></div>
-                <div className="text-lg font-bold text-white leading-none" style={{ fontFamily: 'var(--lm-font-display)', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+                <div className="text-[9.5px] md:text-[10px] mb-0.5">{countdowns[countdownIdx]?.emoji || '💝'} <span className="text-white/75">{countdowns[countdownIdx]?.label || ''}</span></div>
+                <div className="text-base md:text-lg font-bold text-white leading-none" style={{ fontFamily: 'var(--lm-font-display)', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
                   {countdownDays[countdownIdx] === Infinity ? '--' : countdownDays[countdownIdx]}
                 </div>
                 <div className="text-[9px] text-white/60 mt-0.5">天后</div>
@@ -120,7 +119,7 @@ export function HeroSection({
             ) : (
               <>
                 <div className="text-[10px] text-white/75 mb-0.5">💝 纪念日</div>
-                <div className="text-lg font-bold text-white leading-none" style={{ fontFamily: 'var(--lm-font-display)', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+                <div className="text-base md:text-lg font-bold text-white leading-none" style={{ fontFamily: 'var(--lm-font-display)', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
                   {nextDays}
                 </div>
                 <div className="text-[9px] text-white/60 mt-0.5">天后</div>
@@ -131,8 +130,8 @@ export function HeroSection({
       )}
 
       {/* Info overlay - upper center */}
-      <div className="absolute inset-0 flex flex-col items-center text-white text-center z-[4] px-6 pointer-events-none pt-[35%] md:pt-[15%]">
-        <span className="text-sm font-medium text-white/90 tracking-[0.3em] uppercase" style={{ fontFamily: 'var(--lm-font-display)', textShadow: '0 1px 10px rgba(0,0,0,0.45)' }}>TOGETHER FOR</span>
+      <div className="absolute inset-0 flex flex-col items-center text-white text-center z-[4] px-6 pointer-events-none pt-10 md:pt-8">
+        <span className="text-[13px] md:text-sm font-medium text-white/90 tracking-[0.18em] md:tracking-[0.3em] uppercase" style={{ fontFamily: 'var(--lm-font-display)', textShadow: '0 1px 10px rgba(0,0,0,0.45)' }}>TOGETHER FOR</span>
         <div className="flex items-baseline mt-1">
           <span className="text-6xl md:text-7xl font-bold leading-none" style={{ fontFamily: 'var(--lm-font-serif)', textShadow: '0 2px 14px rgba(0,0,0,0.55), 0 0 40px rgba(0,0,0,0.25)' }}>{animDays}</span>
           <span className="text-xl font-light italic opacity-70 ml-2 mb-1" style={{ fontFamily: 'var(--lm-font-display)', textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>Days</span>
