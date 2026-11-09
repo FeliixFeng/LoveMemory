@@ -99,6 +99,32 @@ npm run prisma:generate
 
 **GitHub Actions 已停用**（`.github/workflows/deploy.yml.disabled`）。2026-07-13 连续两次部署失败后手动改名关闭。**`scripts/deploy.sh` 也已删除（2026-10-19）**——部署按下面四步手动执行，每步单独看结果，不要写成脚本一把梭。
 
+### ⚠️ 开工前三个硬前置（2026-11-09 第二次事故后提到最前）
+
+**部署不是"跑四条命令"**。这台机器 2核2G + 40G 云盘，**瓶颈是云盘 IOPS**，构建把它打满会让整机半死：SSH 握手成功但不吐 banner、443 反代全挂、同机 frps 一起挂（完整症状与恢复见本章末尾「事故课」）。以下三条**每次部署前逐条确认，不许跳**：
+
+1. **先看资源**（在动任何东西之前）
+   ```bash
+   ssh ali1 'df -h /; free -h; docker system df'
+   ```
+   磁盘可用 <5G、可用内存 <300M 先收拾；Build Cache >3GB 先 `docker builder prune -af`（只清缓存，**绝不加 `--volumes`**、绝不 `image prune -a`）。**不要"顺便清空构建缓存"**——清了就全量重建，突发写入更大。
+
+2. **rsync 必须先 `-n` 空跑**
+   ```bash
+   rsync -azn --delete <同样的排除项> ./ ali1:/data/app/love-memory/     # 先 n
+   ```
+   确认「将被删除」清单里只有构建产物和过期文件，再去掉 `n` 真跑。`--delete` 配错排除项是**唯一能一次性毁掉线上数据**的操作。
+
+3. **先声明耗时，启动构建，然后只读日志播报**
+   2核2G 全量构建 **5~10 分钟属正常**；**有构建缓存时只要 2~3 分钟**（2026-11-09 实测）。构建期间：
+   - **不许并发 `curl` / `ssh` 探测**（每次探测本身都在抢 IO，机器越忙越慢）
+   - **不许中途取消重来**（反复中断是 10-19 打爆 IOPS 的直接原因）
+   - **必须每 2~3 分钟主动播报一次进度**，内容从远端日志文件 `tail` 读，而不是新开连接去「探活」
+
+   > **沉默不是稳重，在运维场景里沉默就是故障信号。** 2026-11-09 第三次部署时，构建其实 2 分钟就成功了，但执行方挂了一个 9 分钟的阻塞等待、全程零输出，操作者判定「又卡死了」并中断任务——虽然这次没造成损失，但误判就是这样产生的。读日志播报的成本是几十字节输出，不播报的代价是操作者做出错误决策。
+
+违反任一条都可能重演整机卡死。**部署是运维动作，不是敲命令。**
+
 ### 四步手动部署
 
 ```bash
@@ -122,7 +148,15 @@ rsync -az --delete \
 ssh ali1 'cd /data/app/love-memory && python3 scripts/migrate.py'
 
 # 4. 远程构建并重启（用连字符形式，这台机器提供的是 docker-compose）
-ssh ali1 'cd /data/app/love-memory && docker-compose up -d --build'
+#    必须脱离 ssh 会话：setsid + nohup + 日志文件。这样断线、Ctrl-C、取消后台任务
+#    都不会打断构建——2026-11-09 第二次事故就是 ssh 断开把构建拦腰截断
+ssh ali1 'cd /data/app/love-memory && mkdir -p /data/logs && \
+  setsid nohup docker-compose up -d --build > /data/logs/deploy-$(date +%Y%m%d-%H%M%S).log 2>&1 < /dev/null & \
+  sleep 3; echo "已启动，日志: $(ls -t /data/logs/deploy-*.log | head -1)"'
+
+# 4.1 之后只看日志文件播报进度，不要反复连 ssh 探测
+ssh ali1 'tail -20 "$(ls -t /data/logs/deploy-*.log | head -1)"'
+#     成功标志：#18 writing image ... done → Container love-memory Recreate → Started
 
 # 5. 健康检查（容器内 3000 + 外网域名，两边都要过）
 ssh ali1 'curl -fsS --retry 10 --retry-delay 3 http://127.0.0.1:3000/api/health'
@@ -193,6 +227,55 @@ ssh ali1 'cd /data/app/love-memory && docker-compose stop && rm -rf data && tar 
 3. 构建前看一眼 `df -h` / `free -h`：磁盘可用 <5G、可用内存 <300M 先收拾再部署
 4. 构建中途别反复中断重来，一次跑完；2核2G 单次全量构建 5~10 分钟属正常
 5. 只在本机和服务器各构建一次，不要"改一行就重 build"，反复构建才是打爆 IOPS 的原因
+
+**2026-11-09 第二次同样事故**（同一个坑，隔了三周又踩）：`docker-compose up -d --build` 启动后第 6 分钟（仍在 5-10 分钟正常区间内），因"看起来卡住"取消了后台任务 → ssh 断 → 构建被打断；随后为确认状态又连续 `curl` + `ssh` 探测六七次，机器进入与 10-19 完全相同的状态（SSH 握手成功、banner 不出、443 全挂）。
+
+根因不是技术，是流程：
+
+- 危险提示原本只在章末「事故课」，而可执行命令在章首 → **读的人永远先读到命令**。已把「三个硬前置」提到章首
+- 用本地 M3 的时间感（40 秒）判断 2核2G（5-10 分钟），把"正常"当"卡死"
+- 忘了 `rsync` 的 `-n` 空跑（那次没出事是运气）
+- 中断后继续探测 = 在已经 IO 打满的机器上继续加 IO
+
+排查提示：`~/.ssh/config` 开了 `ControlMaster`（`ControlPersist 10m`），机器卡住时旧 master socket 会残留，新 `ssh` 可能**秒退且无任何输出**（看起来像"命令没执行"，其实是复用了死连接）。判断机器真活的可靠办法是抓 banner，别信 ssh 的静默返回：
+
+```bash
+nc -w 8 47.121.181.198 22 | head -c 40     # 能读到 SSH-2.0-... 才是真活着
+ssh -o ControlPath=none ali1 'uptime'      # 绕过复用，强制新建连接
+```
+
+### 2026-11-09 同日第三次：确认可行的配方（约 2 分钟）
+
+这次成功把前两次的根因坐实了——问题不在机器性能，在构建方式。
+
+| 条件 | 做法 |
+|:--|:--|
+| 构建缓存 | **保留 5.28GB 不清** |
+| 进程关系 | `setsid nohup ... > /data/logs/deploy-*.log 2>&1 < /dev/null &`，完全脱离 ssh 会话 |
+| 观察方式 | 只 `tail` 远端日志文件，不新开连接探活 |
+| 结果 | 镜像构建 + 容器重建 **约 2 分钟**，load 未起峰，未复现卡死 |
+
+**结论，以后照这个来：**
+
+- 前两次失败的真正组合是「**全量构建 + 中途中断 + 中断后反复探测**」，三条凑齐才炸
+- **保留缓存 = 增量构建 = 写盘量小一个数量级**。这是保护这台机器最有效的一招，所以「顺便清个缓存」是反效果
+- 构建**绝不能依赖 ssh 会话存活**。`setsid nohup` + 日志文件是硬要求，不是优化
+
+### 新坑：控制台重启卡在「停止中」
+
+2026-11-09 第二次事故后的恢复过程，又踩到一个：
+
+- **现象**：控制台点「重启 / 停止」后一直转「停止中」；再点「强制停止」报错
+  `The current status of the instance does not support this operation. The expected status is in (Running;Paused)`
+- **原因**：实例处于 `Stopping` 中间态，阿里云状态机只允许从 `Running`/`Paused` 发起强停。而 OS 侧有进程卡在 **D 状态**（不可中断睡眠，内核里等磁盘 IO 返回），`SIGTERM` / `SIGKILL` 对它全部无效，ACPI 关机流程永远走不完——**上层等 OS，OS 等 IO，IO 在排队**
+- **处理顺序（从轻到重）**：
+  1. 关掉控制台标签页重开，确认不是页面状态滞后（有时任务早失败，页面还挂着旧状态）
+  2. **CloudShell** 里绕过 UI 前置校验：`aliyun ecs StopInstance --InstanceId <id> --ForceStop true`（CloudShell 的 aliyun CLI 已带当前账号凭证，不用配 AccessKey）
+  3. 提工单：「实例卡在 Stopping 超 X 分钟，强停报状态不支持」，后台可直接重置实例状态
+  4. 什么都不做，等云侧停止任务超时回退（十几分钟到半小时，不是永久锁死）
+- **数据风险**：云盘已落盘的数据不丢；仅可能丢失未 flush 的脏页，ext4 journal 下次启动会 replay。本次事故中 `data/` 全程未被写入，零损失
+- **禁忌**：焦虑时不要点「释放实例」。那是销毁，不是重启
+
 
 ## UI 约定（2026-10 重构后）
 

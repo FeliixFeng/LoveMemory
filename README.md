@@ -71,6 +71,9 @@ OSS_ENDPOINT=https://oss-cn-wuhan-lr.aliyuncs.com
 ## 部署
 
 手动四步：`typecheck` → `rsync`（排除数据）→ 远程 `docker-compose up -d --build` → 健康检查。
+
+**动手前必须先看 [AGENTS.md](./AGENTS.md) 部署章节开头的「开工前三个硬前置」**：查 `df -h`/`free -h`、rsync 先 `-n` 空跑、构建 5~10 分钟属正常且不许中断/并发探测。漏掉这三条会把云盘 IOPS 打爆导致整机卡死（2026-10-19、2026-11-09 各踩过一次）。
+
 完整命令、服务器事实、IOPS 事故教训见 **[AGENTS.md](./AGENTS.md) 部署章节**。`scripts/deploy.sh` 已删除，不要重建脚本。
 
 线上：<https://lovexin.felixfeng.online>（nginx → 容器 `love-memory`，127.0.0.1:3000）。
