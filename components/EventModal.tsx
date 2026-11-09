@@ -173,22 +173,22 @@ export function EventModal({
               />
             </div>
           </div>
-          {/* 地点不用多填一栏：写「武汉 江汉路」自动归到武汉，写「家里」就老实说上不了图 */}
-          {draft.location.trim() && (
-            <div className="mt-1.5 flex items-center gap-2 text-[10px]">
-              {resolved ? (
+          {/* 地点提示 —— 高度常驻预留，输入城市时不再把卡片撑大（2026-11-09 用户反馈） */}
+          <div className="mt-1.5 h-4 flex items-center gap-2 text-[10px] overflow-hidden">
+            {draft.location.trim() && (
+              resolved ? (
                 <>
-                  <span className="text-lm-accent-deep/70 inline-flex items-center gap-1">
+                  <span className="text-lm-accent-deep/70 inline-flex items-center gap-1 whitespace-nowrap">
                     <PinIcon className="w-3 h-3" />
                     {resolved.city} · {resolved.province}
                   </span>
-                  <span className="text-lm-body/30">会出现在足迹地图</span>
+                  <span className="text-lm-body/30 whitespace-nowrap">会出现在足迹地图</span>
                 </>
               ) : (
-                <span className="text-lm-body/35">识别不出城市，这条不会上地图</span>
-              )}
-            </div>
-          )}
+                <span className="text-lm-body/35 whitespace-nowrap">识别不出城市，这条不会上地图</span>
+              )
+            )}
+          </div>
 
           {/* 描述 —— 引文样式，落笔感 */}
           <div className="mt-5">
