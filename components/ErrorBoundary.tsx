@@ -30,7 +30,7 @@ export class ErrorBoundary extends Component<Props, State> {
       if (this.props.fallback) return this.props.fallback;
       return (
         <div className="flex flex-col items-center justify-center min-h-[40vh] p-8">
-          <span className="text-4xl mb-4">😥</span>
+          <span aria-hidden className="w-8 h-px mx-auto mb-4 block bg-lm-accent/40" />
           <h2 className="text-base font-bold text-lm-ink mb-2" style={{ fontFamily: 'var(--lm-font-serif)' }}>
             出了点问题
           </h2>

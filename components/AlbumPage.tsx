@@ -8,6 +8,7 @@ import { Lightbox } from './Lightbox';
 import { SkeletonPage } from './SkeletonCard';
 import { SafeImage } from './SafeImage';
 import { PageHeader } from './PageHeader';
+import { EventBadge } from './EventBadge';
 
 export function AlbumPage() {
   const { data, loading } = useAppData();
@@ -25,7 +26,7 @@ export function AlbumPage() {
 
       {eventsWithPhotos.length === 0 && standalonePhotos.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16">
-          <span className="text-4xl mb-3">📷</span>
+          <span aria-hidden className="w-8 h-px mb-3 block bg-lm-accent/40" />
           <p className="text-sm text-lm-body/50">还没有照片</p>
         </div>
       ) : (
@@ -48,7 +49,7 @@ export function AlbumPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-base">{getEmoji(event.icon)}</span>
+                      <EventBadge emoji={getEmoji(event.icon)} />
                       <h3 className="text-sm font-bold text-lm-ink truncate" style={{ fontFamily: 'var(--lm-font-serif)' }}>{event.title || '未命名'}</h3>
                     </div>
                     <div className="flex items-center gap-2 mt-0.5 text-[11px] text-lm-body/45">

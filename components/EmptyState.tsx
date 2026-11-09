@@ -4,7 +4,7 @@ export function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
     <div className="px-4" style={{ animation: 'slideUp 0.4s ease-out' }}>
       <div className="lm-card rounded-2xl p-6 text-center">
-        <div className="text-4xl mb-3">✨</div>
+        <div className="w-8 h-px mx-auto mb-3 bg-lm-accent/40" aria-hidden />
         <h3 className="text-sm font-bold text-lm-ink mb-1" style={{ fontFamily: 'var(--lm-font-serif)' }}>
           开始记录你们的故事
         </h3>

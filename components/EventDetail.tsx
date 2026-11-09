@@ -7,6 +7,8 @@ import { EXPENSE_CATEGORIES } from '../lib/constants';
 import { ExpenseItem } from './ExpenseItem';
 import { SafeImage } from './SafeImage';
 import { Overlay } from './ui/Overlay';
+import { EventBadge } from './EventBadge';
+import { PinIcon } from './NavIcons';
 
 export function EventDetail({
   event, photos, expenses, onClose, onEdit, onAddPhoto, onDeletePhoto, onReorderPhotos, onAddExpense, onDeleteExpense, onViewPhoto, uploading, uploadProgress, deleting
@@ -94,16 +96,7 @@ export function EventDetail({
         <div className="sticky top-0 bg-lm-bg/92 backdrop-blur-xl z-10 px-5 py-4 border-b border-lm-line/40">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-3 min-w-0">
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0"
-                style={{
-                  background: 'linear-gradient(140deg, rgba(204,146,102,0.22), rgba(173,124,87,0.12))',
-                  border: '1px solid rgba(173,124,87,0.18)',
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.8)'
-                }}
-              >
-                {getEmoji(event.icon)}
-              </div>
+              <EventBadge emoji={getEmoji(event.icon)} size="lg" />
               <div className="min-w-0">
                 <h2 id="event-detail-title" className="text-[17px] font-bold text-lm-ink font-serif-cn truncate leading-tight">
                   {event.title || '未命名事件'}
@@ -113,7 +106,10 @@ export function EventDetail({
                   {event.location && (
                     <>
                       <span className="text-lm-body/25">·</span>
-                      <span className="truncate">📍 {event.location}</span>
+                      <span className="truncate inline-flex items-center gap-1 min-w-0">
+                        <PinIcon className="w-3 h-3 shrink-0 text-lm-body/40" />
+                        <span className="truncate">{event.location}</span>
+                      </span>
                     </>
                   )}
                   {event.mood && <span className="shrink-0">{getMoodEmoji(event.mood)}</span>}
@@ -214,7 +210,13 @@ export function EventDetail({
                     <div className="h-full bg-lm-accent transition-[width] duration-300" style={{ width: `${uploadProgress}%` }} />
                   </div>
                 )}
-                <span className="text-xl leading-none">{uploading ? '⏳' : '+'}</span>
+                <span className="text-xl leading-none">
+                  {uploading ? (
+                    <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeDasharray="42 16" />
+                    </svg>
+                  ) : '+'}
+                </span>
                 <span className="text-[10px]">{uploading ? `${uploadProgress}%` : '添加照片'}</span>
               </button>
             </div>
@@ -263,7 +265,7 @@ export function EventDetail({
 
             {expenses.length === 0 && !showAddExpense ? (
               <div className="py-6 text-center">
-                <span className="text-2xl mb-2 block">💰</span>
+                <span aria-hidden className="w-8 h-px mx-auto mb-2.5 block bg-lm-accent/40" />
                 <p className="text-xs text-lm-body/30">还没有账单</p>
               </div>
             ) : (

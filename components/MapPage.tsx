@@ -6,6 +6,7 @@ import { useAppData } from '../hooks/useAppData';
 import { CITY_COORDS, PROVINCE_FULL_NAMES } from '../lib/map-data';
 import { resolvePlace, type ResolvedPlace } from '../lib/place';
 import { PageHeader } from './PageHeader';
+import { PinIcon, MapIcon } from './NavIcons';
 
 // Lazy load the ECharts map component
 function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<string>; visitedCities: { city: string; province: string }[] }) {
@@ -125,13 +126,13 @@ export function MapPage() {
       </div>
       <div className="lm-card rounded-2xl px-4 py-3">
         <div className="flex justify-center gap-6 text-xs text-lm-body/55">
-          <div className="flex items-center gap-1.5"><span>📍</span><span className="font-bold text-lm-ink">{visitedProvinces.size}</span><span>个省份</span></div>
-          <div className="flex items-center gap-1.5"><span>🏙️</span><span className="font-bold text-lm-ink">{uniqueCities.length}</span><span>个地方</span></div>
+          <div className="flex items-center gap-1.5"><PinIcon className="w-3.5 h-3.5 text-lm-accent/70" /><span className="font-bold text-lm-ink">{visitedProvinces.size}</span><span>个省份</span></div>
+          <div className="flex items-center gap-1.5"><MapIcon className="w-3.5 h-3.5 text-lm-accent/70" /><span className="font-bold text-lm-ink">{uniqueCities.length}</span><span>个地方</span></div>
         </div>
       </div>
       {uniqueCities.length > 0 && (
         <div className="lm-card rounded-2xl p-4">
-          <h3 className="text-sm font-bold text-lm-ink mb-3">📍 去过的地方</h3>
+          <h3 className="text-sm font-bold text-lm-ink mb-3">去过的地方</h3>
           <div className="flex flex-wrap gap-2">
             {uniqueCities.map(city => (<span key={city} className="px-3 py-1.5 rounded-full bg-gradient-to-r from-lm-accent/10 to-lm-accent-deep/10 text-xs text-lm-accent-deep font-medium">{city}</span>))}
           </div>
@@ -139,7 +140,7 @@ export function MapPage() {
       )}
       {uniqueCities.length === 0 && (
         <div className="lm-card rounded-2xl p-8 text-center">
-          <span className="text-4xl mb-3 block">🗺️</span>
+          <span aria-hidden className="w-8 h-px mx-auto mb-3 block bg-lm-accent/40" />
           <p className="text-sm text-lm-body/50">还没有记录足迹</p>
         </div>
       )}

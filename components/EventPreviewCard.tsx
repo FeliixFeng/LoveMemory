@@ -4,6 +4,8 @@ import { memo, useRef } from 'react';
 import { Event, Photo, Expense } from '../lib/types';
 import { getEmoji, fmt, formatCurrency, calcTotalExpenses, getMoodEmoji } from '../lib/utils';
 import { SafeImage } from './SafeImage';
+import { EventBadge } from './EventBadge';
+import { CameraIcon, PinIcon } from './NavIcons';
 
 /* 首页只放「封面级」的少量照片，其余交给相册。
    移动端 3 张（第 3 张盖 +N 角标），桌面端 7 张 + 1 格入口。 */
@@ -115,7 +117,7 @@ export const EventPreviewCard = memo(function EventPreviewCard({
           onClick={onAddPhoto}
           className="group w-full h-full flex flex-col items-center justify-center gap-1.5 bg-lm-line/25 text-lm-ink-strong/35 hover:bg-lm-accent/15 hover:text-lm-accent transition-colors"
         >
-          <span className="text-2xl">📷</span>
+          <CameraIcon className="w-5 h-5" />
           <span className="text-xs">添加几张照片来记录这个瞬间</span>
         </button>
       )}
@@ -148,7 +150,10 @@ export const EventPreviewCard = memo(function EventPreviewCard({
                 {event.location && (
                   <>
                     <span className="text-lm-body/25">·</span>
-                    <span className="truncate">📍 {event.location}</span>
+                    <span className="truncate inline-flex items-center gap-1 min-w-0">
+                      <PinIcon className="w-3 h-3 shrink-0 text-lm-body/40" />
+                      <span className="truncate">{event.location}</span>
+                    </span>
                   </>
                 )}
               </div>
@@ -175,9 +180,9 @@ export const EventPreviewCard = memo(function EventPreviewCard({
               </div>
             </div>
 
-            {/* 标题 */}
-            <div className="flex items-baseline gap-2 mt-2.5 md:mt-3.5 min-w-0 shrink-0">
-              <span className="text-[17px] md:text-[20px] shrink-0 leading-none">{getEmoji(event.icon)}</span>
+            {/* 标题 —— emoji 装进暖底徽章，不再裸挂 */}
+            <div className="flex items-center gap-2.5 mt-2.5 md:mt-3.5 min-w-0 shrink-0">
+              <EventBadge emoji={getEmoji(event.icon)} className="md:w-7 md:h-7 md:text-[15px] md:rounded-[10px]" />
               <h3 className="text-[17px] md:text-[26px] font-bold text-lm-ink truncate font-serif-cn leading-[1.2] tracking-tight">
                 {event.title || '未命名事件'}
               </h3>

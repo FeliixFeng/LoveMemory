@@ -215,13 +215,13 @@ export function WishesCapsulesPage() {
           onClick={() => router.push('/wishes')}
           className={`flex-1 py-2.5 text-xs rounded-xl transition-all ${tab === 'wishes' ? 'bg-gradient-to-r from-lm-accent to-lm-accent-deep text-white font-semibold shadow-sm' : 'text-lm-body/40 hover:text-lm-body/60'}`}
         >
-          💝 愿望 {pendingWishes.length > 0 && `(${pendingWishes.length})`}
+          愿望 {pendingWishes.length > 0 && `(${pendingWishes.length})`}
         </button>
         <button
           onClick={() => router.push('/capsule')}
           className={`flex-1 py-2.5 text-xs rounded-xl transition-all ${tab === 'capsules' ? 'bg-gradient-to-r from-lm-accent to-lm-accent-deep text-white font-semibold shadow-sm' : 'text-lm-body/40 hover:text-lm-body/60'}`}
         >
-          💌 胶囊 {capsules.length > 0 && `(${capsules.length})`}
+          胶囊 {capsules.length > 0 && `(${capsules.length})`}
         </button>
       </div>
 
@@ -320,7 +320,7 @@ export function WishesCapsulesPage() {
 
           {wishes.length === 0 && !showAddWish && (
             <div className="flex flex-col items-center justify-center py-16">
-              <span className="text-4xl mb-3">💝</span>
+              <span aria-hidden className="w-8 h-px mb-3 block bg-lm-accent/40" />
               <p className="text-sm text-lm-body/50">还没有愿望</p>
               <p className="text-xs text-lm-body/30 mt-1">点击"添加"创建第一个愿望</p>
             </div>
@@ -374,7 +374,7 @@ export function WishesCapsulesPage() {
 
           {capsules.length === 0 && !showAddCapsule ? (
             <div className="flex flex-col items-center justify-center py-16">
-              <span className="text-4xl mb-3">💌</span>
+              <span aria-hidden className="w-8 h-px mb-3 block bg-lm-accent/40" />
               <p className="text-sm text-lm-body/50">还没有时光胶囊</p>
               <p className="text-xs text-lm-body/30 mt-1">点击"写信"给未来的ta写一封信</p>
             </div>

@@ -4,6 +4,7 @@ import { Event } from '../lib/types';
 import { ICONS, MOODS } from '../lib/constants';
 import { resolvePlace } from '../lib/place';
 import { Overlay } from './ui/Overlay';
+import { PinIcon } from './NavIcons';
 
 export type EventDraft = {
   title: string;
@@ -111,7 +112,10 @@ export function EventModal({
               <div className="flex items-center gap-2 px-3.5 py-1.5 text-[10px]">
                 {resolved ? (
                   <>
-                    <span className="text-lm-accent-deep/70">📍 {resolved.city} · {resolved.province}</span>
+                    <span className="text-lm-accent-deep/70 inline-flex items-center gap-1">
+                      <PinIcon className="w-3 h-3" />
+                      {resolved.city} · {resolved.province}
+                    </span>
                     <span className="text-lm-body/30">会出现在足迹地图</span>
                   </>
                 ) : (

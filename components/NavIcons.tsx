@@ -60,3 +60,12 @@ export function MoreIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function PinIcon({ className }: IconProps) {
+  return (
+    <svg {...base(className)}>
+      <path d="M12 21s-6.5-5.6-6.5-10.4A6.5 6.5 0 0 1 12 4.1a6.5 6.5 0 0 1 6.5 6.5C18.5 15.4 12 21 12 21z" />
+      <circle cx="12" cy="10.4" r="2.4" />
+    </svg>
+  );
+}
