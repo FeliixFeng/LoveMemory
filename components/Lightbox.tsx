@@ -27,6 +27,17 @@ export function Lightbox({
     setLoaded(false);
   }, [index]);
 
+  // 预加载上一张与下一张大图，彻底消除左右切图白屏与停顿
+  useEffect(() => {
+    if (photos.length <= 1) return;
+    const prevIdx = (index - 1 + photos.length) % photos.length;
+    const nextIdx = (index + 1) % photos.length;
+    const p1 = new window.Image();
+    p1.src = photos[prevIdx].displayUrl || photos[prevIdx].url;
+    const p2 = new window.Image();
+    p2.src = photos[nextIdx].displayUrl || photos[nextIdx].url;
+  }, [index, photos]);
+
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (!isTop()) return;
