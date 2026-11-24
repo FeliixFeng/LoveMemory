@@ -16,18 +16,27 @@ function MapChart({ visitedProvinces, visitedCities }: { visitedProvinces: Set<s
   const [resetKey, setResetKey] = useState(0);
 
   useEffect(() => {
+    let isMounted = true;
     Promise.all([
       import('echarts'),
-      fetch('/china.json').then(r => r.json())
-    ]).then(([echartsMod, chinaMap]) => {
+      import('echarts-for-react'),
+      fetch('/china.json').then(r => {
+        if (!r.ok) throw new Error('Failed to load map data');
+        return r.json();
+      })
+    ]).then(([echartsMod, reactMod, chinaMap]) => {
+      if (!isMounted) return;
       echartsMod.registerMap('china', chinaMap);
       setEcharts(echartsMod);
+      setEChartsComponent(() => reactMod.default);
       setReady(true);
-    }).catch(err => console.error('Map load error:', err));
-  }, []);
+    }).catch(err => {
+      console.error('Map load error:', err);
+    });
 
-  useEffect(() => {
-    import('echarts-for-react').then(mod => setEChartsComponent(() => mod.default));
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (!ready || !EChartsComponent) {
@@ -132,9 +141,16 @@ export function MapPage() {
       </div>
       {uniqueCities.length > 0 && (
         <div className="lm-card rounded-2xl p-4">
-          <h3 className="text-sm font-bold text-lm-ink mb-3">去过的地方</h3>
+          <h3 className="text-sm font-bold text-lm-ink mb-3 font-serif-cn">去过的地方</h3>
           <div className="flex flex-wrap gap-2">
-            {uniqueCities.map(city => (<span key={city} className="px-3 py-1.5 rounded-full bg-gradient-to-r from-lm-accent/10 to-lm-accent-deep/10 text-xs text-lm-accent-deep font-medium">{city}</span>))}
+            {uniqueCities.map(city => (
+              <span
+                key={city}
+                className="px-3 py-1.5 rounded-full bg-lm-accent/10 text-xs text-lm-accent-deep font-medium border border-lm-accent/15 shadow-2xs"
+              >
+                {city}
+              </span>
+            ))}
           </div>
         </div>
       )}

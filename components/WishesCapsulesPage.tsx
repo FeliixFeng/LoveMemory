@@ -205,21 +205,29 @@ export function WishesCapsulesPage() {
         </div>
         <button
           onClick={() => withAuth(() => tab === 'wishes' ? setShowAddWish(true) : setShowAddCapsule(true))}
-          className="ml-3 shrink-0 px-3 py-1.5 bg-gradient-to-r from-lm-accent to-lm-accent-deep text-white rounded-xl text-xs font-medium active:scale-95 transition-transform"
+          className="ml-3 shrink-0 lm-glass-chip px-3 py-1.5 rounded-full text-xs font-medium text-lm-accent-deep active:scale-95 transition-all shadow-xs"
         >+ {tab === 'wishes' ? '添加' : '写信'}</button>
       </div>
 
-      {/* Tab switcher */}
+      {/* Tab switcher —— 统一使用全站标准 lm-glass-pill 磨砂玻璃胶囊 */}
       <div className="flex gap-1.5 p-1 lm-card rounded-2xl">
         <button
           onClick={() => router.push('/wishes')}
-          className={`flex-1 py-2.5 text-xs rounded-xl transition-all ${tab === 'wishes' ? 'bg-gradient-to-r from-lm-accent to-lm-accent-deep text-white font-semibold shadow-sm' : 'text-lm-body/40 hover:text-lm-body/60'}`}
+          className={`flex-1 py-2.5 text-xs rounded-xl transition-all font-medium ${
+            tab === 'wishes'
+              ? 'lm-glass-pill text-lm-accent-deep font-semibold shadow-xs'
+              : 'text-lm-body/45 hover:text-lm-body/70'
+          }`}
         >
           愿望 {pendingWishes.length > 0 && `(${pendingWishes.length})`}
         </button>
         <button
           onClick={() => router.push('/capsule')}
-          className={`flex-1 py-2.5 text-xs rounded-xl transition-all ${tab === 'capsules' ? 'bg-gradient-to-r from-lm-accent to-lm-accent-deep text-white font-semibold shadow-sm' : 'text-lm-body/40 hover:text-lm-body/60'}`}
+          className={`flex-1 py-2.5 text-xs rounded-xl transition-all font-medium ${
+            tab === 'capsules'
+              ? 'lm-glass-pill text-lm-accent-deep font-semibold shadow-xs'
+              : 'text-lm-body/45 hover:text-lm-body/70'
+          }`}
         >
           胶囊 {capsules.length > 0 && `(${capsules.length})`}
         </button>

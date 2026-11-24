@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { SettingsPatch } from '../app/lib/schemas';
 import { HERO_SLIDES, type HeroSlide } from '../lib/constants';
 import { useAuth } from './SiteLayoutClient';
@@ -25,6 +25,24 @@ export function SettingsPage() {
   const [newQuote, setNewQuote] = useState('');
   const [newCountdown, setNewCountdown] = useState({ label: '', date: '', emoji: '🎂' });
   const [confirm, setConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
+
+  // 本地名字草稿：输入时防抖并受控，失焦或回车才持久化，避免击键高频触发鉴权与请求
+  const [namesDraft, setNamesDraft] = useState<string[]>(() => [
+    data.coupleNames?.[0] || '',
+    data.coupleNames?.[1] || ''
+  ]);
+
+  useEffect(() => {
+    setNamesDraft([data.coupleNames?.[0] || '', data.coupleNames?.[1] || '']);
+  }, [data.coupleNames]);
+
+  function handleNameBlur() {
+    const trimmed = [namesDraft[0]?.trim() || '', namesDraft[1]?.trim() || ''].filter(Boolean);
+    const original = (data.coupleNames || []).filter(Boolean);
+    if (JSON.stringify(trimmed) !== JSON.stringify(original)) {
+      withAuth(() => void save({ coupleNames: trimmed }, '已保存'));
+    }
+  }
 
   async function save(patch: SettingsPatch, msg?: string) {
     try {
@@ -82,11 +100,15 @@ export function SettingsPage() {
                 <input
                   key={i}
                   type="text"
-                  value={data.coupleNames[i] || ''}
+                  value={namesDraft[i] || ''}
                   onChange={e => {
-                    const next = [...(data.coupleNames || [])];
+                    const next = [...namesDraft];
                     next[i] = e.target.value;
-                    withAuth(() => void save({ coupleNames: next.filter(Boolean) }));
+                    setNamesDraft(next);
+                  }}
+                  onBlur={handleNameBlur}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleNameBlur();
                   }}
                   placeholder={label}
                   maxLength={20}
