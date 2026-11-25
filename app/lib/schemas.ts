@@ -4,9 +4,11 @@ import { z } from 'zod';
 export const CreateEventSchema = z.object({
   title: z.string().min(1, '标题不能为空').max(255),
   date: z.string().min(1, '日期不能为空'),
+  endDate: z.string().max(32).default(''),
   desc: z.string().default(''),
   icon: z.string().max(64).default('heart'),
   location: z.string().max(500).default(''),
+  city: z.string().max(100).optional(),
   mood: z.string().max(100).default(''),
   coverPhoto: z.string().max(500).default(''),
   /* 来源：由一个愿望 / 一封胶囊产生，用来建立双向链接 */
@@ -17,9 +19,11 @@ export const CreateEventSchema = z.object({
 export const UpdateEventSchema = z.object({
   title: z.string().min(1).max(255).optional(),
   date: z.string().min(1).optional(),
+  endDate: z.string().max(32).optional(),
   desc: z.string().optional(),
   icon: z.string().max(64).optional(),
   location: z.string().max(500).optional(),
+  city: z.string().max(100).optional(),
   mood: z.string().max(100).optional(),
   coverPhoto: z.string().max(500).optional()
 });
@@ -69,6 +73,7 @@ export const SettingsPatchSchema = z.object({
   customCovers: z.array(z.string().max(500)).max(100).optional(),
   hiddenDefaultCovers: z.array(z.string().max(500)).max(500).optional(),
   coupleNames: z.array(z.string().max(20)).max(2).optional(),
+  homeCity: z.string().max(100).optional(),
   countdowns: z.array(z.object({
     id: z.number(),
     label: z.string().max(100),

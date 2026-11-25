@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import type { Event, Photo } from '../lib/types';
-import { getEmoji, fmt, getMoodEmoji } from '../lib/utils';
+import { getEmoji, fmtRange, getMoodEmoji } from '../lib/utils';
 import { useAppData } from '../hooks/useAppData';
 import { Lightbox } from './Lightbox';
 import { SkeletonPage } from './SkeletonCard';
@@ -154,7 +154,7 @@ export function AlbumPage() {
                     <div className="min-w-0 flex-1">
                       {/* 日期 + 地点 */}
                       <div className="flex items-center gap-1.5 text-[11px] text-white/80 mb-0.5">
-                        <span>{fmt(event.date)}</span>
+                        <span>{fmtRange(event.date, event.endDate)}</span>
                         {event.location && (
                           <span className="inline-flex items-center gap-0.5 bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full text-[10px] text-white/95 border border-white/15">
                             <PinIcon className="w-2.5 h-2.5" />

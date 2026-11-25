@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Event, AppData } from '../lib/types';
+import { resolveEventPlace } from '../lib/place';
 import { EventDraft } from '../components/EventModal';
 import { apiFetch } from '../app/lib/api-client';
 import type { MutateOptions } from './useAppData';
@@ -27,7 +28,7 @@ export function useEventCRUD(
   const [eventDetailId, setEventDetailId] = useState<string | null>(null);
   const [eventModal, setEventModal] = useState(false);
   const [editEvent, setEditEvent] = useState<Event | null>(null);
-  const [eventDraft, setEventDraft] = useState<EventDraft>({ date: new Date().toISOString().split('T')[0], title: '', desc: '', icon: 'heart', location: '', mood: '' });
+  const [eventDraft, setEventDraft] = useState<EventDraft>({ date: new Date().toISOString().split('T')[0], endDate: '', title: '', desc: '', icon: 'heart', location: '', city: '', mood: '' });
 
   const selectedEvent = data.events.find(e => String(e.id) === selectedEventId) || null;
   const detailEvent = data.events.find(e => String(e.id) === eventDetailId) || null;
@@ -36,13 +37,23 @@ export function useEventCRUD(
 
   function openEventCreate() {
     setEditEvent(null);
-    setEventDraft({ date: new Date().toISOString().split('T')[0], title: '', desc: '', icon: 'heart', location: '', mood: '' });
+    setEventDraft({ date: new Date().toISOString().split('T')[0], endDate: '', title: '', desc: '', icon: 'heart', location: '', city: '', mood: '' });
     setEventModal(true);
   }
 
   function openEventEdit(ev: Event) {
     setEditEvent(ev);
-    setEventDraft({ date: ev.date, title: ev.title, desc: ev.desc, icon: ev.icon, location: ev.location, mood: ev.mood });
+    const resolved = resolveEventPlace(ev);
+    setEventDraft({
+      date: ev.date,
+      endDate: ev.endDate || '',
+      title: ev.title,
+      desc: ev.desc,
+      icon: ev.icon,
+      location: ev.location,
+      city: ev.city !== undefined ? ev.city : (resolved?.city || ''),
+      mood: ev.mood
+    });
     setEventModal(true);
   }
 

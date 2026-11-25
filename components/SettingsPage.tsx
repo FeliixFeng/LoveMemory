@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import type { SettingsPatch } from '../app/lib/schemas';
 import { HERO_SLIDES, type HeroSlide } from '../lib/constants';
+import { resolveCity, resolvePlace } from '../lib/place';
 import { useAuth } from './SiteLayoutClient';
 import { useAppData } from '../hooks/useAppData';
 import { fmt } from '../lib/utils';
@@ -31,16 +32,31 @@ export function SettingsPage() {
     data.coupleNames?.[0] || '',
     data.coupleNames?.[1] || ''
   ]);
+  const [homeCityDraft, setHomeCityDraft] = useState<string>(data.homeCity || '');
 
   useEffect(() => {
     setNamesDraft([data.coupleNames?.[0] || '', data.coupleNames?.[1] || '']);
   }, [data.coupleNames]);
+
+  useEffect(() => {
+    setHomeCityDraft(data.homeCity || '');
+  }, [data.homeCity]);
 
   function handleNameBlur() {
     const trimmed = [namesDraft[0]?.trim() || '', namesDraft[1]?.trim() || ''].filter(Boolean);
     const original = (data.coupleNames || []).filter(Boolean);
     if (JSON.stringify(trimmed) !== JSON.stringify(original)) {
       withAuth(() => void save({ coupleNames: trimmed }, '已保存'));
+    }
+  }
+
+  function handleHomeCityBlur() {
+    const raw = homeCityDraft.trim();
+    const resolved = raw ? (resolveCity(raw) || resolvePlace(raw)) : null;
+    const normalized = resolved ? resolved.city : raw;
+    setHomeCityDraft(normalized);
+    if (normalized !== (data.homeCity || '')) {
+      withAuth(() => void save({ homeCity: normalized }, normalized ? `已设常驻城市：${normalized}` : '已清除常驻城市'));
     }
   }
 
@@ -131,6 +147,47 @@ export function SettingsPage() {
               onChange={e => withAuth(() => void save({ startDate: e.target.value }, '已保存'))}
               className="w-full bg-white border border-lm-line/60 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-lm-accent transition-colors"
             />
+          </div>
+
+          <div className="lm-card rounded-2xl p-5 space-y-3 md:col-span-2">
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 className="text-sm font-bold text-lm-ink font-serif-cn">常驻城市</h2>
+              <span className="text-[10px] text-lm-body/45">区分同城日常与远方旅行（如：武汉）</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={homeCityDraft}
+                onChange={e => setHomeCityDraft(e.target.value)}
+                onBlur={handleHomeCityBlur}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleHomeCityBlur();
+                }}
+                placeholder="输入你们生活的大本营城市，如 武汉"
+                maxLength={30}
+                className="flex-1 bg-white border border-lm-line/60 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-lm-accent transition-colors"
+              />
+              {homeCityDraft && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHomeCityDraft('');
+                    if (data.homeCity) withAuth(() => void save({ homeCity: '' }, '已清除'));
+                  }}
+                  className="px-3 py-2.5 rounded-xl bg-lm-line/30 text-xs text-lm-body/60 hover:text-lm-ink transition-colors"
+                >
+                  清除
+                </button>
+              )}
+            </div>
+            {homeCityDraft.trim() && (() => {
+              const hit = resolveCity(homeCityDraft) || resolvePlace(homeCityDraft);
+              return (
+                <p className="text-[11px] text-lm-body/50">
+                  {hit ? `📍 已识别：${hit.city} · ${hit.province}（足迹地图将标为大本营）` : '未匹配到内置城市坐标，将按原文本匹配'}
+                </p>
+              );
+            })()}
           </div>
         </div>
       )}

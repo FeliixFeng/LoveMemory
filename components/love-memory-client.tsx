@@ -187,6 +187,7 @@ export function LoveMemoryClient() {
       {events.eventModal && (
         <EventModal
           editEvent={events.editEvent} draft={events.eventDraft} setDraft={events.setEventDraft}
+          homeCity={data.homeCity}
           onSave={() => void events.saveEvent()}
           onDelete={() => setConfirm({ title: '确认删除事件', message: '事件会删除，账单会一起删掉；照片会保留在相册的「其他照片」里，不会丢失。确定吗？', onConfirm: () => { void events.deleteEvent(); setConfirm(null); } })}
           onClose={() => events.setEventModal(false)}

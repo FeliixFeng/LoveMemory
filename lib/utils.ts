@@ -14,6 +14,25 @@ export function fmt(d: string): string {
   });
 }
 
+export function calcTripDays(date: string, endDate?: string): number {
+  if (!date || !endDate || endDate <= date) return 1;
+  const start = new Date(`${date}T00:00:00`).getTime();
+  const end = new Date(`${endDate}T00:00:00`).getTime();
+  return Math.max(1, Math.round((end - start) / 86400000) + 1);
+}
+
+export function fmtRange(date: string, endDate?: string): string {
+  if (!date) return '--';
+  if (!endDate || endDate <= date) return fmt(date);
+  const s = new Date(`${date}T00:00:00`);
+  const e = new Date(`${endDate}T00:00:00`);
+  const sameYear = s.getFullYear() === e.getFullYear();
+  const endStr = sameYear
+    ? e.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })
+    : fmt(endDate);
+  return `${fmt(date)} - ${endStr}`;
+}
+
 export function formatCurrency(amount: number): string {
   return `¥${amount.toFixed(2)}`;
 }

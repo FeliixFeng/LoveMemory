@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Event } from '../lib/types';
 import { ICONS, MOODS } from '../lib/constants';
-import { resolvePlace } from '../lib/place';
+import { ALL_CITIES, resolveCity, resolvePlace } from '../lib/place';
+import { calcTripDays } from '../lib/utils';
 import { Overlay } from './ui/Overlay';
 import { PinIcon } from './NavIcons';
 import { EventBadge } from './EventBadge';
@@ -12,25 +13,56 @@ import { SectionLabel } from './SectionLabel';
 export type EventDraft = {
   title: string;
   date: string;
+  endDate: string;
   desc: string;
   icon: string;
   location: string;
+  city: string;
   mood: string;
 };
 
 export function EventModal({
-  editEvent, draft, setDraft, onSave, onDelete, onClose
+  editEvent, draft, setDraft, homeCity = '', onSave, onDelete, onClose
 }: {
   editEvent: Event | null;
   draft: EventDraft;
   setDraft: (fn: (d: EventDraft) => EventDraft) => void;
+  homeCity?: string;
   onSave: () => void;
   onDelete: () => void;
   onClose: () => void;
 }) {
-  const resolved = resolvePlace(draft.location);
+  const resolvedCity = resolveCity(draft.city);
   const [iconOpen, setIconOpen] = useState(false);
+  const [cityPickerOpen, setCityPickerOpen] = useState(false);
+  const [cityQuery, setCityQuery] = useState('');
+  const [cityManual, setCityManual] = useState(Boolean(editEvent));
+  const [showEndDate, setShowEndDate] = useState(Boolean(draft.endDate));
+
+  useEffect(() => {
+    setCityManual(Boolean(editEvent));
+    setShowEndDate(Boolean(editEvent?.endDate));
+    setCityPickerOpen(false);
+    setCityQuery('');
+  }, [editEvent?.id]);
+
   const currentIcon = ICONS.find(i => i.id === draft.icon) || ICONS[0];
+  const tripDays = calcTripDays(draft.date, draft.endDate);
+
+  const filteredCities = useMemo(() => {
+    const q = cityQuery.trim().toLowerCase();
+    if (!q) return ALL_CITIES.slice(0, 24);
+    return ALL_CITIES.filter(
+      item => item.city.toLowerCase().includes(q) || item.province.toLowerCase().includes(q)
+    ).slice(0, 32);
+  }, [cityQuery]);
+
+  function selectCity(cityName: string) {
+    setCityManual(true);
+    setDraft(d => ({ ...d, city: cityName }));
+    setCityPickerOpen(false);
+    setCityQuery('');
+  }
 
   return (
     <Overlay
@@ -137,19 +169,62 @@ export function EventModal({
             </div>
           )}
 
-          {/* 日期 · 地点 —— 点线信息行（桌面并排，移动两行） */}
-          <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:gap-5 gap-2">
-            <div className="flex items-center gap-2.5 flex-1 min-w-0">
+          {/* 日期（含可选跨天开关）与地点 —— 清晰点线行 */}
+          <div className="mt-4 space-y-2">
+            <div className="flex items-center gap-2.5 min-w-0">
               <span className="text-[9px] tracking-[0.25em] uppercase text-lm-accent shrink-0">Date</span>
               <span aria-hidden className="flex-1 border-b border-dotted border-lm-line/80 mb-[3px]" />
-              <input
-                type="date"
-                value={draft.date}
-                onChange={e => setDraft(d => ({ ...d, date: e.target.value }))}
-                className="shrink-0 bg-transparent text-[11px] text-lm-body/80 outline-none tabular-nums"
-              />
+              <div className="flex items-center gap-1.5 shrink-0">
+                <input
+                  type="date"
+                  value={draft.date}
+                  onChange={e => setDraft(d => ({
+                    ...d,
+                    date: e.target.value,
+                    endDate: d.endDate && e.target.value > d.endDate ? '' : d.endDate
+                  }))}
+                  className="bg-transparent text-[11px] text-lm-body/80 outline-none tabular-nums"
+                />
+                {showEndDate ? (
+                  <>
+                    <span className="text-[10px] text-lm-body/40">至</span>
+                    <input
+                      type="date"
+                      min={draft.date}
+                      value={draft.endDate}
+                      onChange={e => setDraft(d => ({ ...d, endDate: e.target.value }))}
+                      className="bg-transparent text-[11px] text-lm-body/80 outline-none tabular-nums"
+                    />
+                    {tripDays > 1 && (
+                      <span className="px-1.5 py-0.5 rounded-full bg-lm-accent/15 text-lm-accent-deep text-[9.5px] font-medium">
+                        {tripDays}天
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowEndDate(false);
+                        setDraft(d => ({ ...d, endDate: '' }));
+                      }}
+                      title="切换为单日事件"
+                      className="text-[10px] text-lm-body/40 hover:text-lm-ink px-1"
+                    >
+                      ×
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowEndDate(true)}
+                    className="px-1.5 py-0.5 rounded-full bg-white/70 border border-lm-line/60 text-[9.5px] text-lm-body/55 hover:text-lm-accent-deep hover:border-lm-accent/40 transition-colors"
+                  >
+                    + 跨天
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-2.5 flex-1 min-w-0">
+
+            <div className="flex items-center gap-2.5 min-w-0">
               <span className="inline-flex items-center gap-1 text-[9px] tracking-[0.25em] uppercase text-lm-accent shrink-0">
                 <PinIcon className="w-3 h-3" />
                 Place
@@ -157,29 +232,123 @@ export function EventModal({
               <span aria-hidden className="flex-1 border-b border-dotted border-lm-line/80 mb-[3px]" />
               <input
                 type="text"
-                placeholder="在哪里发生的…"
+                placeholder="具体地名（餐厅 / 景点 / 家里…）"
                 value={draft.location}
-                onChange={e => setDraft(d => ({ ...d, location: e.target.value }))}
-                className="w-[130px] shrink-0 text-right bg-transparent text-[11px] text-lm-body/80 outline-none placeholder:text-lm-body/30"
+                onChange={e => {
+                  const nextLoc = e.target.value;
+                  if (cityManual) {
+                    setDraft(d => ({ ...d, location: nextLoc }));
+                  } else {
+                    const guessed = resolvePlace(nextLoc)?.city || '';
+                    setDraft(d => ({ ...d, location: nextLoc, city: guessed }));
+                  }
+                }}
+                className="w-[180px] sm:w-[220px] shrink-0 text-right bg-transparent text-[11px] text-lm-body/80 outline-none placeholder:text-lm-body/30"
               />
             </div>
           </div>
-          {/* 地点提示 —— 高度常驻预留，输入城市时不再把卡片撑大（2026-11-09 用户反馈） */}
-          <div className="mt-1.5 h-4 flex items-center gap-2 text-[10px] overflow-hidden">
-            {draft.location.trim() && (
-              resolved ? (
-                <>
-                  <span className="text-lm-accent-deep/70 inline-flex items-center gap-1 whitespace-nowrap">
-                    <PinIcon className="w-3 h-3" />
-                    {resolved.city} · {resolved.province}
-                  </span>
-                  <span className="text-lm-body/30 whitespace-nowrap">会出现在足迹地图</span>
-                </>
-              ) : (
-                <span className="text-lm-body/35 whitespace-nowrap">识别不出城市，这条不会上地图</span>
-              )
+
+          {/* 城市归属提示与快捷切换 —— 固定高度不撑开卡片 */}
+          <div className="mt-1.5 h-5 flex items-center justify-between gap-2 text-[10px] overflow-hidden">
+            {resolvedCity ? (
+              <>
+                <span className="text-lm-accent-deep/80 inline-flex items-center gap-1 whitespace-nowrap truncate">
+                  <PinIcon className="w-3 h-3 shrink-0" />
+                  <span>地图定位：{resolvedCity.city} · {resolvedCity.province}</span>
+                  {homeCity && resolvedCity.city === homeCity && (
+                    <span className="text-lm-body/45">(常驻)</span>
+                  )}
+                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setCityPickerOpen(o => !o)}
+                    className="text-lm-accent hover:underline"
+                  >
+                    更改
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => selectCity('')}
+                    className="text-lm-body/45 hover:text-lm-ink"
+                  >
+                    设为日常
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <span className="text-lm-body/40 whitespace-nowrap truncate">
+                  {draft.location.trim() ? '日常记忆（不上中国地图）' : '填地名可自动定位城市，或手动指定'}
+                </span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {homeCity && (
+                    <button
+                      type="button"
+                      onClick={() => selectCity(homeCity)}
+                      className="px-1.5 py-0.5 rounded-full bg-lm-accent/10 text-lm-accent-deep hover:bg-lm-accent/20 transition-colors"
+                    >
+                      设为{homeCity}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setCityPickerOpen(o => !o)}
+                    className="px-1.5 py-0.5 rounded-full bg-white/70 border border-lm-line/60 text-lm-body/65 hover:text-lm-accent-deep transition-colors"
+                  >
+                    {cityPickerOpen ? '收起' : '选城市'}
+                  </button>
+                </div>
+              </>
             )}
           </div>
+
+          {/* 轻量城市选择器 —— 仅在点击「选城市 / 更改」时展开 */}
+          {cityPickerOpen && (
+            <div className="mt-2 p-3 rounded-2xl bg-white/70 border border-lm-line/60 space-y-2.5 animate-[fadeIn_0.18s_ease-out]">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={cityQuery}
+                  onChange={e => setCityQuery(e.target.value)}
+                  placeholder="搜城市或省份，如 武汉、黄冈、四川…"
+                  className="flex-1 bg-white border border-lm-line/50 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:border-lm-accent"
+                />
+                <button
+                  type="button"
+                  onClick={() => selectCity('')}
+                  className="shrink-0 px-2.5 py-1.5 rounded-xl bg-lm-line/30 text-[11px] text-lm-body/70 hover:bg-lm-line/50"
+                >
+                  不上地图
+                </button>
+              </div>
+              <div className="max-h-32 overflow-y-auto grid grid-cols-3 sm:grid-cols-4 gap-1.5 pr-1">
+                {filteredCities.map(item => {
+                  const active = draft.city === item.city;
+                  return (
+                    <button
+                      key={item.city}
+                      type="button"
+                      onClick={() => selectCity(item.city)}
+                      className={`px-2 py-1.5 rounded-lg text-left transition-all border ${
+                        active
+                          ? 'bg-lm-accent/15 border-lm-accent/50 text-lm-accent-deep font-medium'
+                          : 'bg-white/80 border-transparent hover:border-lm-line text-lm-ink'
+                      }`}
+                    >
+                      <div className="text-[11px] truncate">{item.city}</div>
+                      <div className="text-[9px] text-lm-body/40 truncate">{item.province}</div>
+                    </button>
+                  );
+                })}
+                {filteredCities.length === 0 && (
+                  <p className="col-span-full text-center text-[11px] text-lm-body/40 py-2">
+                    没找到匹配城市，可直接搜索所属地级市
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* 描述 —— 引文样式，落笔感 */}
           <div className="mt-5">

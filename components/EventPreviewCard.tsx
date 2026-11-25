@@ -2,7 +2,7 @@
 
 import { memo, useRef } from 'react';
 import { Event, Photo, Expense } from '../lib/types';
-import { getEmoji, fmt, formatCurrency, calcTotalExpenses, getMoodEmoji } from '../lib/utils';
+import { getEmoji, fmtRange, formatCurrency, calcTotalExpenses, getMoodEmoji } from '../lib/utils';
 import { SafeImage } from './SafeImage';
 import { EventBadge } from './EventBadge';
 import { CameraIcon, PinIcon } from './NavIcons';
@@ -146,7 +146,7 @@ export const EventPreviewCard = memo(function EventPreviewCard({
             <div className="flex items-center gap-2 shrink-0">
               {/* 移动端：日期 + 地点 */}
               <div className="flex items-center gap-1.5 min-w-0 text-[11px] text-lm-body/55 md:hidden">
-                <span className="shrink-0 tabular-nums">{fmt(event.date)}</span>
+                <span className="shrink-0 tabular-nums">{fmtRange(event.date, event.endDate)}</span>
                 {event.location && (
                   <>
                     <span className="text-lm-body/25">·</span>
@@ -207,7 +207,7 @@ export const EventPreviewCard = memo(function EventPreviewCard({
                 只列有值的行——空值行（破折号）会让首页读起来像未填完的表单 */}
             <dl className="hidden md:flex flex-col gap-[7px] mt-auto pt-3 border-t border-lm-line/60">
               {[
-                { k: 'Date', v: fmt(event.date) },
+                { k: 'Date', v: fmtRange(event.date, event.endDate) },
                 ...(event.location ? [{ k: 'Place', v: event.location }] : []),
                 { k: 'Photos', v: `${n} 张` },
                 ...(total > 0 ? [{ k: 'Spent', v: formatCurrency(total) }] : [])

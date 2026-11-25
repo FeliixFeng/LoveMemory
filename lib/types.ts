@@ -2,9 +2,11 @@ export type Event = {
   id: number | string;
   title: string;
   date: string;
+  endDate?: string;
   desc: string;
   icon: string;
   location: string;
+  city?: string;
   mood: string;
   coverPhoto: string;
   sortOrder?: number;
@@ -72,6 +74,8 @@ export type AppData = {
   hiddenDefaultCovers: string[];
   /* 双方名字（1-2 个，留空则 UI 回退 OUR STORY） */
   coupleNames: string[];
+  /* 常驻城市（大本营，例如「武汉」；用来区分日常同城与远方旅行） */
+  homeCity: string;
   events: Event[];
   photos: Photo[];
   expenses: Expense[];

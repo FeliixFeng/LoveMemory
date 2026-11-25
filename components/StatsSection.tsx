@@ -72,7 +72,7 @@ export const StatsSection = memo(function StatsSection({
   const totalExpenses = calcTotalExpenses(expenses);
   /* 与足迹页同一口径：能定位的归到城市（「武汉 江汉路」并入「武汉」），
      定位不了的保留原文（家里、某个山头也算一个地方） */
-  const places = collectPlaces(events.map(e => e.location));
+  const places = collectPlaces(events);
 
   const hasSpent = totalExpenses > 0;
 

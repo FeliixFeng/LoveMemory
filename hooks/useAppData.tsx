@@ -7,7 +7,7 @@ import { apiFetch, ApiError } from '../app/lib/api-client';
 import type { SettingsPatch } from '../app/lib/schemas';
 
 const EMPTY_DATA: AppData = {
-  startDate: '', heroImage: '', customCovers: [], hiddenDefaultCovers: [], coupleNames: [],
+  startDate: '', heroImage: '', customCovers: [], hiddenDefaultCovers: [], coupleNames: [], homeCity: '',
   events: [], photos: [], expenses: [], loveQuotes: [], countdowns: [], wishes: [], capsules: []
 };
 
@@ -19,7 +19,7 @@ function normalizeAppData(d: Partial<AppData>): AppData {
     photos: (d.photos || []).map((p: Photo) => ({ ...p, displayUrl: p.displayUrl || p.url, thumbUrl: p.thumbUrl || p.displayUrl || p.url })),
     expenses: d.expenses || [], loveQuotes: d.loveQuotes || [],
     customCovers: d.customCovers || [], hiddenDefaultCovers: d.hiddenDefaultCovers || [],
-    coupleNames: d.coupleNames || [],
+    coupleNames: d.coupleNames || [], homeCity: d.homeCity || '',
     countdowns: d.countdowns || [], wishes: d.wishes || [], capsules: d.capsules || []
   };
 }

@@ -15,6 +15,7 @@ model Settings {
   hiddenDefaultCovers String    @map("hidden_default_covers")
   countdowns          String
   coupleNames         String    @default("[]") @map("couple_names")
+  homeCity            String    @default("") @map("home_city")
   updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at")
 
   @@map("settings")
@@ -24,9 +25,11 @@ model Event {
   id          String   @id
   title       String
   date        String
+  endDate     String   @default("") @map("end_date")
   description String
   icon        String   @default("heart")
   location    String   @default("")
+  city        String   @default("")
   mood        String   @default("")
   coverPhoto  String   @default("") @map("cover_photo")
   sortOrder   Int      @default(0) @map("sort_order")

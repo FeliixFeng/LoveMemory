@@ -2,6 +2,7 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma.ts';
 import type { Event, Photo, Expense, LoveQuote, Wish, Capsule, AppData } from '../../lib/types.ts';
 import type { SettingsPatch } from './schemas.ts';
+import { resolvePlace } from '../../lib/place.ts';
 
 export type { AppData };
 
@@ -11,6 +12,7 @@ export const DEFAULT_APP_DATA: AppData = {
   customCovers: [],
   hiddenDefaultCovers: [],
   coupleNames: [],
+  homeCity: '',
   events: [],
   photos: [],
   expenses: [],
@@ -69,9 +71,11 @@ function toEvent(item: EventWithRelations): Event {
     id: item.id,
     title: item.title,
     date: item.date,
+    endDate: item.endDate || '',
     desc: item.description,
     icon: item.icon,
     location: item.location || '',
+    city: item.city || '',
     mood: item.mood || '',
     coverPhoto: item.coverPhoto || '',
     wishId: item.wishId ?? null,
@@ -170,6 +174,7 @@ export async function readAppData(): Promise<AppData> {
     customCovers: parseJsonArray(settings?.customCovers, []),
     hiddenDefaultCovers: parseJsonArray(settings?.hiddenDefaultCovers, []),
     coupleNames: parseJsonArray(settings?.coupleNames, []),
+    homeCity: settings?.homeCity || '',
     countdowns: parseJsonArray(settings?.countdowns, []),
     events: events.map(toEvent),
     photos: allPhotos,
@@ -189,6 +194,7 @@ export async function writeSettings(patch: SettingsPatch): Promise<void> {
   if (patch.customCovers !== undefined) settingsData.customCovers = JSON.stringify(patch.customCovers);
   if (patch.hiddenDefaultCovers !== undefined) settingsData.hiddenDefaultCovers = JSON.stringify(patch.hiddenDefaultCovers);
   if (patch.coupleNames !== undefined) settingsData.coupleNames = JSON.stringify(patch.coupleNames);
+  if (patch.homeCity !== undefined) settingsData.homeCity = patch.homeCity;
   if (patch.countdowns !== undefined) settingsData.countdowns = JSON.stringify(patch.countdowns);
 
   const hasSettingsPatch = Object.keys(settingsData).length > 0;
@@ -205,6 +211,7 @@ export async function writeSettings(patch: SettingsPatch): Promise<void> {
           customCovers: JSON.stringify(patch.customCovers || []),
           hiddenDefaultCovers: JSON.stringify(patch.hiddenDefaultCovers || []),
           coupleNames: JSON.stringify(patch.coupleNames || []),
+          homeCity: patch.homeCity || '',
           countdowns: JSON.stringify(patch.countdowns || [])
         },
         update: settingsData
@@ -267,11 +274,13 @@ export async function deletePhoto(url: string): Promise<void> {
 
 export async function createEvent(event: Partial<Event> & { id: string }): Promise<Event> {
   const count = await prisma.event.count();
+  const city = event.city !== undefined ? event.city : (resolvePlace(event.location || '')?.city || '');
 
   await prisma.event.create({
     data: {
-      id: event.id, title: event.title || '', date: event.date || '', description: event.desc || '',
-      icon: event.icon || 'heart', location: event.location || '', mood: event.mood || '',
+      id: event.id, title: event.title || '', date: event.date || '', endDate: event.endDate || '',
+      description: event.desc || '', icon: event.icon || 'heart',
+      location: event.location || '', city, mood: event.mood || '',
       coverPhoto: event.coverPhoto || '', sortOrder: event.sortOrder ?? count,
       wishId: event.wishId ?? null,
       capsuleId: event.capsuleId ?? null
@@ -279,8 +288,9 @@ export async function createEvent(event: Partial<Event> & { id: string }): Promi
   });
 
   return {
-    id: event.id, title: event.title || '', date: event.date || '', desc: event.desc || '',
-    icon: event.icon || 'heart', location: event.location || '', mood: event.mood || '',
+    id: event.id, title: event.title || '', date: event.date || '', endDate: event.endDate || '',
+    desc: event.desc || '', icon: event.icon || 'heart',
+    location: event.location || '', city, mood: event.mood || '',
     coverPhoto: event.coverPhoto || '',
     wishId: event.wishId ?? null,
     capsuleId: event.capsuleId ?? null
@@ -293,9 +303,11 @@ export async function updateEvent(id: string, data: Partial<Event>): Promise<voi
     data: {
       ...(data.title !== undefined && { title: data.title }),
       ...(data.date !== undefined && { date: data.date }),
+      ...(data.endDate !== undefined && { endDate: data.endDate }),
       ...(data.desc !== undefined && { description: data.desc }),
       ...(data.icon !== undefined && { icon: data.icon }),
       ...(data.location !== undefined && { location: data.location }),
+      ...(data.city !== undefined && { city: data.city }),
       ...(data.mood !== undefined && { mood: data.mood }),
       ...(data.coverPhoto !== undefined && { coverPhoto: data.coverPhoto })
     }

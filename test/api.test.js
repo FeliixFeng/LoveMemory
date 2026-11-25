@@ -471,3 +471,76 @@ test('capsules resource: create/update/delete round-trip', async () => {
     await ctx.cleanup();
   }
 });
+
+test('events endDate/city & settings homeCity round-trip', async () => {
+  const ctx = await createTestContext();
+
+  try {
+    const patchRes = await ctx.dataRoute.POST(
+      new Request('http://localhost/api/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ homeCity: '武汉' })
+      })
+    );
+    assert.equal(patchRes.status, 200);
+    const patchBody = await patchRes.json();
+    assert.equal(patchBody.data.homeCity, '武汉');
+
+    // 自动根据地标推断城市
+    const tripRes = await eventsRoute.POST(
+      new Request('http://localhost/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: 'evt-trip-1',
+          title: '迪士尼跨天行',
+          date: '2026-05-01',
+          endDate: '2026-05-03',
+          location: '迪士尼乐园'
+        })
+      })
+    );
+    assert.equal(tripRes.status, 200);
+    const tripBody = await tripRes.json();
+    assert.equal(tripBody.event.endDate, '2026-05-03');
+    assert.equal(tripBody.event.city, '上海');
+
+    // 显式置空 city（设为日常不上图），不应被自动猜回来
+    const dailyRes = await eventsRoute.POST(
+      new Request('http://localhost/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: 'evt-daily-1',
+          title: '楼下吃饭',
+          date: '2026-05-05',
+          location: '武汉某个馆子',
+          city: ''
+        })
+      })
+    );
+    assert.equal(dailyRes.status, 200);
+    const dailyBody = await dailyRes.json();
+    assert.equal(dailyBody.event.city, '');
+  } finally {
+    await ctx.cleanup();
+  }
+});
+
+test('place resolution handles aliases, placeholders, and explicit city override', async () => {
+  const placeMod = await import(new URL(`../lib/place.ts?${salt}`, import.meta.url).href);
+  assert.equal(placeMod.resolvePlace('东坡赤壁')?.city, '黄冈');
+  assert.equal(placeMod.resolvePlace('迪士尼')?.city, '上海');
+  assert.equal(placeMod.resolvePlace('待定'), null);
+  assert.equal(placeMod.resolveEventPlace({ location: '武汉永旺', city: '' }), null);
+  assert.equal(placeMod.resolveEventPlace({ location: '某冷门小镇', city: '黄冈' })?.city, '黄冈');
+  assert.deepEqual(
+    placeMod.collectPlaces([
+      { location: '武汉永旺', city: '武汉' },
+      { location: '家里', city: '' },
+      { location: '待定', city: '' }
+    ]),
+    ['武汉', '家里']
+  );
+});

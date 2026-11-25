@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Event, Photo, Expense } from '../lib/types';
-import { getEmoji, fmt, formatCurrency, calcTotalExpenses, getMoodEmoji } from '../lib/utils';
+import { getEmoji, fmtRange, formatCurrency, calcTotalExpenses, getMoodEmoji } from '../lib/utils';
 import { EXPENSE_CATEGORIES } from '../lib/constants';
 import { ExpenseItem } from './ExpenseItem';
 import { SafeImage } from './SafeImage';
@@ -103,7 +103,7 @@ export function EventDetail({
                   {event.title || '未命名事件'}
                 </h2>
                 <div className="flex items-center gap-1.5 mt-1 text-[11px] text-lm-body/50 min-w-0">
-                  <span className="shrink-0 tabular-nums">{fmt(event.date)}</span>
+                  <span className="shrink-0 tabular-nums">{fmtRange(event.date, event.endDate)}</span>
                   {event.location && (
                     <>
                       <span className="text-lm-body/25">·</span>
