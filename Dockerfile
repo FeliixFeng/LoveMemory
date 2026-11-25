@@ -13,6 +13,8 @@ ENV DATABASE_URL=file:/app/db/data.sqlite
 # binaries.prisma.sh 国内拉不动（2026-10-30 部署时 schema 变更导致缓存失效暴露），走 npmmirror 镜像
 ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
 RUN npx prisma generate
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_OPTIONS="--max-old-space-size=640"
 RUN npm run build
 
 # Stage 3: Production runtime

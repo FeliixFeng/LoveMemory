@@ -163,7 +163,7 @@ ssh ali1 'curl -fsS --retry 10 --retry-delay 3 http://127.0.0.1:3000/api/health'
 curl -fsS https://lovexin.felixfeng.online/api/health
 ```
 
-> **schema 变更清单（2026-10-23）**：`events` 加了 `wish_id` / `capsule_id` 两列和唯一索引，由 `scripts/migrate.py` 负责。**跳过这一步，新代码一查事件就 500**（Prisma 会 select 不存在的列）。本地用 `prisma db push` 即可；服务器上没有 prisma CLI，且容器是 Node 20（无 `node:sqlite`），所以用宿主机的 python3 直连 `/data/app/love-memory/data/data.sqlite`。
+> **schema 变更清单**：`events` 的 `wish_id` / `capsule_id`、`end_date`、`city`，以及 `settings` 的 `couple_names`、`home_city`，均由 `scripts/migrate.py` 幂等负责。**跳过这一步，新代码一查对应字段就 500**（Prisma 会 select 不存在的列）。服务器上没有 prisma CLI，且容器是 Node 20（无 `node:sqlite`），所以用宿主机的 python3 直连 `/data/app/love-memory/data/data.sqlite`。
 
 > **APP_SECRET（2026-10-20 新增）**：token 签名密钥已从 PIN 独立出来。rsync 不传 `.env.production`，所以**首次部署这批代码前**要手动给服务器补一行（随机长字符串，只执行这一次）：
 > `ssh ali1 'echo "APP_SECRET=$(openssl rand -hex 32)" >> /data/app/love-memory/.env.production'`
@@ -260,6 +260,15 @@ ssh -o ControlPath=none ali1 'uptime'      # 绕过复用，强制新建连接
 - 前两次失败的真正组合是「**全量构建 + 中途中断 + 中断后反复探测**」，三条凑齐才炸
 - **保留缓存 = 增量构建 = 写盘量小一个数量级**。这是保护这台机器最有效的一招，所以「顺便清个缓存」是反效果
 - 构建**绝不能依赖 ssh 会话存活**。`setsid nohup` + 日志文件是硬要求，不是优化
+
+### 2026-11-25 补充课：未限流构建写爆 Swap（即使保留缓存也会踩）
+
+2026-11-25 部署虽然完整保留了缓存且未中断，但因为修改了 `prisma/schema.prisma` 触发层失效 + ECharts 重编译，当时可用内存仅 **809Mi**，`next build` 默认多进程无上限吃内存并写爆 2G Swap，把 44 秒的编译拖成 **17 分钟** 并再度打爆云盘 IOPS。
+
+**永久硬预防措施（已固化到代码仓库）：**
+1. `Dockerfile` 的 builder 阶段强制加上 `NODE_OPTIONS="--max-old-space-size=640"` 与 `NEXT_TELEMETRY_DISABLED=1`；
+2. `next.config.mjs` 开启 `experimental: { cpus: 1, webpackMemoryOptimizations: true, webpackBuildWorker: true }`，压低构建期峰值内存；
+3. 构建前若 `free -h` 可用内存不足 1G，先 `docker stop freellmapi`（不动 `frps`），等 `love-memory` 重建完成后再 `docker start freellmapi`。
 
 ### 新坑：控制台重启卡在「停止中」
 

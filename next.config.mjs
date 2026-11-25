@@ -1,6 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  experimental: {
+    // 针对 2核2G 部署机限制并发与 Webpack 峰值内存，防止编译阶段写爆 Swap
+    cpus: 1,
+    webpackMemoryOptimizations: true,
+    webpackBuildWorker: true,
+  },
   images: {
     remotePatterns: [
       {
