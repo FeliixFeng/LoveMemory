@@ -1,0 +1,195 @@
+name: Verify & Deploy to Server
+
+on:
+  push:
+    branches: ["main"]
+    paths-ignore:
+      - "docs/**"
+      - "*.md"
+      - ".gitignore"
+  workflow_dispatch:
+
+# 绝不允许同一时间跑两轮构建，也不允许中途取消正在构建的任务（防止 2核2G 打爆 IOPS）
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Typecheck & Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm test
+
+  deploy:
+    name: Backup, Sync & Safe Build on ali1
+    needs: verify
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure SSH client
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+        run: |
+          set -euo pipefail
+          PORT="${SERVER_PORT:-22}"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          umask 077
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "$PORT" -H "$SERVER_IP" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+          {
+            echo "Host deploy-target"
+            echo "  HostName $SERVER_IP"
+            echo "  User ${{ secrets.SERVER_USER }}"
+            echo "  Port $PORT"
+            echo "  IdentityFile ~/.ssh/deploy_key"
+            echo "  IdentitiesOnly yes"
+            echo "  ConnectTimeout 15"
+            echo "  ServerAliveInterval 30"
+            echo "  ServerAliveCountMax 6"
+          } > ~/.ssh/config
+          chmod 600 ~/.ssh/config
+
+      - name: Pre-flight resource check & backup on ali1
+        run: |
+          ssh deploy-target 'bash -s' <<'EOF'
+          set -euo pipefail
+
+          AVAIL_MB=$(df -Pm / | awk 'NR==2 {print $4}')
+          AVAIL_MEM_MB=$(free -m | awk '/^Mem:/ {print $7}')
+          echo "Disk available: ${AVAIL_MB}MB, Memory available: ${AVAIL_MEM_MB}MB"
+          df -h /
+          free -h
+
+          if [ "$AVAIL_MB" -lt 3072 ]; then
+            echo "Insufficient disk space (<3072MB), aborting deploy"
+            exit 1
+          fi
+          if [ "$AVAIL_MEM_MB" -lt 300 ]; then
+            echo "Insufficient available memory (<300MB), aborting deploy"
+            exit 1
+          fi
+
+          TS=$(date +%Y%m%d-%H%M%S)
+          mkdir -p /data/backups
+          cd /data/app/love-memory
+          tar czf "/data/backups/lm-src-${TS}.tar.gz" --exclude=node_modules --exclude=.next --exclude=data --exclude=public/uploads .
+          tar czf "/data/backups/lm-data-${TS}.tar.gz" data
+          tar czf "/data/backups/lm-uploads-${TS}.tar.gz" public/uploads
+          if docker image inspect love-memory-app:latest >/dev/null 2>&1; then
+            docker tag love-memory-app:latest "love-memory-app:rollback-${TS}"
+          fi
+
+          # 保留最近 5 份压缩备份与最近 3 个回滚镜像标签
+          ls -1t /data/backups/lm-src-*.tar.gz 2>/dev/null | tail -n +6 | xargs -r rm -f
+          ls -1t /data/backups/lm-data-*.tar.gz 2>/dev/null | tail -n +6 | xargs -r rm -f
+          ls -1t /data/backups/lm-uploads-*.tar.gz 2>/dev/null | tail -n +6 | xargs -r rm -f
+          docker images --format '{{.Repository}}:{{.Tag}}' love-memory-app | grep ':rollback-' | sort -r | tail -n +4 | xargs -r docker rmi || true
+
+          echo "Backup complete: ${TS}"
+          EOF
+
+      - name: Sync repository to server (dry-run then apply)
+        run: |
+          set -euo pipefail
+          RSYNC_OPTS=(
+            --rsync-path="sudo -u user rsync"
+            --exclude '.git'
+            --exclude '.github'
+            --exclude '.next'
+            --exclude 'node_modules'
+            --exclude '/data'
+            --exclude 'public/uploads'
+            --exclude '.env.local'
+            --exclude '.env.production'
+            --exclude '.DS_Store'
+            --exclude '.idea'
+            --exclude '.claude'
+            --exclude 'tsconfig.tsbuildinfo'
+          )
+
+          echo "=== rsync dry-run ==="
+          rsync -azni --delete "${RSYNC_OPTS[@]}" "${GITHUB_WORKSPACE}/" deploy-target:/data/app/love-memory/
+
+          echo "=== rsync apply ==="
+          rsync -azi --delete "${RSYNC_OPTS[@]}" "${GITHUB_WORKSPACE}/" deploy-target:/data/app/love-memory/
+
+      - name: Safe Docker build & restart on ali1
+        run: |
+          ssh deploy-target 'bash -s' <<'EOF'
+          set -euo pipefail
+          cd /data/app/love-memory
+
+          mkdir -p public/uploads data
+          if [ ! -f .env.production ]; then
+            echo "Missing .env.production on server"
+            exit 1
+          fi
+          chmod 600 .env.production
+
+          FREELLMA_WAS_RUNNING=false
+          if docker ps --format '{{.Names}}' | grep -qx 'freellmapi'; then
+            FREELLMA_WAS_RUNNING=true
+            echo "Stopping freellmapi to free memory during build..."
+            docker stop freellmapi
+          fi
+
+          cleanup() {
+            if [ "$FREELLMA_WAS_RUNNING" = "true" ]; then
+              echo "Restoring freellmapi..."
+              docker start freellmapi >/dev/null 2>&1 || true
+            fi
+          }
+          trap cleanup EXIT
+
+          docker-compose up -d --build
+
+          if [ "$FREELLMA_WAS_RUNNING" = "true" ]; then
+            docker start freellmapi
+            FREELLMA_WAS_RUNNING=false
+          fi
+
+          echo "=== Local health check ==="
+          curl -fsS --retry 12 --retry-delay 3 http://127.0.0.1:3000/api/health
+          echo ""
+
+          # 只清无主悬空层，保留构建缓存保障增量构建速度
+          docker image prune -f
+          free -h
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          EOF
+
+      - name: Verify public endpoint
+        run: |
+          curl -fsS --retry 5 --retry-delay 3 https://lovexin.felixfeng.online/api/health
+          echo ""

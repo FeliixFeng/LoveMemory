@@ -98,7 +98,7 @@ npm run prisma:generate
 
 ## 部署
 
-**GitHub Actions 已停用**（`.github/workflows/deploy.yml.disabled`）。2026-07-13 连续两次部署失败后手动改名关闭。**`scripts/deploy.sh` 也已删除（2026-10-19）**——部署按下面四步手动执行，每步单独看结果，不要写成脚本一把梭。
+**GitHub Actions 自动部署**（`.github/workflows/deploy.yml`）：2026-11-25 已按本机低内存安全配方重新启用——推送至 `main`（纯文档/`*.md` 变更跳过）或手动 `workflow_dispatch` 时，先在 GitHub Runner 跑 `typecheck` + `npm test`，再通过 SSH/rsync（配 `concurrency` 互斥锁 `cancel-in-progress: false`）执行前置磁盘/内存检查、备份 + 回滚 tag、`rsync` 排除数据、暂停 `freellmapi` 后安全构建并恢复、本地及公网健康检查。旧的 `scripts/deploy.sh` 保持删除；手动部署仍按下面步骤。
 
 ### ⚠️ 开工前三个硬前置（2026-11-09 第二次事故后提到最前）
 
