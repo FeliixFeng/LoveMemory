@@ -393,3 +393,18 @@ settings 加 `setupCompletedAt`（空 = 未初始化，任何页强制跳 /setup
   4. `3aaab53`：纪念页（勋章/心愿/胶囊，`components/WishesCapsulesPage.tsx`、`lib/achievements.ts`）与情侣档案室设置页（`components/SettingsPage.tsx`）重构；
   5. `96a6e03`：桌面端相册多列橱窗重构（`components/AlbumPage.tsx`）与全站缩略图/原图分层直连加载（`lib/image.ts`、`SafeImage.tsx`、`Lightbox.tsx`）。
 * **验收结果**：`npm run typecheck` 0 错误、`npm test` 20/20 全部通过；最终部署 `next build` 耗时 `122.0s`、Swap `0B`，`/api/health` 与 `/ /album /footprint /wishes /capsule /more` 六条路由均返回 `200`。
+
+---
+
+## 第十轮：细节打磨与边界稳定性修复（2026-11-25 晚）
+
+* **事件指定封面闭环（`components/EventDetail.tsx`、`hooks/useEventCRUD.ts`、`components/EventPreviewCard.tsx`、`hooks/usePhotoUpload.ts`）**：
+  * 事件详情照片格子新增轻巧的「设为封面 / 封面」胶囊按钮，复用 `PUT /api/events/[id]`；指定后首页卡片网格（优先置首）、那年今日/盲盒、相册橱窗与足迹城市条同步生效；删除该照片时同步清理失效封面引用。
+* **Lightbox 回忆上下文字幕（`components/Lightbox.tsx`）**：
+  * 支持接收 `events` 数组，浏览胶卷或事件大图时在底部展示轻量半透明「回忆标题 · 日期 · 地点」胶囊。
+* **统一上传压缩与鉴权重放（`lib/upload-client.ts`、`hooks/usePhotoUpload.ts`、`components/SettingsPage.tsx`）**：
+  * 抽出共享客户端压缩与上传 helper `uploadImageFile`，让设置页自定义封面上传同步享有客户端压缩、上传中进度态与 401 PIN 重放。
+* **边界隐患与时区修复（`app/api/upload/route.ts`、`components/love-memory-client.tsx`、`hooks/useEventCRUD.ts`、`components/WishesCapsulesPage.tsx`）**：
+  * `POST /api/upload` 缩略图生成链路补全 `.rotate()` 自动矫正 EXIF 方向，并为 JPEG/WebP 缩略图显式设定 `quality: 82`（`mozjpeg: true`）；
+  * `onReorderPhotos` 改走 `withAuth` + `mutate` 统一鉴权与失败回滚，上传文件绑定 `events.eventDetailId ?? events.selectedEventId`；
+  * `useEventCRUD`、`WishesCapsulesPage` 与 `SettingsPage` 导出文件名统一使用本地日期 `localTodayStr()`，消除零点至早八点 UTC 跨天偏差。

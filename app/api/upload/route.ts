@@ -61,9 +61,15 @@ export async function POST(request: Request) {
     const filename = buildFilename(file.name);
     const thumbFilename = buildThumbFilename(filename);
 
-    const thumbBuffer = await sharp(buffer)
-      .resize({ width: 480, height: 480, fit: 'inside', withoutEnlargement: true })
-      .toBuffer();
+    const thumbPipeline = sharp(buffer)
+      .rotate()
+      .resize({ width: 480, height: 480, fit: 'inside', withoutEnlargement: true });
+    const thumbBuffer =
+      file.type === 'image/jpeg'
+        ? await thumbPipeline.jpeg({ quality: 82, mozjpeg: true }).toBuffer()
+        : file.type === 'image/webp'
+          ? await thumbPipeline.webp({ quality: 82 }).toBuffer()
+          : await thumbPipeline.toBuffer();
 
     let url: string;
     let thumbUrl: string;

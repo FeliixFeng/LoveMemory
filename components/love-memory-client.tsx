@@ -214,21 +214,24 @@ export function LoveMemoryClient() {
           onEdit={() => withAuth(() => { if (events.detailEvent) events.openEventEdit(events.detailEvent); })}
           onAddPhoto={() => withAuth(() => photos.fileRef.current?.click())}
           onDeletePhoto={p => withAuth(() => setConfirm({ title: '确认删除照片', message: '删除后无法恢复，确定要删除吗？', onConfirm: () => { void photos.onDelPhoto(p); setConfirm(null); } }))}
-          onReorderPhotos={(from, to) => {
-            const eventPhotos = data.photos.filter(p => p.eventId === events.eventDetailId);
-            const otherPhotos = data.photos.filter(p => p.eventId !== events.eventDetailId);
+          onReorderPhotos={(from, to) => withAuth(() => {
+            const eventId = events.eventDetailId;
+            if (!eventId) return;
+            const eventPhotos = data.photos.filter(p => p.eventId === eventId);
+            const otherPhotos = data.photos.filter(p => p.eventId !== eventId);
             const swapped = [...eventPhotos];
             [swapped[from], swapped[to]] = [swapped[to], swapped[from]];
             const orderedUrls = swapped.map(p => p.url);
-            setData(prev => ({ ...prev, photos: [...otherPhotos, ...swapped] }));
-            void apiFetch('/api/photos/order', {
-              method: 'PUT',
-              body: { eventId: events.eventDetailId, urls: orderedUrls }
-            }).catch(() => {
-              setToast('排序保存失败，请重试');
-              loadData();
-            });
-          }}
+            void mutate(
+              prev => ({ ...prev, photos: [...otherPhotos, ...swapped] }),
+              () => apiFetch('/api/photos/order', { method: 'PUT', body: { eventId, urls: orderedUrls } }),
+              { errorMsg: '排序保存失败，请重试', onAuthRequired }
+            );
+          })}
+          onSetCover={p => withAuth(() => {
+            if (!events.eventDetailId) return;
+            void events.setEventCover(events.eventDetailId, p ? (p.displayUrl || p.url) : '');
+          })}
           onAddExpense={(d) => expenses.addExpense(events.eventDetailId!, d)}
           onDeleteExpense={id => withAuth(() => setConfirm({ title: '确认删除账单', message: '确定要删除这条账单吗？', onConfirm: () => { void expenses.deleteExpense(id); setConfirm(null); } }))}
           onViewPhoto={(p, i) => photos.setViewPhoto({ photos: p, index: i })}
@@ -242,6 +245,7 @@ export function LoveMemoryClient() {
         <Lightbox
           photos={photos.viewPhoto.photos}
           index={photos.viewPhoto.index}
+          events={data.events}
           onClose={() => photos.setViewPhoto(null)}
           onPrev={() => photos.setViewPhoto(v => v && { ...v, index: (v.index - 1 + v.photos.length) % v.photos.length })}
           onNext={() => photos.setViewPhoto(v => v && { ...v, index: (v.index + 1) % v.photos.length })}
@@ -250,7 +254,7 @@ export function LoveMemoryClient() {
 
       {confirm && <ConfirmDialog title={confirm.title} message={confirm.message} danger={confirm.danger} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(null)} />}
       <Toast message={toast} />
-      <input ref={photos.fileRef} type="file" multiple accept="image/*" className="hidden" onChange={e => photos.onPhotoUpload(e, events.selectedEventId)} />
+      <input ref={photos.fileRef} type="file" multiple accept="image/*" className="hidden" onChange={e => photos.onPhotoUpload(e, events.eventDetailId ?? events.selectedEventId)} />
     </>
   );
 }

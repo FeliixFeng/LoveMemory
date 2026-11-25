@@ -1,33 +1,10 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import imageCompression from 'browser-image-compression';
 import { Photo, AppData } from '../lib/types';
 import { apiFetch, ApiError } from '../app/lib/api-client';
+import { UploadAuthError, uploadImageFile } from '../lib/upload-client';
 import type { SettingsPatch } from '../app/lib/schemas';
-
-const COMPRESS_OPTIONS = {
-  maxSizeMB: 1.5,           // 最大 1.5MB
-  maxWidthOrHeight: 2048,   // 长边不超过 2048px
-  useWebWorker: true,       // 用 Web Worker 不阻塞 UI
-  fileType: 'image/jpeg',   // 统一输出 JPEG
-  initialQuality: 0.85      // 85% 质量
-};
-
-async function compressImage(file: File): Promise<File> {
-  // 跳过非图片文件
-  if (!file.type.startsWith('image/')) return file;
-  // 跳过已经够小的图片（< 500KB）
-  if (file.size < 500 * 1024) return file;
-
-  try {
-    const compressed = await imageCompression(file, COMPRESS_OPTIONS);
-    // 如果压缩后反而更大（罕见），返回原图
-    return compressed.size < file.size ? compressed : file;
-  } catch {
-    return file; // 压缩失败就上传原图
-  }
-}
 
 export function usePhotoUpload(
   data: AppData,
@@ -43,37 +20,17 @@ export function usePhotoUpload(
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function doUpload(file: File, eventId?: string): Promise<Photo> {
-    // 上传前压缩
-    const compressed = await compressImage(file);
-
-    const fd = new FormData();
-    fd.append('image', compressed, compressed.name || file.name);
-    if (eventId) fd.append('eventId', eventId);
-
-    return new Promise<Photo>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', '/api/upload');
-      const token = typeof window !== 'undefined' ? localStorage.getItem('lm_token') : null;
-      if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
-      };
-
-      xhr.onload = () => {
-        if (xhr.status === 401) {
-          onAuthRequired(() => doUpload(file, eventId).then(() => {}));
-          reject(new Error('auth'));
-          return;
-        }
-        if (xhr.status !== 200) { reject(new Error()); return; }
-        const d = JSON.parse(xhr.responseText);
-        resolve({ ...d, displayUrl: d.displayUrl || d.url, thumbUrl: d.thumbUrl || d.displayUrl || d.url } as Photo);
-      };
-
-      xhr.onerror = () => reject(new Error());
-      xhr.send(fd);
-    });
+    try {
+      return await uploadImageFile(file, {
+        eventId,
+        onProgress: setUploadProgress
+      });
+    } catch (err) {
+      if (err instanceof UploadAuthError) {
+        onAuthRequired(() => { void doUpload(file, eventId); });
+      }
+      throw err;
+    }
   }
 
   async function onPhotoUpload(e: React.ChangeEvent<HTMLInputElement>, selectedEventId: string | null) {
@@ -91,7 +48,7 @@ export function usePhotoUpload(
       setData(prev => ({ ...prev, photos: [...up.reverse(), ...prev.photos] }));
       setToast('已上传');
     } catch (err) {
-      if ((err as Error)?.message !== 'auth') setToast('上传失败');
+      if (!(err instanceof UploadAuthError)) setToast('上传失败');
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -103,7 +60,21 @@ export function usePhotoUpload(
     setDeleting(p.url);
     try {
       await apiFetch('/api/upload', { method: 'DELETE', body: { url: p.url } });
-      setData(prev => ({ ...prev, photos: prev.photos.filter(x => x.url !== p.url) }));
+      const affectedEvents = data.events.filter(
+        ev => ev.coverPhoto && (ev.coverPhoto === p.url || ev.coverPhoto === p.displayUrl)
+      );
+      setData(prev => ({
+        ...prev,
+        photos: prev.photos.filter(x => x.url !== p.url),
+        events: prev.events.map(ev =>
+          ev.coverPhoto && (ev.coverPhoto === p.url || ev.coverPhoto === p.displayUrl)
+            ? { ...ev, coverPhoto: '' }
+            : ev
+        )
+      }));
+      for (const ev of affectedEvents) {
+        void apiFetch(`/api/events/${ev.id}`, { method: 'PUT', body: { coverPhoto: '' } }).catch(() => {});
+      }
       setToast('已删除');
       if (viewPhoto && viewPhoto.photos[viewPhoto.index]?.url === p.url) setViewPhoto(null);
     } catch (err) {
@@ -128,7 +99,7 @@ export function usePhotoUpload(
     } catch (err) {
       if (err instanceof ApiError && err.isAuthError) {
         onAuthRequired(() => { void onHeroUpload(e); });
-      } else if ((err as Error)?.message !== 'auth') {
+      } else if (!(err instanceof UploadAuthError)) {
         setToast('封面保存失败');
       }
     } finally {

@@ -1,17 +1,19 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { Photo } from '../lib/types';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { Event, Photo } from '../lib/types';
+import { fmtRange } from '../lib/utils';
 import { getPhotoOriginalUrl, getPhotoThumbUrl } from '../lib/image';
 import { useScrollLock } from '../hooks/useScrollLock';
 import { useOverlayLayer } from '../hooks/useOverlayLayer';
 import { Z_LAYER } from './ui/Overlay';
 
 export function Lightbox({
-  photos, index, onClose, onPrev, onNext
+  photos, index, events, onClose, onPrev, onNext
 }: {
   photos: Photo[];
   index: number;
+  events?: Event[];
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
@@ -20,6 +22,16 @@ export function Lightbox({
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   const photo = photos[index];
   const hasMultiple = photos.length > 1;
+
+  const caption = useMemo(() => {
+    if (!photo?.eventId || !events?.length) return null;
+    const ev = events.find(e => String(e.id) === photo.eventId);
+    if (!ev) return null;
+    return {
+      title: ev.title,
+      meta: [fmtRange(ev.date, ev.endDate), ev.location].filter(Boolean).join(' · ')
+    };
+  }, [photo?.eventId, events]);
 
   const originalSrc = getPhotoOriginalUrl(photo);
   const thumbSrc = getPhotoThumbUrl(photo);
@@ -147,6 +159,20 @@ export function Lightbox({
           onLoad={() => setLoadedSrc(originalSrc)}
         />
       </div>
+
+      {/* 回忆上下文微标 */}
+      {caption && (
+        <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 max-w-[88vw] px-3.5 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-center z-20">
+          <div className="text-xs font-medium text-white/95 font-serif-cn truncate">
+            {caption.title}
+          </div>
+          {caption.meta && (
+            <div className="text-[10px] text-white/65 truncate mt-0.5 tabular-nums">
+              {caption.meta}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

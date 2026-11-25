@@ -8,6 +8,8 @@ import { useAuth } from './SiteLayoutClient';
 import { useAppData } from '../hooks/useAppData';
 import { fmt } from '../lib/utils';
 import { deriveThumbFromUrl } from '../lib/image';
+import { localTodayStr } from '../lib/flashback';
+import { UploadAuthError, uploadImageFile } from '../lib/upload-client';
 import { Toast } from './Toast';
 import { ConfirmDialog } from './modals/ConfirmDialog';
 import { SafeImage } from './SafeImage';
@@ -23,11 +25,12 @@ const TABS = [
 const QUICK_HOME_CITIES = ['武汉', '上海', '北京', '成都', '杭州', '深圳'];
 
 export function SettingsPage() {
-  const { token, withAuth } = useAuth();
+  const { withAuth, pendingOp, setShowPin } = useAuth();
   const { data, loading, toast, setToast, saveSettings, loadData, days } = useAppData();
   const [tab, setTab] = useState<'date' | 'cover' | 'quotes' | 'countdowns'>('date');
   const [newQuote, setNewQuote] = useState('');
   const [newCountdown, setNewCountdown] = useState({ label: '', date: '', emoji: '🎂' });
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [confirm, setConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   const [namesDraft, setNamesDraft] = useState<string[]>(() => [
@@ -75,7 +78,7 @@ export function SettingsPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `lovememory-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `lovememory-backup-${localTodayStr()}.json`;
       a.click();
       URL.revokeObjectURL(url);
       setToast('已导出回忆备份');
@@ -389,6 +392,7 @@ export function SettingsPage() {
 
           <button
             type="button"
+            disabled={uploadingCover}
             onClick={() => withAuth(() => {
               const input = document.createElement('input');
               input.type = 'file';
@@ -396,23 +400,40 @@ export function SettingsPage() {
               input.onchange = async (e) => {
                 const file = (e.target as HTMLInputElement).files?.[0];
                 if (!file) return;
-                const fd = new FormData();
-                fd.append('image', file);
-                const headers: Record<string, string> = {};
-                if (token) headers['Authorization'] = `Bearer ${token}`;
-                const r = await fetch('/api/upload', { method: 'POST', headers, body: fd });
-                if (r.ok) {
-                  const d = await r.json();
-                  const url = d.displayUrl || d.url;
-                  void save({ customCovers: [...data.customCovers, url] }, '封面已添加');
-                }
+                const runUpload = async () => {
+                  setUploadingCover(true);
+                  try {
+                    const photo = await uploadImageFile(file);
+                    const url = photo.displayUrl || photo.url;
+                    await save({ customCovers: [...data.customCovers, url] }, '封面已添加');
+                  } catch (err) {
+                    if (err instanceof UploadAuthError) {
+                      pendingOp.current = runUpload;
+                      setShowPin(true);
+                    } else {
+                      setToast('封面上传失败');
+                    }
+                  } finally {
+                    setUploadingCover(false);
+                  }
+                };
+                void runUpload();
               };
               input.click();
             })}
-            className="w-full py-4 lm-glass-panel rounded-3xl border border-dashed border-lm-accent/40 text-xs font-medium text-lm-accent-deep hover:border-lm-accent transition-all flex items-center justify-center gap-2 active:scale-[0.99]"
+            className="w-full py-4 lm-glass-panel rounded-3xl border border-dashed border-lm-accent/40 text-xs font-medium text-lm-accent-deep hover:border-lm-accent transition-all flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-60"
           >
-            <span className="text-base">+</span>
-            <span>上传一张首页氛围封面</span>
+            {uploadingCover ? (
+              <>
+                <span className="w-3.5 h-3.5 border-2 border-lm-accent/30 border-t-lm-accent rounded-full animate-spin" />
+                <span>压缩并上传中...</span>
+              </>
+            ) : (
+              <>
+                <span className="text-base">+</span>
+                <span>上传一张首页氛围封面</span>
+              </>
+            )}
           </button>
 
           {visibleDefaults.length > 0 && (

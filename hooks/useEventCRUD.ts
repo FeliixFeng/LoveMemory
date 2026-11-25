@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Event, AppData } from '../lib/types';
 import { resolveEventPlace } from '../lib/place';
+import { localTodayStr } from '../lib/flashback';
 import { EventDraft } from '../components/EventModal';
 import { apiFetch } from '../app/lib/api-client';
 import type { MutateOptions } from './useAppData';
@@ -28,7 +29,7 @@ export function useEventCRUD(
   const [eventDetailId, setEventDetailId] = useState<string | null>(null);
   const [eventModal, setEventModal] = useState(false);
   const [editEvent, setEditEvent] = useState<Event | null>(null);
-  const [eventDraft, setEventDraft] = useState<EventDraft>({ date: new Date().toISOString().split('T')[0], endDate: '', title: '', desc: '', icon: 'heart', location: '', city: '', mood: '' });
+  const [eventDraft, setEventDraft] = useState<EventDraft>({ date: localTodayStr(), endDate: '', title: '', desc: '', icon: 'heart', location: '', city: '', mood: '' });
 
   const selectedEvent = data.events.find(e => String(e.id) === selectedEventId) || null;
   const detailEvent = data.events.find(e => String(e.id) === eventDetailId) || null;
@@ -37,7 +38,7 @@ export function useEventCRUD(
 
   function openEventCreate() {
     setEditEvent(null);
-    setEventDraft({ date: new Date().toISOString().split('T')[0], endDate: '', title: '', desc: '', icon: 'heart', location: '', city: '', mood: '' });
+    setEventDraft({ date: localTodayStr(), endDate: '', title: '', desc: '', icon: 'heart', location: '', city: '', mood: '' });
     setEventModal(true);
   }
 
@@ -116,6 +117,21 @@ export function useEventCRUD(
     }
   }
 
+  async function setEventCover(eventId: string, coverPhoto: string) {
+    await mutate(
+      prev => ({
+        ...prev,
+        events: prev.events.map(e => (String(e.id) === String(eventId) ? { ...e, coverPhoto } : e))
+      }),
+      () => apiFetch(`/api/events/${eventId}`, { method: 'PUT', body: { coverPhoto } }),
+      {
+        successMsg: coverPhoto ? '已设为回忆封面' : '已取消指定封面',
+        errorMsg: '设置封面失败',
+        onAuthRequired
+      }
+    );
+  }
+
   return {
     selectedEventId, setSelectedEventId,
     eventDetailId, setEventDetailId,
@@ -123,6 +139,6 @@ export function useEventCRUD(
     editEvent, setEditEvent,
     eventDraft, setEventDraft,
     selectedEvent, detailEvent, selectedPhotos, selectedExpenses,
-    openEventCreate, openEventEdit, saveEvent, deleteEvent
+    openEventCreate, openEventEdit, saveEvent, deleteEvent, setEventCover
   };
 }

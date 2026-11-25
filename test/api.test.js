@@ -639,3 +639,52 @@ test('image url helpers prefer OSS/local thumbs for cards and original for light
   assert.equal(resolvedDerived.thumbSrc, 'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/thumbs/custom.jpg');
   assert.equal(resolvedDerived.fallbackSrc, 'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/photos/custom.jpg');
 });
+
+test('upload route normalizes EXIF orientation in JPEG thumbnails and supports updating event coverPhoto', async () => {
+  const ctx = await createTestContext();
+  const { default: sharp } = await import('sharp');
+
+  try {
+    const jpegWithExif = await sharp({
+      create: { width: 120, height: 60, channels: 3, background: '#ff8866' }
+    })
+      .jpeg()
+      .withMetadata({ orientation: 6 })
+      .toBuffer();
+
+    const fd = new FormData();
+    fd.append('image', new Blob([jpegWithExif], { type: 'image/jpeg' }), 'portrait.jpg');
+
+    const upRes = await ctx.uploadRoute.POST(
+      new Request('http://localhost/api/upload', { method: 'POST', body: fd })
+    );
+    assert.equal(upRes.status, 200);
+    const upBody = await upRes.json();
+    const thumbFile = path.join(ctx.uploadDir, upBody.thumbUrl.replace(/^\/uploads\//, ''));
+    const meta = await sharp(thumbFile).metadata();
+    assert.equal(meta.width, 60);
+    assert.equal(meta.height, 120);
+
+    const evRes = await eventsRoute.POST(
+      new Request('http://localhost/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: '测试封面', date: '2026-11-25' })
+      })
+    );
+    const { event } = await evRes.json();
+    const putRes = await eventByIdRoute.PUT(
+      new Request(`http://localhost/api/events/${event.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ coverPhoto: upBody.displayUrl })
+      }),
+      { params: Promise.resolve({ id: String(event.id) }) }
+    );
+    assert.equal(putRes.status, 200);
+    const updated = await prisma.event.findUnique({ where: { id: String(event.id) } });
+    assert.equal(updated.coverPhoto, upBody.displayUrl);
+  } finally {
+    await ctx.cleanup();
+  }
+});

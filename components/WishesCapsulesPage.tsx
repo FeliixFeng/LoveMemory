@@ -7,6 +7,7 @@ import { useAuth } from './SiteLayoutClient';
 import { useAppData } from '../hooks/useAppData';
 import { apiFetch } from '../app/lib/api-client';
 import { computeAchievements, type AchievementCategory } from '../lib/achievements';
+import { localTodayStr } from '../lib/flashback';
 import { fmt } from '../lib/utils';
 import { FallingHearts } from './FallingHearts';
 import { SkeletonCard } from './SkeletonCard';
@@ -67,7 +68,7 @@ export function WishesCapsulesPage() {
         method: 'POST',
         body: {
           title: source.title,
-          date: new Date().toISOString().slice(0, 10),
+          date: localTodayStr(),
           desc: source.desc || '',
           icon: source.wishId != null ? 'gift' : 'anniversary',
           location: '',

@@ -13,7 +13,7 @@ import { PinIcon } from './NavIcons';
 import { SectionLabel } from './SectionLabel';
 
 export function EventDetail({
-  event, photos, expenses, onClose, onEdit, onAddPhoto, onDeletePhoto, onReorderPhotos, onAddExpense, onDeleteExpense, onViewPhoto, uploading, uploadProgress, deleting
+  event, photos, expenses, onClose, onEdit, onAddPhoto, onDeletePhoto, onReorderPhotos, onSetCover, onAddExpense, onDeleteExpense, onViewPhoto, uploading, uploadProgress, deleting
 }: {
   event: Event;
   photos: Photo[];
@@ -23,6 +23,7 @@ export function EventDetail({
   onAddPhoto: () => void;
   onDeletePhoto: (p: Photo) => void;
   onReorderPhotos: (fromIndex: number, toIndex: number) => void;
+  onSetCover?: (p: Photo | null) => void;
   onAddExpense: (data: { amount: number; category: string; note: string }) => Promise<boolean>;
   onDeleteExpense: (id: number) => void;
   onViewPhoto: (photos: Photo[], index: number) => void;
@@ -159,7 +160,9 @@ export function EventDetail({
             </div>
 
             <div className="grid grid-cols-3 gap-1.5">
-              {photos.map((p, i) => (
+              {photos.map((p, i) => {
+                const isCover = Boolean(event.coverPhoto && (event.coverPhoto === p.url || event.coverPhoto === p.displayUrl));
+                return (
                 <div key={p.url} className="relative aspect-square rounded-xl overflow-hidden bg-lm-line/20 group">
                   <SafeImage
                     src={getPhotoThumbUrl(p)}
@@ -167,9 +170,25 @@ export function EventDetail({
                     alt=""
                     fill
                     sizes="(max-width: 640px) 33vw, 200px"
-                    className="object-cover"
+                    className="object-cover cursor-pointer"
                     onClick={() => onViewPhoto(photos, i)}
                   />
+
+                  {/* Set cover badge */}
+                  {onSetCover && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); onSetCover(isCover ? null : p); }}
+                      aria-label={isCover ? '取消回忆封面' : '设为回忆封面'}
+                      className={`absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-full text-[9.5px] font-medium backdrop-blur-sm transition-all ${
+                        isCover
+                          ? 'bg-lm-accent/90 text-white shadow-2xs opacity-100'
+                          : 'bg-black/45 text-white/90 opacity-60 md:opacity-0 md:group-hover:opacity-100 hover:bg-lm-accent/90'
+                      }`}
+                    >
+                      {isCover ? '封面' : '设为封面'}
+                    </button>
+                  )}
 
                   {/* Delete */}
                   <button
@@ -204,7 +223,8 @@ export function EventDetail({
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
 
               {/* Add photo button */}
               <button

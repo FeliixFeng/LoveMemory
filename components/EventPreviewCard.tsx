@@ -44,6 +44,12 @@ export const EventPreviewCard = memo(function EventPreviewCard({
 
   const total = calcTotalExpenses(expenses);
   const n = photos.length;
+  const coverIdx = event.coverPhoto
+    ? photos.findIndex(p => p.url === event.coverPhoto || p.displayUrl === event.coverPhoto)
+    : -1;
+  const orderedPhotos = coverIdx > 0
+    ? [photos[coverIdx], ...photos.slice(0, coverIdx), ...photos.slice(coverIdx + 1)]
+    : photos;
 
   function handleTouchStart(e: React.TouchEvent) {
     touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -78,10 +84,10 @@ export const EventPreviewCard = memo(function EventPreviewCard({
     <div className={`relative shrink-0 ${PANEL_H} md:flex-1 md:min-w-0`}>
       {n > 0 ? (
         <div className={`grid h-full w-full gap-[3px] ${mobileCols} ${mdCols} grid-rows-1 ${mdRows}`}>
-          {photos.slice(0, MAX_DESKTOP).map((p, i) => (
+          {orderedPhotos.slice(0, MAX_DESKTOP).map((p, i) => (
             <button
               key={p.url || i}
-              onClick={() => onViewPhoto?.(photos, i)}
+              onClick={() => onViewPhoto?.(orderedPhotos, i)}
               className={`relative overflow-hidden bg-lm-accent/15 ${i >= MAX_MOBILE ? 'hidden md:block' : ''}`}
             >
               <SafeImage
