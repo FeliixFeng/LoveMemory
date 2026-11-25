@@ -362,3 +362,11 @@ settings 加 `setupCompletedAt`（空 = 未初始化，任何页强制跳 /setup
 ### 2. 足迹页（`components/MapPage.tsx`）与地图手感重构
 * **交互与布局**：移除多余浮标，省市计数与「随机漫游」收拢入顶栏；移动端下方明信片横滑（`inline: 'nearest'`），桌面端自动展开 4 列网格 + 右侧回忆画卷双栏联动；
 * **ECharts 手感优化**：改用原生 `echarts.init` 与单 Canvas（`z: 2/3`，去掉 `zlevel` 防止点位拖影），开启全局拖动热区（`roamTrigger: 'global'`），去掉内部 `clip: true` 防止放大裁切，新增阻尼平滑滚轮缩放与右下角极简 `+ / − / ↺` 控件。
+
+---
+
+## 第八轮：纪念（勋章/心愿/胶囊）与情侣档案室重构 + 首页情感卡片（2026-11-25）
+
+* **首页（`components/MemoryFlashback.tsx`、`lib/flashback.ts`）**：新增「那年今日 / 时光盲盒」双态卡与「自动恋爱里程碑」进度卡，不占用首屏构图、无额外入库负担；
+* **纪念页（`components/WishesCapsulesPage.tsx`、`lib/achievements.ts`）**：导航与页头统一为「纪念」，顶部三段磨砂胶囊切换 `勋章 | 心愿 | 胶囊`；新增 16 枚恋爱勋章（时光/足迹/定格）；心愿完成改为复古「已实现」印章；胶囊重塑为火漆封蜡信封与 `<Overlay>` 信笺阅读弹窗；
+* **更多/设置页（`components/SettingsPage.tsx`）**：去模板化改版为「我们 · 情侣档案室」，新增双人重叠徽章档案顶卡、一键 JSON 导出备份、点线手账行输入、情话便签卡与台历倒计时卡。

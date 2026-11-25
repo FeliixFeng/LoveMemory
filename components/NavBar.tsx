@@ -9,7 +9,7 @@ const NAV_LINKS = [
   { href: '/', label: '首页', Icon: HomeIcon },
   { href: '/album', label: '相册', Icon: CameraIcon },
   { href: '/footprint', label: '足迹', Icon: MapIcon },
-  { href: '/wishes', label: '心愿', Icon: HeartIcon },
+  { href: '/wishes', label: '纪念', Icon: HeartIcon },
   { href: '/more', label: '更多', Icon: MoreIcon },
 ];
 

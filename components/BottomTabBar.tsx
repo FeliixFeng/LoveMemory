@@ -8,7 +8,7 @@ const TABS = [
   { href: '/', Icon: HomeIcon, label: '首页' },
   { href: '/album', Icon: CameraIcon, label: '相册' },
   { href: '/footprint', Icon: MapIcon, label: '足迹' },
-  { href: '/wishes', Icon: HeartIcon, label: '心愿' },
+  { href: '/wishes', Icon: HeartIcon, label: '纪念' },
   { href: '/more', Icon: MoreIcon, label: '更多' },
 ];
 

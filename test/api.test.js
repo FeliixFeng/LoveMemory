@@ -574,3 +574,34 @@ test('flashback helpers compute On This Day, milestones, and photo-prioritized r
   const picked = fb.pickRandomMemory(sampleEvents, photos, '1');
   assert.equal(picked.id, '4');
 });
+
+test('achievements helper computes unlocked badges across time, footprint, and memory categories', async () => {
+  const ach = await import(new URL(`../lib/achievements.ts?${salt}`, import.meta.url).href);
+  const sampleData = {
+    startDate: '2018-12-30',
+    heroImage: '',
+    customCovers: [],
+    hiddenDefaultCovers: [],
+    coupleNames: ['峰', '欣'],
+    homeCity: '武汉',
+    events: [
+      { id: '1', title: '武汉', date: '2026-01-01', desc: '', icon: 'heart', location: '武汉', city: '武汉', mood: '', coverPhoto: '' },
+      { id: '2', title: '合肥', date: '2026-04-15', desc: '', icon: 'airplane', location: '合肥', city: '合肥', mood: '', coverPhoto: '' },
+      { id: '3', title: '三亚', date: '2026-07-22', desc: '', icon: 'airplane', location: '三亚', city: '三亚', mood: '', coverPhoto: '' }
+    ],
+    photos: [{ url: '/a.jpg', uploadedAt: '2026-04-15', eventId: '2' }],
+    expenses: [],
+    loveQuotes: [],
+    countdowns: [],
+    wishes: [{ id: 1, title: '看海', description: '', emoji: '🌊', isCompleted: true, completedAt: '2026-07-22', sortOrder: 0 }],
+    capsules: []
+  };
+
+  const badges = ach.computeAchievements(sampleData, 2887);
+  const byId = new Map(badges.map(b => [b.id, b]));
+  assert.equal(byId.get('time-2000')?.unlocked, true);
+  assert.equal(byId.get('time-3000')?.unlocked, false);
+  assert.equal(byId.get('map-3p')?.unlocked, true);
+  assert.equal(byId.get('map-trip')?.unlocked, true);
+  assert.equal(byId.get('wish-1')?.unlocked, true);
+});
