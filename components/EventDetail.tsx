@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Event, Photo, Expense } from '../lib/types';
 import { getEmoji, fmtRange, formatCurrency, calcTotalExpenses, getMoodEmoji } from '../lib/utils';
 import { EXPENSE_CATEGORIES } from '../lib/constants';
+import { getPhotoOriginalUrl, getPhotoThumbUrl } from '../lib/image';
 import { ExpenseItem } from './ExpenseItem';
 import { SafeImage } from './SafeImage';
 import { Overlay } from './ui/Overlay';
@@ -161,7 +162,8 @@ export function EventDetail({
               {photos.map((p, i) => (
                 <div key={p.url} className="relative aspect-square rounded-xl overflow-hidden bg-lm-line/20 group">
                   <SafeImage
-                    src={p.thumbUrl || p.displayUrl || p.url}
+                    src={getPhotoThumbUrl(p)}
+                    fallbackSrc={getPhotoOriginalUrl(p)}
                     alt=""
                     fill
                     sizes="(max-width: 640px) 33vw, 200px"

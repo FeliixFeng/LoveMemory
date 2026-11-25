@@ -605,3 +605,37 @@ test('achievements helper computes unlocked badges across time, footprint, and m
   assert.equal(byId.get('map-trip')?.unlocked, true);
   assert.equal(byId.get('wish-1')?.unlocked, true);
 });
+
+test('image url helpers prefer OSS/local thumbs for cards and original for lightbox', async () => {
+  const img = await import(new URL(`../lib/image.ts?${salt}`, import.meta.url).href);
+
+  assert.equal(img.shouldBypassNextImage('https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/thumbs/a.jpg'), true);
+  assert.equal(img.shouldBypassNextImage('/uploads/thumbs/a.jpg'), true);
+  assert.equal(img.shouldBypassNextImage('/hero/hero1-web.jpg'), false);
+
+  const samplePhoto = {
+    url: 'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/photos/1.jpg',
+    displayUrl: 'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/photos/1.jpg',
+    thumbUrl: 'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/thumbs/1.jpg',
+    uploadedAt: '2026-11-08T00:00:00.000Z',
+    eventId: '1'
+  };
+  assert.equal(img.getPhotoThumbUrl(samplePhoto), samplePhoto.thumbUrl);
+  assert.equal(img.getPhotoOriginalUrl(samplePhoto), samplePhoto.displayUrl);
+
+  const resolvedWithCover = img.resolveEventCoverUrls(
+    { coverPhoto: samplePhoto.url },
+    [samplePhoto],
+    [samplePhoto]
+  );
+  assert.equal(resolvedWithCover.thumbSrc, samplePhoto.thumbUrl);
+  assert.equal(resolvedWithCover.fallbackSrc, samplePhoto.displayUrl);
+
+  const resolvedDerived = img.resolveEventCoverUrls(
+    { coverPhoto: 'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/photos/custom.jpg' },
+    [],
+    []
+  );
+  assert.equal(resolvedDerived.thumbSrc, 'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/thumbs/custom.jpg');
+  assert.equal(resolvedDerived.fallbackSrc, 'https://lovememory.oss-cn-wuhan-lr.aliyuncs.com/photos/custom.jpg');
+});

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Event, Photo } from '../lib/types';
 import { findNearestMilestone, findOnThisDay, localTodayStr, pickRandomMemory } from '../lib/flashback';
 import { fmt, fmtRange, getEmoji } from '../lib/utils';
+import { resolveEventCoverUrls } from '../lib/image';
 import { SafeImage } from './SafeImage';
 import { EventBadge } from './EventBadge';
 import { PinIcon } from './NavIcons';
@@ -41,11 +42,10 @@ export function MemoryFlashback({
   const activeHit = onThisDayHits[0] || null;
   const displayEvent = activeHit?.event || randomEvent;
 
-  const displayThumb = useMemo(() => {
-    if (!displayEvent) return '';
-    if (displayEvent.coverPhoto) return displayEvent.coverPhoto;
-    const evPhoto = photos.find(p => p.eventId === String(displayEvent.id));
-    return evPhoto?.thumbUrl || evPhoto?.displayUrl || evPhoto?.url || '';
+  const { thumbSrc: displayThumb, fallbackSrc: displayThumbFallback } = useMemo(() => {
+    if (!displayEvent) return { thumbSrc: '', fallbackSrc: '' };
+    const evPhotos = photos.filter(p => p.eventId === String(displayEvent.id));
+    return resolveEventCoverUrls(displayEvent, evPhotos, photos);
   }, [displayEvent, photos]);
 
   if (!displayEvent && !milestone) return null;
@@ -73,6 +73,7 @@ export function MemoryFlashback({
               {displayThumb ? (
                 <SafeImage
                   src={displayThumb}
+                  fallbackSrc={displayThumbFallback}
                   alt={displayEvent.title}
                   fill
                   sizes="56px"

@@ -7,6 +7,7 @@ import type { Event, Photo } from '../lib/types';
 import { PROVINCE_FULL_NAMES } from '../lib/map-data';
 import { isPlaceholderLocation, resolveEventPlace } from '../lib/place';
 import { calcTripDays, formatCurrency, fmtRange, getEmoji, getMoodEmoji } from '../lib/utils';
+import { getPhotoOriginalUrl, getPhotoThumbUrl, resolveEventCoverUrls } from '../lib/image';
 import { PinIcon, CameraIcon } from './NavIcons';
 import { SafeImage } from './SafeImage';
 import { EventBadge } from './EventBadge';
@@ -26,6 +27,7 @@ type CityBucket = {
   events: Event[];
   photos: Photo[];
   coverPhoto: string;
+  coverFallback: string;
   totalSpent: number;
 };
 
@@ -444,6 +446,7 @@ export function MapPage() {
             events: [],
             photos: [],
             coverPhoto: '',
+            coverFallback: '',
             totalSpent: 0,
           };
           cityMap.set(resolved.city, bucket);
@@ -453,7 +456,9 @@ export function MapPage() {
         bucket.photos.push(...evPhotos);
         bucket.totalSpent += expenseByEvent.get(String(ev.id)) || 0;
         if (!bucket.coverPhoto) {
-          bucket.coverPhoto = ev.coverPhoto || evPhotos[0]?.thumbUrl || evPhotos[0]?.displayUrl || evPhotos[0]?.url || '';
+          const resolvedCover = resolveEventCoverUrls(ev, evPhotos, data.photos);
+          bucket.coverPhoto = resolvedCover.thumbSrc;
+          bucket.coverFallback = resolvedCover.fallbackSrc;
         }
       } else if (!isPlaceholderLocation(ev.location)) {
         dailyEvents.push(ev);
@@ -471,11 +476,12 @@ export function MapPage() {
     if (dailyEvents.length > 0) {
       const dailyPhotos = dailyEvents.flatMap(ev => photosByEvent.get(String(ev.id)) || []);
       const dailySpent = dailyEvents.reduce((sum, ev) => sum + (expenseByEvent.get(String(ev.id)) || 0), 0);
-      const cover = dailyEvents.find(ev => ev.coverPhoto)?.coverPhoto
-        || dailyPhotos[0]?.thumbUrl
-        || dailyPhotos[0]?.displayUrl
-        || dailyPhotos[0]?.url
-        || '';
+      const coverEvent = dailyEvents.find(ev => ev.coverPhoto);
+      const dailyCover = coverEvent
+        ? resolveEventCoverUrls(coverEvent, dailyPhotos, data.photos)
+        : dailyPhotos[0]
+          ? { thumbSrc: getPhotoThumbUrl(dailyPhotos[0]), fallbackSrc: getPhotoOriginalUrl(dailyPhotos[0]) }
+          : { thumbSrc: '', fallbackSrc: '' };
       ordered.push({
         id: DAILY_BUCKET_ID,
         title: '日常角落',
@@ -486,7 +492,8 @@ export function MapPage() {
         isDaily: true,
         events: dailyEvents,
         photos: dailyPhotos,
-        coverPhoto: cover,
+        coverPhoto: dailyCover.thumbSrc,
+        coverFallback: dailyCover.fallbackSrc,
         totalSpent: dailySpent,
       });
     }
@@ -607,6 +614,7 @@ export function MapPage() {
                       {bucket.coverPhoto ? (
                         <SafeImage
                           src={bucket.coverPhoto}
+                          fallbackSrc={bucket.coverFallback}
                           alt={bucket.title}
                           fill
                           sizes="(max-width: 640px) 122px, 160px"
@@ -742,7 +750,8 @@ export function MapPage() {
                               className="relative w-24 h-28 sm:w-28 sm:h-32 shrink-0 rounded-xl overflow-hidden bg-lm-line/20 group active:scale-[0.98] transition-transform shadow-2xs"
                             >
                               <SafeImage
-                                src={p.thumbUrl || p.displayUrl || p.url}
+                                src={getPhotoThumbUrl(p)}
+                                fallbackSrc={getPhotoOriginalUrl(p)}
                                 alt=""
                                 fill
                                 sizes="112px"

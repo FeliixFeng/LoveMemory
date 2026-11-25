@@ -28,14 +28,6 @@ export function HeroSection({
   }, [heroImages.length]);
 
   useEffect(() => {
-    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 767;
-    heroImages.slice(0, 3).forEach(s => {
-      const src = typeof s === 'string' ? s : (isMobile ? s.mobile : s.web);
-      const img = new Image(); img.src = src;
-    });
-  }, [heroImages]);
-
-  useEffect(() => {
     if (quotes.length <= 1) return;
     const t = setInterval(() => setQuoteIdx(i => (i + 1) % quotes.length), 4500);
     return () => clearInterval(t);

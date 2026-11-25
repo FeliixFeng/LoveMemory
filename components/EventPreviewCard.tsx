@@ -3,6 +3,7 @@
 import { memo, useRef } from 'react';
 import { Event, Photo, Expense } from '../lib/types';
 import { getEmoji, fmtRange, formatCurrency, calcTotalExpenses, getMoodEmoji } from '../lib/utils';
+import { getPhotoOriginalUrl, getPhotoThumbUrl } from '../lib/image';
 import { SafeImage } from './SafeImage';
 import { EventBadge } from './EventBadge';
 import { CameraIcon, PinIcon } from './NavIcons';
@@ -84,7 +85,8 @@ export const EventPreviewCard = memo(function EventPreviewCard({
               className={`relative overflow-hidden bg-lm-accent/15 ${i >= MAX_MOBILE ? 'hidden md:block' : ''}`}
             >
               <SafeImage
-                src={p.thumbUrl || p.displayUrl || p.url}
+                src={getPhotoThumbUrl(p)}
+                fallbackSrc={getPhotoOriginalUrl(p)}
                 alt=""
                 fill
                 sizes={imgSizes}

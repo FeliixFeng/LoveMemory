@@ -370,3 +370,14 @@ settings 加 `setupCompletedAt`（空 = 未初始化，任何页强制跳 /setup
 * **首页（`components/MemoryFlashback.tsx`、`lib/flashback.ts`）**：新增「那年今日 / 时光盲盒」双态卡与「自动恋爱里程碑」进度卡，不占用首屏构图、无额外入库负担；
 * **纪念页（`components/WishesCapsulesPage.tsx`、`lib/achievements.ts`）**：导航与页头统一为「纪念」，顶部三段磨砂胶囊切换 `勋章 | 心愿 | 胶囊`；新增 16 枚恋爱勋章（时光/足迹/定格）；心愿完成改为复古「已实现」印章；胶囊重塑为火漆封蜡信封与 `<Overlay>` 信笺阅读弹窗；
 * **更多/设置页（`components/SettingsPage.tsx`）**：去模板化改版为「我们 · 情侣档案室」，新增双人重叠徽章档案顶卡、一键 JSON 导出备份、点线手账行输入、情话便签卡与台历倒计时卡。
+
+---
+
+## 第九轮：相册桌面端多列橱窗化 + 全站缩略图/原图分层策略（2026-11-25）
+
+* **相册页桌面端重构（`components/AlbumPage.tsx`）**：
+  * 移动端保留单列精致画册卡（`aspect-[16/10]`），平板切 2 列（`md:grid-cols-2`）、桌面切 3 列画廊橱窗（`lg:grid-cols-3 aspect-[4/3]`），「拾光碎片」融入同网格对齐，彻底消除桌面端单列巨幅大图突兀感；
+  * 点击影集卡片改为打开 `<Overlay layer="sheet">` 影集内页抽屉，避免多列网格手风琴撑歪邻卡，保持画册列表稳固；抽屉内用缩略图 3–5 列排布，点击任意照片进入 `<Lightbox>` 看原图。
+* **缩略图 / 原图分层与加载提速（`lib/image.ts`、`components/SafeImage.tsx`、`components/Lightbox.tsx`）**：
+  * `SafeImage` 自动对外部 OSS URL 与本地 `/uploads/thumbs/` 设置 `unoptimized`（直连 CDN / 本地静态缩略图，绕过 2 核部署机 `/_next/image` 带宽与 CPU 瓶颈），并接通 `fallbackSrc` 自动回退与 `src` 变更重置；
+  * 全站卡片封面、事件格、地图条、详情网格与自定义封面预览统一改用 `480px` 缩略图（~40–50KB），`<HeroSection>` 与 `<Lightbox>` 保留原图加载，且 `<Lightbox>` 以缩略图即时垫底预览后再无感切换原图。
