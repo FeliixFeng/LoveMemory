@@ -544,3 +544,33 @@ test('place resolution handles aliases, placeholders, and explicit city override
     ['武汉', '家里']
   );
 });
+
+test('flashback helpers compute On This Day, milestones, and photo-prioritized random memory', async () => {
+  const fb = await import(new URL(`../lib/flashback.ts?${salt}`, import.meta.url).href);
+
+  const sampleEvents = [
+    { id: '1', title: '初次相遇', date: '2018-12-30', desc: '', icon: 'heart', location: '', mood: '', coverPhoto: '' },
+    { id: '2', title: '六周年', date: '2024-12-30', desc: '', icon: 'anniversary', location: '', mood: '', coverPhoto: '' },
+    { id: '3', title: '今年周年', date: '2026-12-30', desc: '', icon: 'anniversary', location: '', mood: '', coverPhoto: '' },
+    { id: '4', title: '合肥旅行', date: '2026-04-15', desc: '', icon: 'airplane', location: '合肥', mood: '', coverPhoto: '' }
+  ];
+
+  // 那年今日：排除今年，按距今年数升序
+  const hits = fb.findOnThisDay(sampleEvents, '2026-12-30');
+  assert.equal(hits.length, 2);
+  assert.equal(hits[0].yearsAgo, 2);
+  assert.equal(hits[0].event.id, '2');
+  assert.equal(hits[1].yearsAgo, 8);
+  assert.equal(hits[1].event.id, '1');
+
+  // 里程碑计算：2018-12-30 到 2026-11-25（距离 8 周年 35 天，距离 3000 天 113 天）
+  const milestone = fb.findNearestMilestone('2018-12-30', '2026-11-25');
+  assert.equal(milestone.label, '相恋 8 周年纪念');
+  assert.equal(milestone.daysLeft, 35);
+  assert.match(milestone.secondaryLabel, /3000 天/);
+
+  // 盲盒优先抽带照片的事件且避开 excludeId
+  const photos = [{ url: '/a.jpg', uploadedAt: '2026-04-15', eventId: '4' }];
+  const picked = fb.pickRandomMemory(sampleEvents, photos, '1');
+  assert.equal(picked.id, '4');
+});

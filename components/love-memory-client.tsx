@@ -9,6 +9,7 @@ import { EmptyState } from './EmptyState';
 import { EventPreviewCard } from './EventPreviewCard';
 import { EventDetail } from './EventDetail';
 import { EventModal } from './EventModal';
+import { MemoryFlashback } from './MemoryFlashback';
 import { StatsSection } from './StatsSection';
 import { FloatingAddButton } from './FloatingAddButton';
 import { Lightbox } from './Lightbox';
@@ -176,6 +177,16 @@ export function LoveMemoryClient() {
         ) : (
           <EmptyState onAdd={() => withAuth(events.openEventCreate)} />
         )}
+
+        <MemoryFlashback
+          startDate={data.startDate}
+          events={data.events}
+          photos={data.photos}
+          onSelectAndOpen={id => {
+            events.setSelectedEventId(id);
+            events.setEventDetailId(id);
+          }}
+        />
 
         <StatsSection events={data.events} photos={data.photos} expenses={data.expenses} days={days} />
 
