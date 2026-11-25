@@ -52,12 +52,13 @@
 - **默认封面随仓库分发**：`public/hero/hero{1-6}-{mobile,web}.jpg`（竖 1536×2730 9:16 / 横 2730×1536 16:9），`lib/constants.ts` 的 `HERO_SLIDES` 引用。OSS 上不存封面；缓存规则：路径永不复用，覆盖同名才补 `?v=YYYYMMDD`。
 - **上传落点契约**（`app/api/upload/route.ts`）：原图 `photos/<时间戳>_<随机>.<ext>`，缩略图 `thumbs/<同名>`（扁平）。配了 OSS → 桶内同结构；没配 → `public/uploads/` 同结构（Next 静态服务 `/uploads/*`，compose 卷 `./public/uploads` 持久化）。**桶根目录禁止落裸文件**——2026-10-21 已清理一代散图（含 7MB 未压缩原图）。
 - **压缩双保险**：客户端 `browser-image-compression`（≤1.5MB / 长边 2048；压缩失败会原样上传）；服务端 `capImageSize` 兜底 >2MB JPEG/WebP → 长边 2560 / 质量 80。
+- **前端分层展示契约（2026-11-25 起）**：所有列表封面、网格、地图卡片与设置缩略预览走 `lib/image.ts`（`getPhotoThumbUrl` / `resolveEventCoverUrls` / `deriveThumbFromUrl` + `fallbackSrc`）；`components/SafeImage.tsx` 自动对外部 HTTPS/HTTP（OSS CDN）与 `/uploads/thumbs/` 设置 `unoptimized`，绕过部署机 `/_next/image` 带宽/CPU 瓶颈。仅 `HeroSection` 与 `Lightbox` 展示原图，且 `Lightbox` 以缩略图即时垫底预览后再无感切换原图。
 - **删除顺序**：先删文件成功、再删库行（反序失败会留孤儿）；删除 key 用 URL 完整路径，不要 `basename`（会剥掉 `photos/` 前缀删错对象）。
 - 无 OSS 部署整站可用（浏览/事件/心愿/胶囊/账单/照片上传全功能），OSS 只是存储宿主选项。
 
 ### 数据写路径契约（2026-10-20 收窄后，不要回退）
 
-**`POST /api/data` 只接受 settings 字段**（`SettingsPatchSchema`，strict）：`startDate / heroImage / customCovers / hiddenDefaultCovers / countdowns / loveQuotes`。传 `events / photos / expenses / wishes / capsules` 等一律 **400**——这是防删库的硬闸门，回归测试盯着（`test/api.test.js`）。
+**`POST /api/data` 只接受 settings 字段**（`SettingsPatchSchema`，strict）：`startDate / heroImage / customCovers / hiddenDefaultCovers / coupleNames / homeCity / countdowns / loveQuotes`。传 `events / photos / expenses / wishes / capsules` 等一律 **400**——这是防删库的硬闸门，回归测试盯着（`test/api.test.js`）。
 
 各实体的增删改走**资源接口**：
 
@@ -77,7 +78,7 @@
 
 **胶囊封存在服务端**（2026-10-23）：`readAppData()` 按 `unlockDate` 把未解锁胶囊的 `content` 置空、`locked: true`。`/api/data` 和 `/api/capsules` 都走这里，所以只改一个路由不够。前端只认 `locked`，不要自己拿日期算。
 
-**地点只有一处解析**（2026-10-23）：所有地点计算走 `lib/place.ts` 的 `resolvePlace / placeLabel / collectPlaces`。不要再写 `location.includes(city)` 或 `excludedWords` 黑名单 —— 首页统计、足迹地图、事件弹窗三处曾经各算各的，同一个「武汉 江汉路」得出三种结果。解析不出的（家里 / 待定 / 海边）不上地图，但 `placeLabel` 会保留原文，仍然算一个「地方」。
+**地点只有一处解析**（2026-10-23；2026-11-25 扩展 `Event.city` 与 `Settings.homeCity`）：所有地点计算走 `lib/place.ts` 的 `resolvePlace / resolveEventPlace / placeLabel / collectPlaces`。不要再写 `location.includes(city)` 或 `excludedWords` 黑名单 —— 首页统计、足迹地图、事件弹窗三处曾经各算各的，同一个「武汉 江汉路」得出三种结果。解析不出的（家里 / 待定 / 海边）或显式设为日常的事件不上地图，但 `placeLabel` 会保留原文，仍然算一个「地方」。
 
 **来源链接**：`Event.wishId` / `Event.capsuleId`（可空、唯一）。愿望完成或胶囊开启后由前端调 `POST /api/events` 带上来源，一条来源只能对应一条回忆。
 

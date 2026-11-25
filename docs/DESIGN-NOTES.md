@@ -352,7 +352,7 @@ settings 加 `setupCompletedAt`（空 = 未初始化，任何页强制跳 /setup
 
 ---
 
-## 第七轮：数据底座小重构 + 足迹页交互焕新（2026-11-25 已提交，待部署）
+## 第七轮：数据底座小重构 + 足迹页交互焕新（2026-11-25 已上线）
 
 ### 1. 数据模型与录入解耦
 * **`Settings.homeCity`**：新增常驻城市设置，足迹自动划分「远方足迹 / 常驻大本营 / 日常角落」；
@@ -381,3 +381,15 @@ settings 加 `setupCompletedAt`（空 = 未初始化，任何页强制跳 /setup
 * **缩略图 / 原图分层与加载提速（`lib/image.ts`、`components/SafeImage.tsx`、`components/Lightbox.tsx`）**：
   * `SafeImage` 自动对外部 OSS URL 与本地 `/uploads/thumbs/` 设置 `unoptimized`（直连 CDN / 本地静态缩略图，绕过 2 核部署机 `/_next/image` 带宽与 CPU 瓶颈），并接通 `fallbackSrc` 自动回退与 `src` 变更重置；
   * 全站卡片封面、事件格、地图条、详情网格与自定义封面预览统一改用 `480px` 缩略图（~40–50KB），`<HeroSection>` 与 `<Lightbox>` 保留原图加载，且 `<Lightbox>` 以缩略图即时垫底预览后再无感切换原图。
+
+---
+
+## 2026-11-25 全天改动汇总与线上验收
+
+* **累计上线提交（按时间顺序）**：
+  1. `db7bfb5`：升级地点/旅程模型（`Settings.homeCity`、`Event.endDate`、`Event.city`）并重构足迹地图交互；
+  2. `bc742da`：限制 `next build` 内存峰值与并发（`NODE_OPTIONS="--max-old-space-size=640"`、`cpus: 1`、`webpackMemoryOptimizations`），保障 2 核 2G 部署机零 Swap 稳定编译；
+  3. `d1e06e3`：首页新增「那年今日 / 时光盲盒」与「自动恋爱里程碑」卡片（`components/MemoryFlashback.tsx`、`lib/flashback.ts`）；
+  4. `3aaab53`：纪念页（勋章/心愿/胶囊，`components/WishesCapsulesPage.tsx`、`lib/achievements.ts`）与情侣档案室设置页（`components/SettingsPage.tsx`）重构；
+  5. `96a6e03`：桌面端相册多列橱窗重构（`components/AlbumPage.tsx`）与全站缩略图/原图分层直连加载（`lib/image.ts`、`SafeImage.tsx`、`Lightbox.tsx`）。
+* **验收结果**：`npm run typecheck` 0 错误、`npm test` 20/20 全部通过；最终部署 `next build` 耗时 `122.0s`、Swap `0B`，`/api/health` 与 `/ /album /footprint /wishes /capsule /more` 六条路由均返回 `200`。
