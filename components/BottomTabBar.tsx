@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { HomeIcon, CameraIcon, MapIcon, HeartIcon, MoreIcon } from './NavIcons';
+import { HomeIcon, AlbumIcon, MapIcon, HeartIcon, MoreIcon } from './NavIcons';
 
 const TABS = [
   { href: '/', Icon: HomeIcon, label: '首页' },
-  { href: '/album', Icon: CameraIcon, label: '相册' },
+  { href: '/album', Icon: AlbumIcon, label: '相册' },
   { href: '/footprint', Icon: MapIcon, label: '足迹' },
   { href: '/wishes', Icon: HeartIcon, label: '纪念' },
   { href: '/more', Icon: MoreIcon, label: '更多' },

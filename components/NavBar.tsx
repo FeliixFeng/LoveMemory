@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { HomeIcon, CameraIcon, MapIcon, HeartIcon, MoreIcon } from './NavIcons';
+import { HomeIcon, AlbumIcon, MapIcon, HeartIcon, MoreIcon } from './NavIcons';
 
 const NAV_LINKS = [
   { href: '/', label: '首页', Icon: HomeIcon },
-  { href: '/album', label: '相册', Icon: CameraIcon },
+  { href: '/album', label: '相册', Icon: AlbumIcon },
   { href: '/footprint', label: '足迹', Icon: MapIcon },
   { href: '/wishes', label: '纪念', Icon: HeartIcon },
   { href: '/more', label: '更多', Icon: MoreIcon },

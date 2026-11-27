@@ -9,7 +9,7 @@ import { Lightbox } from './Lightbox';
 import { SkeletonPage } from './SkeletonCard';
 import { SafeImage } from './SafeImage';
 import { Overlay } from './ui/Overlay';
-import { PinIcon, CameraIcon } from './NavIcons';
+import { PinIcon, CameraIcon, AlbumIcon } from './NavIcons';
 
 type ViewMode = 'albums' | 'stream';
 
@@ -156,7 +156,7 @@ export function AlbumPage() {
       {/* 空状态 */}
       {totalPhotos === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 lm-card rounded-3xl">
-          <span className="text-3xl mb-3">📸</span>
+          <AlbumIcon className="w-9 h-9 text-lm-accent/70 mb-3" />
           <p className="text-sm font-bold text-lm-ink font-serif-cn mb-1">相册还是空的</p>
           <p className="text-xs text-lm-body/50">在首页记录一次事件并上传属于你们的照片吧</p>
         </div>

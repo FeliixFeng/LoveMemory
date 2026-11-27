@@ -34,6 +34,17 @@ export function CameraIcon({ className }: IconProps) {
   );
 }
 
+export function AlbumIcon({ className }: IconProps) {
+  return (
+    <svg {...base(className)}>
+      <rect x="3" y="6.5" width="15" height="13.5" rx="2.2" />
+      <path d="M6.5 6.5V5.2A1.7 1.7 0 0 1 8.2 3.5h11.1A1.7 1.7 0 0 1 21 5.2v11.1a1.7 1.7 0 0 1-1.7 1.7H18" />
+      <circle cx="13.8" cy="10.2" r="1.1" fill="currentColor" stroke="none" />
+      <path d="m3.5 17.4 4.4-4.3a1 1 0 0 1 1.42 0l2.88 2.85 1.55-1.5a1 1 0 0 1 1.42 0l2.38 2.35" />
+    </svg>
+  );
+}
+
 export function MapIcon({ className }: IconProps) {
   return (
     <svg {...base(className)}>
