@@ -408,3 +408,29 @@ settings 加 `setupCompletedAt`（空 = 未初始化，任何页强制跳 /setup
   * `POST /api/upload` 缩略图生成链路补全 `.rotate()` 自动矫正 EXIF 方向，并为 JPEG/WebP 缩略图显式设定 `quality: 82`（`mozjpeg: true`）；
   * `onReorderPhotos` 改走 `withAuth` + `mutate` 统一鉴权与失败回滚，上传文件绑定 `events.eventDetailId ?? events.selectedEventId`；
   * `useEventCRUD`、`WishesCapsulesPage` 与 `SettingsPage` 导出文件名统一使用本地日期 `localTodayStr()`，消除零点至早八点 UTC 跨天偏差。
+
+---
+
+## 第十一轮：自动化 CI/CD 启用与相册图标语义统一（2026-11-27 已上线）
+
+* **GitHub Actions CI/CD 正式跑通（`3a397c1`）**：
+  * 启用 `.github/workflows/deploy.yml` 并配好仓库 Secrets（`SERVER_IP`、`SERVER_USER`、`SERVER_PORT`、`SSH_PRIVATE_KEY`），推送 `main`（非文档改动）后自动运行 `verify`（Node 24 + `typecheck` + `npm test`）与串行安全部署 `deploy`（前置磁盘/内存检查、数据备份、`rsync`、`freellmapi` 构建期临时让路、健康检查）；
+  * 首个完整自动化 Run `45635582290` 成功跑通（`verify` 45s，`deploy` 2m48s，Swap 0B）。
+* **相册导航图标重构（`17048fe`）**：
+  * 在 `components/NavIcons.tsx` 新增双卡叠放相册图标 `AlbumIcon`（延续 `1.8px` 细线矢量风），替换桌面端顶栏（`NavBar.tsx`）、移动端底栏（`BottomTabBar.tsx`）的「相册」导航图标，以及 `AlbumPage.tsx` 空状态占位图标（移除原 `📸` emoji）；
+  * 原 `CameraIcon` 保留并专注用于拍照/添加照片入口与图片角标语义（`EventPreviewCard.tsx`、`MapPage.tsx`、`AlbumPage.tsx`）；
+  * 本地 `npm run typecheck` 与 `npm test`（21/21）全部通过，GitHub Actions Run `46022855637` 自动验证与部署上线。
+
+---
+
+## 当前阶段总结与下一步计划（截至 2026-11-27）
+
+### 1. 已完成基线
+* **全站二级页面风格与功能闭环**：相册（影集橱窗 + 时光胶卷 + 缩略图/原图分层）、足迹（ECharts 地图 + 城市双向索引明信片 + 常驻城市分级）、纪念（16 枚勋章 / 心愿印章 / 火漆时间胶囊）、更多（情侣档案室 + 一键备份）、全站细节稳定性及自动化 CI/CD 部署均已就绪并稳定运行在 `https://lovexin.felixfeng.online`。
+
+### 2. 下一步待讨论与待实施重点（暂缓动工，后续细聊）
+1. **首页整体视觉与结构迁移**：
+   * 相册、足迹、纪念、更多已形成统一的新版高定暖白编辑感与磨砂玻璃体系，下一步集中讨论**首页（Hero 封面、横向时间轴、事件预览卡片、那年今日/盲盒与里程碑区）**如何做整体风格迁移与版面重构。
+2. **「新建事件 × 随手拍照」快捷链路设计**：
+   * **PWA 相机调用方案**：基于线上 HTTPS + PWA 环境，优先采用原生文件桥接（`<input type="file" accept="image/*" capture="environment" />` 直接拉起系统后置相机，配合 `multiple` 相册多选与现有客户端压缩 `compressImageFile`），保留手机原生 HDR/夜景/对焦画质；
+   * **流程与入口待定稿**：结合新版首页一起敲定——是在时间轴/悬浮 `+` 提供「拍一张记此刻」入口（**先拍照再建事件**：拍完带草稿图直达 `EventModal`），还是在 `EventModal` 内置照片待传区（**创建时一并选图/拍照**，点保存时合并创建与上传），以及是否附带从相册图片读取 EXIF 拍摄日期自动填表、调用相机前先过 PIN 鉴权等细节。

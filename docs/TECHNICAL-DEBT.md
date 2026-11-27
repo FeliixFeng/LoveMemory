@@ -45,3 +45,9 @@
 * **位置**：`app/(site)/layout.tsx` & `app/lib/app-data.ts`
 * **现象**：全站所有路由每次 SSR 都会拉取全量数据库内容（全部事件、照片、账单、胶囊、心愿）。
 * **建议**：未来随着照片和事件增多，相册和独立页面可考虑分页或按需轻量化下发。
+
+### ⏳ 9. 琐碎图标与 CI Action 版本顺手清理（非阻塞）
+* **位置**：`.github/workflows/deploy.yml`、`components/MapPage.tsx`
+* **现象**：
+  * GitHub Actions 日志提示 `actions/checkout@v4`、`actions/setup-node@v4` 后续将被强制切换至 Node 24（当前自动适配通过，无影响）；
+  * `MapPage.tsx` 空状态仍使用 `🗺️` emoji（相册空状态已在 `17048fe` 替换为 `AlbumIcon`），后续可随视觉走查顺手统一为 `MapIcon`。
